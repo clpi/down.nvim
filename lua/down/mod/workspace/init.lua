@@ -331,7 +331,7 @@ M.new_file = function(path, workspace, opts)
     return
   end
   local destination = (fullpath / path):add_suffix '.md'
-  destination:parent_assert():mkdir(Path.const.o755 + 4 * math.pow(8, 4), true)   -- 40755(oct)
+  destination:parent_assert():mkdir(Path.const.o755 + 4 * math.pow(8, 4), true) -- 40755(oct)
   local fd = destination:fs_open(opts.force and 'w' or 'a', Path.const.o644, false)
   if fd then
     vim.loop.fs_close(fd)
@@ -577,13 +577,13 @@ M.handle = {
       log.trace(e, 'wsadded')
     end,
     file_created = function(e)
-      log.trace( 'filecreated',e)
+      log.trace('filecreated', e)
     end,
     wscache_empty = function(e)
-      log.trace('wscache_empty',e)
+      log.trace('wscache_empty', e)
     end,
     wschanged = function(e)
-      log.trace('wschanged',e)
+      log.trace('wschanged', e)
     end
   },
 }

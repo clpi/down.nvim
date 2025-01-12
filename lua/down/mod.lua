@@ -88,11 +88,11 @@ Mod.mods = {}
 Mod.default = {
   mods = {
     'tool.telescope',
-    'lsp',
+    -- 'lsp',
     'note',
     'workspace',
-    'data.log',
-    'template',
+    -- 'data.log',
+    -- 'template',
   },
   ---@type fun():down.mod.Setup
   setup = function()

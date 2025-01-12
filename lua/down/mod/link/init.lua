@@ -28,25 +28,25 @@ Link.maps = {
     'n',
     '<BS>',
     '<ESC>:<C-U>edit #<CR>',
-    { desc = 'Go back', },
+    { desc = 'Go back', silent = true, noremap = false, nowait = true },
   },
   {
     'n',
     '<CR>',
     '<ESC>:<C-U>lua require("down.mod.link").follow.link()<CR>',
-    { desc = 'Follow link', },
+    { desc = 'Follow link', silent = true, noremap = false, nowait = true },
   },
   {
     'n',
     '<S-TAB>',
     '<ESC>:<C-U>lua require("down.mod.link").goto_prev_link()<CR>',
-    { desc = 'Previous link', },
+    { desc = 'Previous link', silent = true, noremap = false, nowait = true },
   },
   {
     'n',
     '<TAB>',
     '<ESC>:<C-U>lua require("down.mod.link").goto_next_link()<CR>',
-    { desc = 'Next link', },
+    { desc = 'Next link', silent = true, noremap = false, nowait = true },
   },
 }
 
