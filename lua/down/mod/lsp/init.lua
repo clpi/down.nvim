@@ -138,8 +138,7 @@ Lsp.info = {
 }
 
 function Lsp.run()
-  local ext = vim.fn.expand '%:e'
-  if ext == 'md' or ext == 'dn' or ext == 'dd' or ext == 'down' or ext == 'downrc' then
+  if Lsp.is_md() then
     lsp.start(Lsp.info)
   end
 end
@@ -167,6 +166,10 @@ Lsp.autocmd = function(fty)
   })
 end
 
+Lsp.is_md = function()
+  local ext = vim.fn.expand '%:e'
+  return ext == 'md' or ext == 'dn' or ext == 'dd' or ext == 'down' or ext == 'downrc'
+end
 Lsp.ft = function(fty)
   return vim.api.nvim_create_autocmd({ 'FileType' }, {
     pattern = fty or '*',
