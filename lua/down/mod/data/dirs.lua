@@ -2,7 +2,7 @@ local Dirs = {}
 
 local path = require('plenary.path')
 local ctx = require 'plenary.context_manager'
-local ctx = require 'plenary.async_lib'
+local async = require 'plenary.async_lib'
 
 Dirs.vim = {
   data = vim.fn.stdpath('data'),
@@ -18,7 +18,6 @@ Dirs.down = {
     return vim.fs.joinpath(vim.fn.stdpath(base or 'data'), sub or '')
   end,
 }
-Dirs.down.data = function(sub) return Dirs.down.dir('data', sub) end
 
 Dirs.get_mkfile = function(file)
   local f = path:new(file)

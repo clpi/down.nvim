@@ -5,11 +5,6 @@ local log = require 'down.util.log'
 ---@class down.mod.cmd.Mod: down.Mod
 local M = mod.new 'cmd.mod'
 
----@class down.mod.cmd.mod.Data
-M.data = {
-
-  -- The table containing all the functions. This can get a tad complex so I recommend you read the wiki entry
-}
 M.commands = {
   mod = {
     name = 'mod',
@@ -23,7 +18,7 @@ M.commands = {
         name = 'mod.new',
         callback = function()
           log.trace 'Mod.commands.new: Callback'
-        end
+        end,
       },
       load = {
         name = 'mod.load',
@@ -40,8 +35,8 @@ M.commands = {
         name = 'mod.unload',
         args = 1,
         callback = function(e)
-          log.trace "Mod.commands.unload: Callback"
-        end
+          log.trace 'Mod.commands.unload: Callback'
+        end,
       },
       list = {
         args = 0,
@@ -73,16 +68,18 @@ M.commands = {
           mods_popup:map('n', 'q', close, {})
           local lines = {}
           table.insert(lines, '# Mods loaded')
-          table.insert(lines, ''); table.insert(lines, '')
+          table.insert(lines, '')
+          table.insert(lines, '')
           table.insert(lines, '## Mods:')
-          table.insert(lines, ''); table.insert(lines, '')
+          table.insert(lines, '')
+          table.insert(lines, '')
           for name, _ in pairs(mod.mods) do
             table.insert(lines, '1. `' .. name .. '`')
           end
           vim.api.nvim_buf_set_lines(mods_popup.bufnr, 0, -1, true, lines)
           vim.bo[mods_popup.bufnr].modifiable = false
           mods_popup:mount()
-        end
+        end,
       },
     },
   },

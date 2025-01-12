@@ -1,6 +1,12 @@
 local mod = require 'down.mod'
 local log = require 'down.util.log'
-local settings = require('down.mod.lsp.settings')
+local settings = require 'down.mod.lsp.settings'
+local lsp = vim.lsp
+local lspu = vim.lsp.util
+local cwd = vim.fn.getcwd
+local exp = vim.fn.expand
+local ft = vim.bo.filetype
+local trc, inf, err, wrn = log.trace, log.info, log.error, log.warn
 
 ---@class down.mod.Lsp: down.Mod
 local Lsp = mod.new 'lsp'
@@ -22,7 +28,7 @@ Lsp.commands = {
     name = 'lsp',
     condition = 'markdown',
     callback = function(e)
-      log.trace 'lsp'
+      trc('lsp', e)
     end,
     subcommands = {
       restart = {
@@ -30,7 +36,7 @@ Lsp.commands = {
         name = 'lsp.restart',
         condition = 'markdown',
         callback = function(e)
-          log.trace 'lsp.restart'
+          log.trace('lsp.restart', e)
         end,
       },
       start = {
@@ -38,7 +44,7 @@ Lsp.commands = {
         name = 'lsp.start',
         condition = 'markdown',
         callback = function(e)
-          log.trace 'lsp.start'
+          log.trace('lsp.start', e)
         end,
       },
       status = {
@@ -72,7 +78,7 @@ Lsp.commands = {
         name = 'actions.workspace',
         condition = 'markdown',
         callback = function(e)
-          log.trace 'actions.workspce'
+          trc('actions.workspce', e)
         end,
       },
     },
@@ -88,7 +94,7 @@ Lsp.commands = {
         name = 'rename.workspace',
         condition = 'markdown',
         callback = function(e)
-          log.trace 'rename.workspace'
+          trc('rename.workspace', e)
         end,
       },
       dir = {
@@ -96,7 +102,7 @@ Lsp.commands = {
         name = 'rename.dir',
         condition = 'markdown',
         callback = function(e)
-          log.trace 'rename.dir'
+          trc(e, 'rename.dir')
         end,
       },
       section = {
@@ -104,7 +110,7 @@ Lsp.commands = {
         name = 'rename.section',
         condition = 'markdown',
         callback = function(e)
-          log.trace 'rename.section'
+          trc(e, 'rename.section')
         end,
       },
       file = {
@@ -120,55 +126,51 @@ Lsp.commands = {
 }
 
 Lsp.load = function()
-  local autocmd = Lsp.data.ft 'markdown'
+  local autocmd = Lsp.ft 'markdown'
 end
 
----@class (exact) down.mod.lsp.Config
-Lsp.data = {}
-
 ---@class down.mod.lsp.Config
-Lsp.config = {
-  name = 'downls',
-  cmd = { 'down', 'lsp', '--stdio' },
-  root_dir = vim.fn.getcwd(),
+Lsp.info = {
+  name = 'down-lsp',
+  cmd = { 'down', '--stdio', 'lsp' },
+  root_dir = cwd(),
   settings = settings,
 }
 
-function Lsp.data.run()
-  local ft = vim.bo.filetype
+function Lsp.run()
   local ext = vim.fn.expand '%:e'
   if ext == 'md' or ext == 'dn' or ext == 'dd' or ext == 'down' or ext == 'downrc' then
-    vim.lsp.start(Lsp.config)
+    lsp.start(Lsp.info)
   end
 end
 
-function Lsp.data.augroup()
+function Lsp.augroup()
   return vim.api.nvim_create_augroup('down.lsp', {
     clear = true,
   })
 end
 
-function Lsp.data.serve()
-  vim.lsp.start {
+function Lsp.serve()
+  lsp.start {
     name = 'downls',
-    cmd = { 'down', 'lsp' },
-    root_dir = vim.fn.getcwd(),
+    cmd = { 'down', '--stdio', 'lsp' },
+    root_dir = cwd(),
     settings = Lsp.config.settings,
   }
 end
 
-Lsp.data.autocmd = function(ft)
+Lsp.autocmd = function(fty)
   return vim.api.nvim_create_autocmd({ 'BufEnter', 'BufNewFile' }, {
-    pattern = ft or '*',
-    callback = Lsp.data.serve,
+    pattern = fty or '*',
+    callback = Lsp.serve,
     desc = 'Run downls',
   })
 end
 
-Lsp.data.ft = function(ft)
+Lsp.ft = function(fty)
   return vim.api.nvim_create_autocmd({ 'FileType' }, {
-    pattern = ft or '*',
-    callback = Lsp.data.serve,
+    pattern = fty or '*',
+    callback = Lsp.serve,
     desc = 'Run downls',
   })
 end

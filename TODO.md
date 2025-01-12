@@ -19,7 +19,7 @@
       instead of having it under `[module].config` - [ ] If necessary, then make inter-module config accessibility under `[module].config` instead of `module.config`
 - [ ] (easy) Change config to be under
 - [ ] (easy) Consider removing `[module].load` `[module].maps` `[module].opts` `[module].cmds` and merge all into `[module].setup` due to redundancy
-- [ ] (easy) Remove all lingering instances of `[module].data.data` and merge into `[module].data`
+- [ ] (easy) Remove all lingering instances of `[module]..` and merge into `[module].`
   - [ ] (easy) Consider another separation of tables and functions of a module
 - [ ] (easy) Fix `ui.calendar` for `note` module
 - [ ] (easy) Fix mod popup window buffer close error

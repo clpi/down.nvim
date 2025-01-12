@@ -1,17 +1,24 @@
-local L = require 'down.mod'.new('edit.cursor')
-local tu = require('nvim-treesitter.ts_utils')
+local mod = require 'down.mod'
+local util = require 'down.util'
+local log = util.log
+local ts = vim.treesitter
+local tuok, tu = pcall(require, 'nvim-treesitter.ts_utils')
 
+---@class down.mod.edit.Cursor: down.Mod
+local L = mod.new 'edit.cursor'
+
+---@return down.mod.Setup
 function L.setup()
   return {
     dependencies = {
       'tool.treesitter',
       'workspace',
     },
-    loaded = true,
+    loaded = tuok,
   }
 end
 
----@class down.edit.cursor.Config
+---@class down.mod.edit.cursor.Config
 L.config = {}
 
 ---@class down.edit.cursor.Data
@@ -25,17 +32,14 @@ L.config = {}
 ---@field public range ...
 ---@field public lspRange table
 ---@field public hl nil
-L.data = {
-  ---@return string[]
-}
 ---@class edit.cursor.Node
-L.data.node = {}
-function L.data.node:captures()
-  return require('vim.treesitter').get_captures_at_cursor(0)
+L.node = {}
+function L.node:captures()
+  return ts.get_captures_at_cursor(0)
 end
 
 ---@return table
-function L.data.node:lspRange()
+function L.node:lspRange()
   ---@diagnostic disable-next-line
   return tu.node_to_lsp_range(self.get())
 end
@@ -43,7 +47,7 @@ end
 ---@param switch boolean: switch parent
 ---@param nextParent boolean: nextParent parent
 ---@return TSNode|nil
-function L.data.node:next(switch, nextParent)
+function L.node:next(switch, nextParent)
   ---@diagnostic disable-next-line
   return tu.get_next_node(self.get(), switch or true, nextParent or true)
 end
@@ -51,33 +55,33 @@ end
 ---@param switch boolean: switch parent
 ---@param prevParent boolean: nextParent parent
 ---@return TSNode|nil
-function L.data.node:prev(switch, prevParent)
+function L.node:prev(switch, prevParent)
   ---@diagnostic disable-next-line
   return tu.get_previous_node(self.get(), switch or true, prevParent or true)
 end
 
 ---@return string[]
-function L.data.node:text()
+function L.node:text()
   ---@diagnostic disable-next-line
   return tu.get_node_text(self.get(), 0)
 end
 
 ---@return TSNode|nil
-function L.data.node.get()
+function L.node.get()
   local n = tu.get_node_at_cursor(0, nil)
   ---@diagnostic disable-next-line
-  setmetatable(n, { __index = n, __call = L.data.node.get() })
+  setmetatable(n, { __index = n, __call = L.node.get() })
   return n
 end
 
 ---@return TSNode
-function L.data.node:root()
+function L.node:root()
   ---@diagnostic disable-next-line
   return tu.get_root_for_node(self.get())
 end
 
 ---@return ...
-function L.data.node:range()
+function L.node:range()
   ---@diagnostic disable-next-line
   return tu.get_vim_range(self.get(), 0)
 end
@@ -85,9 +89,14 @@ end
 ---@param ns? string: namespace
 ---@param hgroup? string: hilite group
 ---@return nil
-function L.data.node:hl(ns, hgroup)
+function L.node:hl(ns, hgroup)
   ---@diagnostic disable-next-line
   return tu.highlight_node(self.get(), 0, ns, hgroup)
+end
+
+---@return boolean
+function L.in_codeblock()
+  return false
 end
 
 return L

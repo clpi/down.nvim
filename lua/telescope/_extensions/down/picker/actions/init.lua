@@ -1,6 +1,6 @@
-local mod = require("down.mod")
-local pickers = require("telescope.pickers")
-local finders = require("telescope.finders")
+local mod = require "down.mod"
+local pok, pickers = pcall(require, "telescope.pickers")
+local fok, finders = pcall(require, "telescope.finders")
 local conf = require("telescope.config").values -- allows us to use the values from the users config
 local make_entry = require("telescope.make_entry")
 local downld, down = pcall(require, 'down')

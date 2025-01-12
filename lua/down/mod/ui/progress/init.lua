@@ -1,8 +1,7 @@
 -- TODO: code cleanup
-local Spinner = require("down.mod").new("ui.progress")
+local Spinner = require('down.mod').new('ui.progress')
 --> from fidget.nvim
-local list =
-{ "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
+local list = { '⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏' }
 
 Spinner.setup = function()
   return {
@@ -13,18 +12,15 @@ end
 ---@class down.ui.progress.Config
 Spinner.config = {}
 
----@class down.ui.progress.Config
-Spinner.data = {}
-
-function Spinner.data.start(s, ns)
+function Spinner.start(s, ns)
   local block = s.code_block
-  local r, c = block["start"].row, block["start"].column
+  local r, c = block['start'].row, block['start'].column
   local t = vim.loop.new_timer()
 
   local idx = 0
   local id = vim.api.nvim_buf_set_extmark(s.buf, ns, r, c, {
-    virt_text_pos = "eol",
-    virt_text = { { list[idx + 1], "Function" } },
+    virt_text_pos = 'eol',
+    virt_text = { { list[idx + 1], 'Function' } },
   })
 
   t:start(
@@ -37,7 +33,7 @@ function Spinner.data.start(s, ns)
         ns,
         r,
         c,
-        { virt_text = { { list[idx + 1], "Function" } }, id = id }
+        { virt_text = { { list[idx + 1], 'Function' } }, id = id }
       )
     end)
   )
@@ -52,7 +48,7 @@ function Spinner.data.start(s, ns)
   }
 end
 
-function Spinner.data.shut(s, ns)
+function Spinner.shut(s, ns)
   -- local s = Spinner.state
   vim.api.nvim_buf_del_extmark(s.buf, ns, s.id)
   s.t:stop()

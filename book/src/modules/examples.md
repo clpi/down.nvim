@@ -56,17 +56,16 @@ end
 
 ---@brief This is where we will set up the module's data and any methods it will call.
 ---@class down.jupyter.Data
-J.data = {
 
   ---@brief One such piece of data you may wish to store is the ongoing collection of cells, as well
   ---@brief as their contents and type in the Juypyter notebook. You may even wish to leverage the
   ---@brief down.lua `lsp.notebook` module to hook into the LSP for Jupyter notebooks.
-  cells = {
+  J.cells = {
 
-  },
+  }
 
   ---@brief To keep track of the notebook currently being interacted with
-  notebook = {
+  J.notebook = {
 
     path = nil,
 
@@ -76,7 +75,6 @@ J.data = {
 
   }
 
-}
 
 ---@brief Technically, we have now created a proper module that can be loaded into Neovim through down.lua.
 ---@brief However, we will be typically be best off at the beginning characterizing the module with any
@@ -172,14 +170,6 @@ M.config = {
   --- @brief module config
   ---          the public facing config for this module that can be
   ---          set by the user from its default values here.
-  --- ...
-}
-
----@class example.Data
-M.data = {
-  --- @brief module data
-  ---          the home of the module's internal data and methods
-  ---          TODO: split up concerns
   --- ...
 }
 

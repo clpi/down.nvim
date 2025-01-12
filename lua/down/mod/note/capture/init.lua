@@ -1,5 +1,8 @@
+local mod = require 'down.mod'
+local log = require 'down.util.log'
+
 ---@type down.Mod
-local M = require 'down.mod'.new('note.capture')
+local M = mod.new 'note.capture'
 
 ---@return down.mod.Setup
 M.setup = function()
@@ -8,13 +11,12 @@ M.setup = function()
     loaded = true,
     dependencies = {
       'cmd',
+      'ui',
+      'ui.popup',
       'workspace',
     },
   }
 end
-
----@class down.mod.note.capture.Data
-M.data = {}
 
 ---@class down.mod.note.capture.Config
 M.config = {}

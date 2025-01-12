@@ -44,7 +44,7 @@ M.config = {
 }
 
 ---@class example.Data
-M.data = {
+M. = {
   --- @brief module data
   ---          the home of the module's internal data and methods
   ---          TODO: split up concerns

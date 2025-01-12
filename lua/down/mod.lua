@@ -5,7 +5,7 @@ local log = require('down.util.log')
 --- @!TODO : Change to body access where appropriate and now available to avoid complex config for end user
 ---   1. Firsr try with  Ms, then workspace
 ---
---- @TODO: Merge Module.data with Module, Module.config as subfield for all modules
+--- @TODO: Merge Module. with Module, Module.config as subfield for all modules
 ---        which have class then of down.mod.[Mod] as M
 ---
 ---
@@ -34,7 +34,6 @@ local Mod = {
   handle = {},
   id = '',
   namespace = vim.api.nvim_create_namespace('down.mod'),
-  data = {},
   config = {},
   events = {},
   dep = {},
@@ -42,7 +41,7 @@ local Mod = {
   tests = {},
 }
 
-Mod.data.metatable = {
+Mod.metatable = {
   ---@type metatable
   handle = {
     __index = function(self, k)
@@ -78,14 +77,8 @@ Mod.data.metatable = {
     __index = function(self, k)
       return self.dep[k]
     end,
-    __newindex = function(self, k, v)
-      self.data[k] = v
-    end,
     __eq = function(m1, m2)
       return m1.id == m2.id
-    end,
-    __call = function(self, fun, ...)
-      return self.data[fun](...)
     end,
   },
 }
@@ -124,17 +117,16 @@ Mod.default = {
       end,
       opts = {},
       maps = {},
-      -- handle = setmetatable({}, Mod.data.metatable.handle),
+      -- handle = setmetatable({}, Mod..metatable.handle),
       handle = {},
       id = n,
       namespace = vim.api.nvim_create_namespace('down.mod.' .. n),
-      data = {},
       config = {},
       events = {},
       dep = {},
       import = {},
       tests = {},
-    }, Mod.data.metatable)
+    }, Mod.metatable)
   end,
 }
 
@@ -182,7 +174,7 @@ Mod.load_mod_from_table = function(m, cfg)
           return Mod.delete(m.id)
         end
       end
-      m.dep[req] = Mod.mods[req].data
+      m.dep[req] = Mod.mods[req]
     end
   end
   if mod_to_replace then
@@ -199,16 +191,15 @@ Mod.load_mod_from_table = function(m, cfg)
   return Mod.mods[m.id]
 end
 
---- @param modn string
+--- @param n string
 --- @return down.config.Mod?
-function Mod.check_mod(modn)
-  local modl = require('down.mod.' .. modn)
+function Mod.check_mod(n)
+  local modl = require('down.mod.' .. n)
   if not modl then
-    log.error('Mod.load_mod: could not load mod ' .. modn)
+    log.error('Mod.load_mod: could not load mod ' .. n)
     return nil
-  end
-  if modl == true then
-    log.error('did not return valid mod: ' .. modn)
+  elseif modl == true then
+    log.error('did not return valid mod: ' .. n)
     return nil
   end
   return modl
@@ -240,9 +231,9 @@ end
 function Mod.load_mod_as_dependency_from_table(md, parent_mod)
   if Mod.load_mod_from_table(md) then
     if type(parent_mod) == 'string' then
-      Mod.mods[parent_mod].dep[md.id] = md.data
+      Mod.mods[parent_mod].dep[md.id] = md
     elseif type(parent_mod) == 'table' then
-      parent_mod.dep[md.id] = md.data
+      parent_mod.dep[md.id] = md
     end
   end
 end
@@ -277,7 +268,7 @@ function Mod.get_mod(modn)
     log.trace('Attempt to get mod with name' .. modn .. 'failed - mod is not loaded.')
     return
   end
-  return Mod.mods[modn].data
+  return Mod.mods[modn]
 end
 
 --- Returns true if mod with name modn is loaded, false otherwise
@@ -292,45 +283,57 @@ end
 
 --- Executes `callback` once `mod` is a valid and loaded mod, else the callback gets instantly executed.
 --- @param modn string The name of the mod to listen for.
---- @param callback fun(mod_public_table: table)
+--- @param cb fun(mod_public_table: table)
 function Mod.await(modn, cb)
   if Mod.is_loaded(modn) then
     cb(assert(Mod.get_mod(modn)))
-    return
+  else
+    Event.callback('mod_loaded', function(_, m)
+      cb(m)
+    end, function(e)
+      return e.body.id == modn
+    end)
   end
+end
 
-  Event.callback('mod_loaded', function(_, m)
-    cb(m.data)
-  end, function(event)
-    return event.body.id == modn
-  end)
+---@field k table|function
+---@field kt? function
+function Mod.load_kind(mk, kt)
+  if type(mk) == 'function' then
+    mk()
+  elseif type(mk) == 'nil' then
+    return
+  elseif type(mk) == 'table' then
+    for k, v in pairs(mk) do
+      kt(k, v)
+    end
+  end
 end
 
 ---@param m down.Mod
 function Mod.load_opts(m)
-  if m.opts then
-    for i, k in pairs(m.opts) do
-      vim.bo[i] = k
-    end
-  end
+  Mod.load_kind(m.opts, function(k, v)
+    vim.bo[k] = v
+  end)
 end
 
 ---@param m down.Mod
 function Mod.load_maps(m)
-  if m.maps then
-    if type(m.maps) == 'function' then
-      return
-    elseif type(m.maps) == 'table' then
-      for i, k in ipairs(m.maps) do
-        vim.keymap.set(
-          k[1] or 'n',
-          k[2],
-          k[3],
-          { desc = k[4], noremap = true, nowait = true, silent = true }
-        )
-      end
+  Mod.load_kind(m.maps, function(_, v)
+    local opts = {
+      noremap = true,
+      nowait = true,
+      silent = true,
+    }
+    if type(v[4]) == 'string' then
+      opts.desc = v[4]
+    elseif type(v[4]) == 'table' then
+      opts = v[4]
+    elseif type(v[4]) == 'nil' then
+      opts.desc = v[3] or ''
     end
-  end
+    vim.keymap.set(v[1] or 'n', v[2], v[3], opts)
+  end)
 end
 
 ---@param m down.Mod
@@ -364,7 +367,7 @@ end
 
 ---@param m down.Mod
 Mod.test = function(m)
-  log.info("Mod.test: Performing tests for ", m.id, ": ")
+  log.info('Mod.test: Performing tests for ', m.id, ': ')
   if m.tests then
     for tn, test in m.tests do
       log.info('Mod.test: Running test ', tn, ' for ', m.id, ': ', test(m))
@@ -375,7 +378,7 @@ end
 ---@param cmds down.Commands
 ---@return boolean
 Mod.handle_cmd = function(self, e, cmd, cmds, ...)
-  log.trace("Mod.handle_cmd: Handling cmd ", cmd, " for mod ", self.id)
+  log.trace('Mod.handle_cmd: Handling cmd ', cmd, ' for mod ', self.id)
   if not cmds or type(cmds) ~= 'table' or not cmds[cmd] then
     return false
   end
@@ -403,7 +406,7 @@ end
 --- @param ... any
 --- @return boolean
 Mod.handle_event = function(self, e, ...)
-  log.trace("Mod.handle_event: Handling event ", e.id, " for mod ", self.id)
+  log.trace('Mod.handle_event: Handling event ', e.id, ' for mod ', self.id)
   if self.handle and self.handle[e.split[1]] and self.handle[e.split[1]][e.split[2]] then
     self.handle[e.split[1]][e.split[2]](e)
     return true
@@ -431,7 +434,7 @@ end
 ---@param e down.Event
 function Mod.broadcast(e)
   Event.handle(e)
-  log.trace("Mod.broadcast: Broadcasting event", e.id)
+  log.trace('Mod.broadcast: Broadcasting event', e.id)
   for mn, m in pairs(Mod.mods) do
     if Mod.handle_event(m, e) then
       log.trace('Mod.broadcast: Broadcast success: ', e.id, ' to mod ', mn)

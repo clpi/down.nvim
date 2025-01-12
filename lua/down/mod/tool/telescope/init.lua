@@ -1,19 +1,16 @@
-local mod = require('down.mod')
-local M = mod.new('tool.telescope')
+local mod = require 'down.mod'
+local log = require 'down.util.log'
+
+---@class down.mod.tool.Telescope: down.Mod
+local M = mod.new 'tool.telescope'
 local tok, t = pcall(require, 'telescope')
 
 ---@return down.mod.Setup
 M.setup = function()
-  if tok then
-    return {
-      loaded = true,
-      dependencies = { 'workspace' },
-    }
-  else
-    return {
-      loaded = false,
-    }
-  end
+  return {
+    loaded = tok,
+    dependencies = { 'workspace' },
+  }
 end
 
 ---@class down.mod.Data
@@ -46,8 +43,8 @@ M.config = {
   },
 }
 
-M.data.pickers = {}
-M.data.load_pickers = function()
+M.pickers = {}
+M.load_pickers = function()
   local r = {}
   for _, pic in ipairs(M.config.enabled) do
     local ht, te = pcall(require, 'telescope._extensions.down.picker.' .. pic)
@@ -56,7 +53,7 @@ M.data.load_pickers = function()
     end
     r[pic] = require('telescope._extensions.down.picker.' .. pic)
   end
-  M.data.pickers = r
+  M.pickers = r
   return r
 end
 M.commands = {
@@ -90,11 +87,11 @@ M.commands = {
 }
 M.load = function()
   assert(tok)
-  M.data.load_pickers()
+  M.load_pickers()
   if tok then
     t.load_extension 'down'
     for _, pic in ipairs(M.config.enabled) do
-      vim.keymap.set('n', '<plug>down.telescope.' .. pic .. '', M.data.pickers[pic])
+      vim.keymap.set('n', '<plug>down.telescope.' .. pic .. '', M.pickers[pic])
     end
   else
     return
@@ -102,11 +99,11 @@ M.load = function()
 end
 
 M.maps = {
-  { 'n', ',df', '<cmd>Telescope down files<CR>',     'Telescope down files' },
-  { 'n', ',dF', '<cmd>Telescope down<CR>',           'Telescope down' },
-  { 'n', ',dt', '<cmd>Telescope down tags<CR>',      'Telescope down tags' },
-  { 'n', ',dk', '<cmd>Telescope down links<CR>',     'Telescope down links' },
+  { 'n', ',dF', '<cmd>Telescope down files<CR>', 'Telescope down files' },
+  { 'n', ',dF', '<cmd>Telescope down<CR>', 'Telescope down' },
+  { 'n', ',dL', '<cmd>Telescope down links<CR>', 'Telescope down links' },
   { 'n', ',dW', '<cmd>Telescope down workspace<CR>', 'Telescope down workspaces' },
+  -- { 'n', ',dt', '<cmd>Telescope down tags<CR>',      'Telescope down tags' },
 }
 
 -- M.handle = {

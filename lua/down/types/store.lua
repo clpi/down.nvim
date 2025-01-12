@@ -135,7 +135,7 @@
 --- @class (exact) down.store.KindIdDateMap<V> { default?: down.store.Item.Kind, [down.store.Item.Kind]?: down.store.map.Id<V> }
 ---
 ---
---- @brief down.store.data
+--- @brief down.store.
 ---
 --- @alias down.store.KindId<V> down.Store<string, down.Store<down.Id, down.store.Item>>
 ---

@@ -1,26 +1,25 @@
 local M = {}
-M.data = {}
-M.data.matrix = {
+M.matrix = {
   round = {
-    nw = "⎛",
-    cw = "⎜",
-    sw = "⎝",
+    nw = '⎛',
+    cw = '⎜',
+    sw = '⎝',
 
-    ne = "⎞",
-    ce = "⎟",
-    se = "⎠",
+    ne = '⎞',
+    ce = '⎟',
+    se = '⎠',
   },
 
   bracket = {
-    nw = "⎧",
-    cw = "⎨",
-    ww = "⎥",
-    sw = "⎩",
+    nw = '⎧',
+    cw = '⎨',
+    ww = '⎥',
+    sw = '⎩',
 
-    ne = "⎫",
-    ce = "⎬",
-    ee = "⎪",
-    se = "⎭",
+    ne = '⎫',
+    ce = '⎬',
+    ee = '⎪',
+    se = '⎭',
   },
 }
 

@@ -8,6 +8,7 @@
 
 --- @class (exact) down.log.Config
 --- @field plugin string                                           Name of the plugin. Prepended to log messages.
+--- @field outfile string
 --- @field use_console boolean                                     Whether to print the output to Neovim while running.
 --- @field highlights boolean                                      Whether highlighting should be used in console (using `:echohl`).
 --- @field use_file boolean                                        Whether to write output to a file.
@@ -15,12 +16,28 @@
 --- @field modes ({ name: down.log.Level, hl: string, level: number })[] Level config.
 --- @field float_precision number                                  Can limit the number of decimals displayed for floats.
 
-local vl, a, lvl, ext = vim.log, vim.api, vim.log.levels, vim.tbl_deep_extend
-
---- User config section
---- @type down.log.Config
-local default_config = function(plug)
-  return {
+--- @class (exact) down.Log
+---   @field levels table<string, number>
+---   @field number_level table<number, string>
+---   @field config down.log.Config
+local Log = {
+  number_level = {
+    [0] = 'trace',
+    [1] = 'debug',
+    [2] = 'info',
+    [3] = 'warn',
+    [4] = 'error',
+    [5] = 'fatal',
+  },
+  levels = {
+    trace = 0,
+    debug = 1,
+    info = 2,
+    warn = 3,
+    error = 4,
+    fatal = 5,
+  },
+  config = {
     plugin = plug or 'down',
 
     use_console = false,
@@ -31,39 +48,22 @@ local default_config = function(plug)
 
     level = 'trace',
 
-    outfile = string.format('%s/%s.log', a.nvim_call_function('stdpath', { 'data' }), plug or 'down'),
-
+    outfile = string.format('%s/%s.log', vim.api.nvim_call_function('stdpath', { 'data' }), 'down'),
     ---@type number
     lvl = vim.log.levels.TRACE,
 
     modes = {
-      trace = { hl = 'Comment', level = lvl.TRACE },
-      debug = { hl = 'Comment', level = lvl.DEBUG },
-      info = { hl = 'None', level = lvl.INFO },
-      warn = { hl = 'WarningMsg', level = lvl.WARN },
-      error = { hl = 'ErrorMsg', level = lvl.ERROR },
+      trace = { hl = 'Comment', level = vim.log.levels.TRACE },
+      debug = { hl = 'Comment', level = vim.log.levels.DEBUG },
+      info = { hl = 'None', level = vim.log.levels.INFO },
+      warn = { hl = 'WarningMsg', level = vim.log.levels.WARN },
+      error = { hl = 'ErrorMsg', level = vim.log.levels.ERROR },
       fatal = { hl = 'ErrorMsg', level = 5 },
     },
 
     float_precision = 0.01,
-  }
-end
-
-local Log = {
-  levels = {
-    trace = 0,
-    debug = 1,
-    info = 2,
-    warn = 3,
-    error = 4,
-    fatal = 5,
   },
-  config = default_config('down'),
 }
-
-Log.get_default_config = function()
-  return default_config('down')
-end
 
 -- local unpack = unpack or table.unpack
 
@@ -165,7 +165,7 @@ end
 --- @param cfg down.log.Config
 --- @param standalone boolean
 Log.new = function(cfg, standalone)
-  cfg = vim.tbl_deep_extend('force', default_config('down'), cfg)
+  cfg = vim.tbl_deep_extend('force', Log.config, cfg)
   cfg.plugin = 'down' -- Force the plugin name to be down
   Log.config = cfg
   for m, v in ipairs(cfg.modes) do

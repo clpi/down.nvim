@@ -2,11 +2,7 @@
 ---
 --- @alias down.mod.Handler fun(event: down.Event)
 ---
---- @alias down.mod.SetupFun fun(): down.mod.Setup
----
---- @class down.Opts: {
----   [string]?: string,
---- }
+--- @alias down.Opts { [string]?: string } | function
 ---
 --- @alias down.VimMode
 --- | 'n'
@@ -31,13 +27,13 @@
 ---   nowait?: boolean
 --- }
 ---
---- @alias down.Maps down.Map[]
+--- @alias down.Maps down.Map[]|fun()
 --- @alias down.Handler fun(event: down.Event, ...: any)
 --- @alias down.Handlers {
 ---   [string]?: down.Handler|down.Handlers,
 ---   __call?: down.Handler,
 --- }
---- @class (exact) down.Mod
+--- @class down.Mod
 ---   @field public config? down.mod.Config The config for the mod.
 ---   @field public import? table<string, down.Mod> Imported submod of the given mod. Contrary to `dep`, which only exposes the public API of a mod, imported mod can be accessed in their entirety.
 ---   @field public commands?  down.Commands that adds all the commands for the mod.
@@ -48,22 +44,21 @@
 ---   @field public id string The name of the mod.
 ---   @field public namespace string The name of the mod.
 ---   @field public post_load? fun() Function that is invoked after all mod are loaded. Useful if you want the down environment to be fully set up before performing some task.
----   @field public data? table<string, any> Every mod can expose any set of information it sees fit through this field. All functions and variables declared in this table will be to any other mod loaded.
 ---   @field public dep? table<string, down.Mod.Data> Contains the public tables of all mod that were dep via the `dependencies` array provided in the `setup()` function of this mod.
----   @field public setup? fun(): down.mod.Setup? Function that is invoked before any other loading occurs. Should perform preliminary startup tasks.
+---   @field public setup? fun(): down.mod.Setup Function that is invoked before any other loading occurs. Should perform preliminary startup tasks.
 ---   @field public replaced? boolean If `true`, this means the mod is a replacement for a base mod. This flag is set automatically whenever `setup().replaces` is set to a value.
 ---   @field public handle? down.Handlers callback that is invoked any time an event the mod has subscribed to has fired.
 ---   @field public tests? table<string, fun()> Function that is invoked when the mod is being tested.
 ---   @field public events? down.mod.Events
--- ---   @field public [string]? down.mod.Data
+---   @field public [any]? any
 ---
 --- @class (exact) down.mod.Setup: {
----   [string]?: { [string]?: any },
+---   [any]?: any,
 ---   loaded: boolean,
 ---   dependencies?: string[],
 ---   replaces?: string,
 ---   merge?: boolean,
----   @field public [string]? any
+--- }
 ---
 --- @class (exact) down.mod.Events: { [string]: down.Event }
 ---
@@ -71,12 +66,15 @@
 --- @alias down.Mod.Mod
 ---   | down.mod.Lsp
 ---   | down.mod.Code
+---   | down.mod.Time
+---   | down.mod.Config
+---   | down.mod.Export
+---   | down.mod.Tag
 ---   | down.mod.Parse
 ---   | down.mod.Edit
 ---   | down.mod.Data
 ---   | down.mod.Link
 ---   | down.mod.Task
----   | down.mod.Tag
 ---   | down.mod.Template
 ---   | down.mod.Log
 ---   | down.mod.Cmd
@@ -88,41 +86,13 @@
 ---   | down.mod.data.Store
 ---   | down.mod.data.History
 ---   | down.mod.task.Agenda
----   | down.mod.data.Export
----   | down.mod.data.Encrypt
 ---   | down.mod.ui.Calendar
 ---   | down.mod.ui.calendar.Day
+---   | down.mod.Keymap
 ---   | down.mod.ui.calendar.Month
----   | down.mod.ui.calendar.Week
----
---- @alias down.Mod.Data
----   | down.mod.lsp.Data
----   | down.mod.data.Data
----   | down.mod.edit.Data
----   | down.mod.cmd.Data
----   | down.mod.tool.Data
----   | down.mod.workspace.Data
----   | down.mod.note.Data
----   | down.mod.ui.Data
----   | down.mod.parse.Data
----   | down.mod.code.Data
----   | down.mod.link.Data
----   | down.mod.task.Data
----   | down.mod.tag.Data
----   | down.mod.template.Data
----   | down.mod.log.Data
----   | down.mod.data.bookmark.Data
----   | down.mod.data.store.Data
----   | down.mod.data.history.Data
----   | down.mod.task.agenda.Data
----   | down.mod.data.export.Data
----   | down.mod.data.encrypt.Data
----   | down.mod.ui.calendar.Data
----   | down.mod.ui.calendar.day.Data
----   | down.mod.ui.calendar.month.Data
----   | down.mod.ui.calendar.week.Data
 ---
 --- @alias down.Mod.Config
+---   | down.mod.keymap.Config
 ---   | down.mod.lsp.Config
 ---   | down.mod.data.Config
 ---   | down.mod.edit.Config
@@ -131,19 +101,20 @@
 ---   | down.mod.workspace.Config
 ---   | down.mod.note.Config
 ---   | down.mod.ui.Config
+---   | down.mod.config.Config
+---   | down.mod.export.Config
 ---   | down.mod.parse.Config
 ---   | down.mod.code.Config
 ---   | down.mod.link.Config
 ---   | down.mod.task.Config
 ---   | down.mod.tag.Config
 ---   | down.mod.template.Config
+---   | down.mod.export.Config
 ---   | down.mod.log.Config
 ---   | down.mod.task.agenda.Config
 ---   | down.mod.data.bookmark.Config
 ---   | down.mod.data.store.Config
 ---   | down.mod.data.history.Config
----   | down.mod.data.export.Config
----   | down.mod.data.encrypt.Config
 ---   | down.mod.ui.calendar.Config
 ---   | down.mod.ui.calendar.day.Config
 ---   | down.mod.ui.calendar.month.Config
@@ -165,7 +136,4 @@
 --- @field min_args? number
 --- @field subcommands? { [string]?:down.Command}
 
---- @class (exact) down.Commands: {
----   [string]?: down.Command,
---- }
----
+--- @alias down.CommandsB {[string]?: down.Command } | function

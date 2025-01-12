@@ -1,18 +1,15 @@
 ---@brief Let's go through the most boilerplate, simple example of a module you may use.
 ---@brief This module will have no real functionality,
-local mod = require "down.mod"
-
+local mod = require 'down.mod'
 
 ---@brief Let's say you want to create a module for Jupyter notebooks to run in Neovim.
 ---@brief We'll start by just creating a barebones module, with no functionality, just to show you how.
 ---@brief We will name this module "jupyter".
 ---@type down.Mod
-local J = mod.create("jupyter", {
+local J = mod.new 'jupyter'
 
-  ---@brief This is where we would automatically call any submodules underneath "jupyter" to be called in
-  ---@brief simultaneously as it is loaded. Since we do not have any such submodules, we will leave this empty.
-
-})
+---@brief This is where we would automatically call any submodules underneath "jupyter" to be called in
+---@brief simultaneously as it is loaded. Since we do not have any such submodules, we will leave this empty.
 
 --[[           1. Flow of functions:
 
@@ -37,39 +34,33 @@ function J.setup()
     ---@brief through in such an early stage. Taking a guess, however, and knowing we can always change,
     ---@brief we'll just choose a few which we will likely need regardless.
     requires = {
-      "data",
-      "workspace",
-      "data.code",
-      "ui.progress",
-      "ui.status",
-      "ui.notify",
-      "ui.vtext"
-    }
+      'data',
+      'workspace',
+      'data.code',
+      'ui.progress',
+      'ui.status',
+      'ui.notify',
+      'ui.vtext',
+    },
   }
 end
 
 ---@brief This is where we will set up the module's data and any methods it will call.
 ---@class down.jupyter.Data
-J.data = {
 
-  ---@brief One such piece of data you may wish to store is the ongoing collection of cells, as well
-  ---@brief as their contents and type in the Juypyter notebook. You may even wish to leverage the
-  ---@brief down.lua `lsp.notebook` module to hook into the LSP for Jupyter notebooks.
-  cells = {
+---@brief One such piece of data you may wish to store is the ongoing collection of cells, as well
+---@brief as their contents and type in the Juypyter notebook. You may even wish to leverage the
+---@brief down.lua `lsp.notebook` module to hook into the LSP for Jupyter notebooks.
+J.cells = {}
 
-  },
+---@brief To keep track of the notebook currently being interacted with
+J.notebook = {
 
-  ---@brief To keep track of the notebook currently being interacted with
-  notebook = {
+  path = nil,
 
-    path = nil,
+  name = nil,
 
-    name = nil,
-
-    kernel = "python3",
-
-  }
-
+  kernel = 'python3',
 }
 
 ---@brief Technically, we have now created a proper module that can be loaded into Neovim through down.lua.
@@ -92,27 +83,25 @@ J.config = {
   ---@brief consider that a user will likely want to change several of the values.
   notebook = {
 
-    default = "notebook.ipynb",
+    default = 'notebook.ipynb',
 
     dir = {
 
-      workspace = "default",
+      workspace = 'default',
 
-      default = "notes",
-    }
-
+      default = 'notes',
+    },
   },
 
-  service = "jupyter",
+  service = 'jupyter',
 
-  command = "jupyterlab",
+  command = 'jupyterlab',
 
-  kernel = "python3",
+  kernel = 'python3',
 
   kernels = {
-    "python3"
-  }
-
+    'python3',
+  },
 }
 
 ---@brief There are many more aspects to a module that can and should be defined as you begin to flesh it out,

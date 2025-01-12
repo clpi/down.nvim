@@ -4,29 +4,27 @@ local M = {
 }
 
 ---@class down.mod.ui.mark.Data
-M.data = {
-  queries = {},
-}
+M.queries = {}
 
-M.data.query = function(lang, q)
-  local out = M.data.queries[q]
+M.query = function(lang, q)
+  local out = M.queries[q]
   if out == nil then
     out = vim.treesitter.query.parse(lang, q)
-    M.data.queries[q] = out
+    M.queries[q] = out
   end
   return out
 end
 
-M.data.hl = {}
+M.hl = {}
 
-M.data.marks = {}
+M.marks = {}
 
-M.data.add_mark = function(name, query)
+M.add_mark = function(name, query)
   vim.api.nvim_buf_set_extmark(0, M.ns)
 end
 
-M.data.markdown.query = function()
-  M.data.query(
+M.markdown.query = function()
+  M.query(
     'markdown',
     [[
     (section) @section
@@ -52,8 +50,8 @@ M.data.markdown.query = function()
   )
 end
 
-M.data.markdown.inline.query = function()
-  M.data.query(
+M.markdown.inline.query = function()
+  M.query(
     'markdown_inline',
     [[
     (code_span) @code_inline

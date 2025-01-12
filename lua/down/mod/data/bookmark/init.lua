@@ -1,18 +1,16 @@
----@class down.mod.data.Bookmark: down.Mod
+---@class down.mod..Bookmark: down.Mod
 local B = {}
 
----@class down.mod.data.bookmark.Config
+---@class down.mod..bookmark.Config
 B.config = {
   workspace = 'default',
 
   file = 'bookmark',
 }
 
----@class down.mod.data.bookmark.Data
-B.data = {
-  bookmarks = {
-    default = {},
-  },
+---@class down.mod..bookmark.Data
+B.bookmarks = {
+  default = {},
 }
 
 ---@return down.mod.Setup

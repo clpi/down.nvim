@@ -1,7 +1,8 @@
-local mod = require 'down.mod'
+local down = require 'down'
+local mod = down.mod
 
----@class down.mod.data.Store: down.Mod
-local Store = mod.new('data.store')
+---@class down.mod..Store: down.Mod
+local Store = mod.new 'data.store'
 
 Store.setup = function()
   return {
@@ -12,11 +13,8 @@ Store.setup = function()
   }
 end
 
---- @class down.mod.data.store.Config
+--- @class down.mod..store.Config
 Store.config = {}
-
---- @class down.mod.data.store.Data
-Store.data = {}
 
 ---@type down.mod.Handler
 Store.handle = {}

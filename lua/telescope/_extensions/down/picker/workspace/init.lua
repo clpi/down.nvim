@@ -64,7 +64,7 @@ return function(options)
           table.insert(lines, 'Files:')
 
           if not files[workspace.name] then
-            files[workspace.name] = down.mod.get_mod('workspace').get_down_files(workspace.name)
+            files[workspace.name] = down.mod.get_mod('workspace').get_markdown_files(workspace.name)
           end
           for _, file in ipairs(files[workspace.name]) do
             table.insert(lines, tostring(file))

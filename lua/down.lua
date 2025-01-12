@@ -39,18 +39,44 @@ function Down:start()
   for name, usermod in pairs(self.config.user) do
     if type(usermod) == 'table' then
       if name == 'lsp' and self.config.dev == false then
-        goto continue
+      elseif name == 'log' then
+        if type(usermod) == 'table' then
+          Down.config.log = usermod
+        elseif type(usermod) == 'number' and usermod >= 0 and usermod <= 4 then
+          Down.config.log.level = Down.util.log.number_level[usermod] or 'info'
+        elseif type(usermod) == 'boolean' then
+          Down.config.log.level = 'info'
+        elseif type(usermod) == 'string' then
+          if
+              usermod == 'trace'
+              or usermod == 'debug'
+              or usermod == 'info'
+              or usermod == 'warn'
+              or usermod == 'error'
+              or usermod == 'fatal'
+          then
+            Down.config.log.level = usermod
+          end
+        end
       elseif name == 'workspaces' then
-        goto continue
       elseif name == 'workspace' then
-        goto continue
       elseif self.mod.load_mod(name, usermod) == nil then
       end
     else
       self.config[name] = usermod
     end
-    ::continue::
   end
+  vim.api.nvim_create_autocmd('BufEnter',
+    {
+      callback = function()
+        for _, l in pairs(Down.mod.mods) do
+          Down.mod.load_maps(l)
+          Down.mod.load_opts(l)
+        end
+      end,
+      pattern = "markdown",
+    }
+  )
   self.config.mod = self.mod.mods
   self.config:post_load()
   self:post_load()

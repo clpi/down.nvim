@@ -6,7 +6,7 @@ local M = mod.new('task', {
   'agenda',
 })
 
----@class down.mod.data.task.Task
+---@class down.mod.task.Task
 M.Task = {
   title = '',
   about = '',
@@ -20,11 +20,9 @@ M.Task = {
     char = -1,
   },
 }
----@class down.mod.task.Data
-M.data = {}
 
 ---@class table<integer, down.mod.task.Task>
-M.data.tasks = {}
+M.tasks = {}
 
 ---@class down.mod.task.Config
 M.config = {

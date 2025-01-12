@@ -1,25 +1,21 @@
-local P = require 'down.mod'.create('parse')
+local mod = require 'down.mod'
+local log = require 'down.util.log'
+
+local P = mod.new 'parse'
 
 P.setup = function()
   return {
     loaded = true,
     dependencies = {
-      'tool.treesitter'
-    }
+      'data',
+      'tool.treesitter',
+    },
   }
 end
 
-P.load = function()
-end
+P.load = function() end
 
 ---@class down.mod.parse.Config
-P.config = {
-
-}
-
----@class down.mod.parse.Data
-P.data = {
-
-}
+P.config = {}
 
 return P

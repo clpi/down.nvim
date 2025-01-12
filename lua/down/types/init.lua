@@ -32,7 +32,7 @@
 ---   workspace?: down.mod.workspace.Config,
 ---   lsp?: down.mod.lsp.Config,
 ---   edit?: down.mod.edit.Config,
----   data?: down.mod.data.Config,
+---   data?: down.mod..Config,
 ---   tool?: down.mod.tool.Config,
 ---   tool?: down.mod.tool.Config,
 ---   cmd?: down.mod.cmd.Config,
@@ -84,10 +84,10 @@
 ---   @field ['edit.link']? down.edit.link.Data
 ---   @field ['edit.indent']? down.edit.indent.Data
 ---   @field ui? down.ui.Data
----   @field media? down.data.media.Data media
----   @field ['data.template']? down.data.template.Data
----   @field ["data.code.snippet"]? down.data.code.snippet.Data
----   @field ["data.code.run"]? down.data.code.run.Data
+---   @field media? down..media.Data media
+---   @field ['data.template']? down..template.Data
+---   @field ["data.code.snippet"]? down..code.snippet.Data
+---   @field ["data.code.run"]? down..code.run.Data
 ---   @field ["ui.calendar"]? down.ui.calendar.Data
 ---   @field ["ui.calendar.month"]? down.ui.calendar.month.Data
 ---   @field ["integration.treesitter"]? down.down.integration.treesitter.Data
@@ -119,7 +119,7 @@
 ---   @field public [string]? any
 
 --- TODO: merge data field to [string]?: down.mod.Data
---- TODO:   down.Mod.data ->
+--- TODO:   down.Mod. ->
 --- TODO:     #field [string]? down.config.UserMod
 --- TODO:   down.Mod.config ->
 --- TODO:     #field config? down.mod.Config
@@ -146,7 +146,7 @@
 ---
 --- @class (exact) down.config.UserConfig: down.config.BaseConfig, {
 ---   lsp?: down.mod.lsp.Config,
----   data?: down.mod.data.Config,
+---   data?: down.mod..Config,
 ---   edit?: down.mod.edit.Config,
 ---   config?: down.mod.config.Config,
 ---   cmd?: down.mod.cmd.Config,

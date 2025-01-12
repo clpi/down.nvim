@@ -1,20 +1,15 @@
-local mod = require "down.mod"
+local mod = require 'down.mod'
 
-local M = mod.new("edit.inline")
+---@class down.mod.edit.Inline: down.Mod
+local M = mod.new 'edit.inline'
 
 M.setup = function()
   return {
-    loaded = true
+    loaded = true,
   }
 end
 
----@class down.edit.inline.Config
-M.config = {
-
-}
----@class down.edit.inline.Data
-M.data = {
-
-}
+---@class down.mod.edit.inline.Config
+M.config = {}
 
 return M

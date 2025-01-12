@@ -1,4 +1,4 @@
-local D = require("down.mod").new("ui.dashboard")
+local D = require('down.mod').new('ui.dashboard')
 
 D.setup = function()
   return {
@@ -9,8 +9,5 @@ end
 
 ---@class down.ui.dashboard.Config
 D.config = {}
-
----@class down.ui.dashboard.Data
-D.data = {}
 
 return D

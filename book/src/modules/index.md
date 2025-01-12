@@ -42,13 +42,6 @@ M.config = {
   --- ...
 }
 
----@class example.Data
-M.data = {
-  --- @brief module data
-  ---          the home of the module's internal data and methods
-  ---          TODO: split up concerns
-  --- ...
-}
 
 M.load = function()
   --- @brief module load
@@ -61,4 +54,3 @@ end
 return M
 
 ```
-

@@ -16,44 +16,40 @@ M.commands = {
   },
 }
 
----@class down.data.history.Data
-M.data = {
+--- Buffer queue
+--- @type table<number, integer>
+M.history = {}
 
-  --- Buffer queue
-  --- @type table<number, integer>
-  history = {},
-
-  --- @type table<number, integer>
-  buf = {},
-}
+--- @type table<number, integer>
+M.buf = {}
 
 --- Clear the stacks
-M.data.clear = function()
-  clear(M.data.history)
-  clear(M.data.buf)
+M.clear = function()
+  clear(M.history)
+  clear(M.buf)
 end
 
-M.data.push = function(stack, buf)
-  table.insert(stack or M.data.buf, 1, buf or vim.api.nvim_get_current_buf())
+M.push = function(stack, buf)
+  table.insert(stack or M.buf, 1, buf or vim.api.nvim_get_current_buf())
 end
 
-M.data.pop = function(stack, buf)
-  table.remove(stack or M.data.buf, 1)
+M.pop = function(stack, buf)
+  table.remove(stack or M.buf, 1)
 end
 
-M.data.print = function(self)
+M.print = function(self)
   for i, v in ipairs(self) do
     print(i, v.path, v.buf)
   end
 end
 
-M.data.back = function()
+M.back = function()
   local bn = vim.api.nvim_get_current_buf()
-  if bn > 1 and #M.data.buf > 0 then
-    M.data.push(M.data.history, bn)
-    local prev = M.data.buf[1]
+  if bn > 1 and #M.buf > 0 then
+    M.push(M.history, bn)
+    local prev = M.buf[1]
     vim.api.nvim_command('buffer ' .. prev)
-    M.data.pop(M.data.buf)
+    M.pop(M.buf)
     return true
   else
     if M.config.silent then
@@ -63,13 +59,13 @@ M.data.back = function()
   end
 end
 
-M.data.forward = function()
+M.forward = function()
   local cb = vim.api.nvim_get_current_buf()
-  local hb = M.data.history[1]
+  local hb = M.history[1]
   if hb then
-    M.data.push(M.data.buf, cb)
+    M.push(M.buf, cb)
     vim.api.nvim_command('buffer ' .. hb)
-    M.data.pop(M.data.history)
+    M.pop(M.history)
     return true
   else
     if not M.config.silent then
@@ -79,11 +75,11 @@ M.data.forward = function()
   end
 end
 
----@alias down.data.history.Store down.Store Store
----@type down.data.history.Store Store
-M.data.store = {}
+---@alias down..history.Store down.Store Store
+---@type down..history.Store Store
+M.store = {}
 
----@class down.data.history.Config
+---@class down..history.Config
 M.config = {
 
   store = 'data/stores',
@@ -101,7 +97,7 @@ M.setup = function()
 end
 
 M.handle = function(event)
-  if event.id == 'cmd.events.data.history.back' then
+  if event.id == 'cmd.events..history.back' then
     -- Get all the buffers
   end
 end

@@ -1,55 +1,41 @@
 ---@type down.Mod
-local M = require "down.mod".new("task.agenda", {
-})
+local M = require 'down.mod'.new('task.agenda', {})
 
----@class down.data.task.agenda.Agenda
+---@class down..task.agenda.Agenda
 M.Agenda = {
 
   ---@type lsp.URI
-  uri = "",
+  uri = '',
 
   ---@type down.Store
   store = {},
 
   ---@type down.Store
-  tasks = {}
-}
----@class down.mod.data.task.agenda.Data
-M.data = {
-
+  tasks = {},
 }
 
----@class table<down.mod.data.task.agenda.Agenda>
-M.data.agendas = {
+---@class table<down.mod..task.agenda.Agenda>
+M.agendas = {}
 
-}
-
----@class down.mod.data.task.agenda.Config
+---@class down.mod..task.agenda.Config
 M.config = {
 
-
   ---@type lsp.URI
-  uri = "",
+  uri = '',
 
   ---@type down.Store
-  store = "data/agendas"
-
+  store = 'data/agendas',
 }
 
 ---@return down.mod.Setup
 M.setup = function()
   ---@type down.mod.Setup
   return {
-    dependencies = {
-
-    },
+    dependencies = {},
     loaded = true,
   }
 end
 
-M.load = function()
-
-end
-
+M.load = function() end
 
 return M

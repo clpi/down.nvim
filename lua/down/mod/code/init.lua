@@ -11,16 +11,13 @@ Code.config = {
   languages = {},
 }
 
---- @class down.mod.code.Data
-Code.data = {
-  ---@type table<string, string>
-  code = {},
-}
+---@type table<string, string>
+Code.code = {}
 
 Code.commands = {
   code = {
-    name = "code",
-    condition = "markdown",
+    name = 'code',
+    condition = 'markdown',
     args = 1,
     callback = function(e)
       log.trace(('Code.commands.code callback: %s'):format(e.body))
@@ -32,7 +29,7 @@ Code.commands = {
         callback = function(e)
           log.trace(('Code.commands.edit cb: %s'):format(e.body))
         end,
-        name = "code.edit",
+        name = 'code.edit',
       },
       run = {
         args = 0,
@@ -40,7 +37,7 @@ Code.commands = {
         callback = function(e)
           log.trace(('Code.commands.run cb: %s'):format(e.body))
         end,
-        name = "code.run",
+        name = 'code.run',
       },
       save = {
         args = 0,
@@ -48,14 +45,13 @@ Code.commands = {
         callback = function(e)
           log.trace(('Code.commands.save cb: %s'):format(e.body))
         end,
-        name = "code.save",
-      }
-    }
-  }
+        name = 'code.save',
+      },
+    },
+  },
 }
 
-Code.load = function()
-end
+Code.load = function() end
 
 Code.setup = function()
   return {

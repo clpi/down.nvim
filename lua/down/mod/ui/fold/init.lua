@@ -1,20 +1,14 @@
 local mod = require 'down.mod'
 
-local F = mod.new('ui.fold')
+local F = mod.new 'ui.fold'
 
 F.setup = function()
   return {
-    loaded = true
+    loaded = true,
   }
 end
 
 ---@class down.edit.fold.Config
-F.config = {
-
-}
----@class down.edit.fold.Data
-F.data = {
-
-}
+F.config = {}
 
 return F

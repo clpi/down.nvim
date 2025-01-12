@@ -1,30 +1,27 @@
-local down = require("down")
+local down = require('down')
 local mod = down.mod
 
-local M = mod.new("ui.icon.diamond")
+local M = mod.new('ui.icon.diamond')
 
 ---@class down.ui.icon.diamond.Config
 M.config = {
   icon_diamond = {
     heading = {
-      icons = { "◈", "◇", "◆", "⋄", "❖", "⟡" },
+      icons = { '◈', '◇', '◆', '⋄', '❖', '⟡' },
     },
 
     footnote = {
       single = {
-        icon = "†",
+        icon = '†',
       },
       multi_prefix = {
-        icon = "‡ ",
+        icon = '‡ ',
       },
       multi_suffix = {
-        icon = "‡ ",
+        icon = '‡ ',
       },
     },
   },
 }
-
----@class down.ui.icon.diamond.Data
-M.data = {}
 
 return M
