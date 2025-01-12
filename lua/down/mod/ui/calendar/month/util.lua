@@ -1,3 +1,5 @@
+local lib = require 'down.util.lib'
+
 local M = {}
 
 M.display_win = function(lines)

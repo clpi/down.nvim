@@ -30,16 +30,13 @@ G.get_mode = function(name, callback)
     curr.id = name
     return curr
   end
-
   log.error 'Error: mode not set or not available'
 end
 
 G.get_view = function(name)
-  local n = name or 'month'
-  if G.view[n] ~= nil then
-    return G.view[name]
+  if G.view[name or 'month'] ~= nil then
+    return G.view[name or 'month']
   end
-
   log.error 'Error: view not set or not available'
 end
 
@@ -69,7 +66,7 @@ G.open_window = function(options)
     options.height or MIN_HEIGHT + (options.padding or 0)
   )
 
-  vim.bo.filetype = 'markdown'
+  vim.bo.filetype = 'calendar'
   vim.api.nvim_create_autocmd({ 'WinClosed', 'BufDelete' }, {
     buffer = buffer,
     callback = function()
@@ -121,22 +118,17 @@ end
 
 G.select_date = function(options)
   local buffer, window = G.open_window(options)
-
   options.mode = 'select_date'
-
   return G.new_calendar(buffer, window, options)
 end
 
 G.select_date_range = function(options)
   local buffer, window = G.open_window(options)
-
   options.mode = 'select_range'
-
   return G.new_calendar(buffer, window, options)
 end
 
 G.load = function()
-  -- Add base calendar modes
   G.add_mode('standalone', function(_)
     return {}
   end)
