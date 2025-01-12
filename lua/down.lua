@@ -11,16 +11,17 @@ Down = {
   mod = require('down.mod'),
   event = require('down.event'),
   util = require('down.util'),
+  log = require('down.util.log'),
 }
 
 Down.default = {
-  -- ['data.log'] = {},
   ['lsp'] = {},
   ['cmd'] = {},
   ['link'] = {},
+  ['tool.telescope'] = {},
+  -- ['data.log'] = {},
   -- ['cmd.back'] = {},
   -- ['data.history'] = {},
-  ['tool.telescope'] = {},
 }
 
 --- Load the user configuration, and load into config
@@ -35,7 +36,7 @@ end
 
 function Down:start()
   Down.util.log.trace('Setting up Down')
-  Down.mod.load_mod('workspace', self.config.user.workspace or {})
+  Down.mod.load_mod('workspace', self.config.user.workspace or self.config.user.workspaces or {})
   for name, usermod in pairs(self.config.user) do
     if type(usermod) == 'table' then
       if name == 'lsp' and self.config.dev == false then
@@ -66,6 +67,10 @@ function Down:start()
       self.config[name] = usermod
     end
   end
+  self:post_load()
+end
+
+function Down:post_load()
   vim.api.nvim_create_autocmd('BufEnter',
     {
       callback = function()
@@ -77,17 +82,14 @@ function Down:start()
       pattern = "markdown",
     }
   )
+  self:post_load()
   self.config.mod = self.mod.mods
   self.config:post_load()
-  self:post_load()
-  self:broadcast('started')
-end
-
-function Down:post_load()
   for _, l in pairs(self.mod.mods) do
     self.event.load_cb(l)
     l.post_load()
   end
+  self:broadcast('started')
 end
 
 ---@param e string

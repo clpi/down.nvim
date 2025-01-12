@@ -66,6 +66,7 @@ the _familiar_, organized future for neovim and beyond!
       "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
       "pysan3/pathlib.nvim",
+      "nvim-neotest/nvim-nio",
       "nvim-telescope/telescope.nvim", -- optional
     },
 }
