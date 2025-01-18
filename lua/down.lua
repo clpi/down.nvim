@@ -16,7 +16,7 @@ Down = {
 
 Down.default = {
   -- ['lsp'] = {},
-  ['template'] = {},
+  -- ['template'] = {},
   ['mod'] = {},
   ['task'] = {},
   ['cmd'] = {},

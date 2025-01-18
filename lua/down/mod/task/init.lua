@@ -31,15 +31,25 @@ M.config = {
 }
 
 M.commands = {
-  enabled = false,
+  enabled = true,
   task = {
     name = 'task',
     args = 0,
+    condition = 'markdown',
     max_args = 1,
     callback = function(e)
       log.trace 'task'
     end,
     subcommands = {
+      toggle = {
+        name = 'task.toggle',
+        args = 0,
+        max_args = 1,
+        callback = function(e)
+          log.trace 'task.toggle'
+          M.toggle()
+        end,
+      },
       list = {
         args = 0,
         max_args = 1,

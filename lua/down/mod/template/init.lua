@@ -6,7 +6,7 @@ local mod = require 'down.mod'
 local M = mod.new 'template'
 
 M.commands = {
-  -- enabled = false,
+  enabled = false,
   template = {
     min_args = 1,
     enabled = false,
