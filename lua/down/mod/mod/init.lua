@@ -22,7 +22,16 @@ M.style = {
 }
 
 M.print = {
-  fns = function(m)
+  toc = function(tb)
+    ins(tb, '## Table of Contents')
+    for name, m in pairs(mod.mods) do
+      ins(tb, '- [' .. name .. '](#' .. name .. ')')
+    end
+  end,
+  children = function(m)
+  end,
+  dependants = function()
+
   end,
   deps = function(m, tb, pre)
     pre = pre or ''
@@ -63,6 +72,20 @@ M.print = {
     end
     return pre .. ix .. title .. value
   end,
+  methods = function(tb, m, name)
+    ins(tb, '')
+    ins(tb, '#### **Methods**')
+    ins(tb, '~~~lua')
+    local i = 0
+    for k, v in pairs(m) do
+      i = i + 1
+      if type(v) == 'function' then
+        local ix = M.print.index(nil, '\t')
+        ins(tb, 'function ' .. name .. '.' .. k .. '()')
+      end
+    end
+    ins(tb, '~~~')
+  end,
   command = function(tb, pre, cmd, v, i)
     local index = M.print.index(i, pre)
     local enabled = ''
@@ -97,21 +120,23 @@ M.print = {
   mod = function(m, tb, i, name)
     local ix = M.print.index(i)
     local i = (i or '') .. '.'
-    ins(tb, '### ' .. '' .. ' ' .. name)
+    ins(tb, '### ' .. '' .. ' **' .. name .. '**')
     ins(tb, '')
     -- ins(tb, .. '`' .. (name or m.name or '') .. '`')
     -- M.print.commands(m, tb, m.name, '', i)
+    M.print.toc(tb)
     M.print.setup(m, tb, m.name, '')
     M.print.commands(m, tb, m.name, '')
+    M.print.methods(tb, m, name)
   end,
   title = function(lines)
-    ins(lines, '# Mods loaded')
+    ins(lines, '# down.nvim')
     ins(lines, '')
   end,
   mods = function(tb)
     local lines = tb or {}
     M.print.title(lines)
-    ins(lines, '## Mods:')
+    ins(lines, '## Mods')
     ins(lines, '')
     local i = 0
     for name, m in pairs(mod.mods) do
