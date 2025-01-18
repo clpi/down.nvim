@@ -1,0 +1,3 @@
+[submodule "ext/lsp"]
+	path = lsp
+	url = git@github.com:clpi/down.lsp.git
