@@ -18,6 +18,7 @@ Down.default = {
   -- ['lsp'] = {},
   ['template'] = {},
   ['mod'] = {},
+  ['task'] = {},
   ['cmd'] = {},
   ['link'] = {},
   ['tool.telescope'] = {},

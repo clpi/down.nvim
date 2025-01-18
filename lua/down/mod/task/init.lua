@@ -2,9 +2,7 @@ local mod = require 'down.mod'
 local log = require 'down.util.log'
 
 ---@class down.mod.Task: down.Mod
-local M = mod.new('task', {
-  'agenda',
-})
+local M = mod.new('task')
 
 ---@class down.mod.task.Task
 M.Task = {
@@ -33,6 +31,7 @@ M.config = {
 }
 
 M.commands = {
+  enabled = false,
   task = {
     name = 'task',
     args = 0,
@@ -107,10 +106,20 @@ M.setup = function()
       'cmd',
       'ui.calendar',
       'data.store',
-      'data.task.agenda',
+      -- 'data.task.agenda',
     },
     loaded = true,
   }
+end
+
+function M.toggle()
+  local line = vim.api.nvim_get_current_line()
+  if line:match('%[ %]') then
+    line = line:gsub('%[ %]', '[x]')
+  elseif line:match('%[x%]') then
+    line = line:gsub('%[x%]', '[ ]')
+  end
+  vim.api.nvim_set_current_line(line)
 end
 
 -- M.handle = {

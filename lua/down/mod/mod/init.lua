@@ -6,7 +6,7 @@ local log = require 'down.util.log'
 local M = mod.new 'mod'
 
 M.commands = {
-  -- enabled = false,
+  enabled = true,
   mod = {
     enabled = true,
     name = 'mod',
@@ -89,8 +89,8 @@ M.commands = {
   },
 }
 M.maps = {
-  { 'n', ',dml', '<CMD>Down mod list<CR>',   'List mods' },
-  { 'n', ',dmL', '<CMD>Down mod load<CR>',   'Load mod' },
+  { 'n', ',dml', '<CMD>Down mod list<CR>', 'List mods' },
+  { 'n', ',dmL', '<CMD>Down mod load<CR>', 'Load mod' },
   { 'n', ',dmu', '<CMD>Down mod unload<CR>', 'Unload mod' },
 }
 M.setup = function()

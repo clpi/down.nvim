@@ -335,7 +335,7 @@ M.sync = function()
       end
       local lc = lm.commands
       for cn, c in pairs(lm.commands) do
-        if c.enabled ~= false then
+        if type(c) == 'table' and c.enabled ~= false then
           lc[cn] = c
           -- M.commands(mod_name)
         end
