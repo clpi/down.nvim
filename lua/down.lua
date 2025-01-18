@@ -71,18 +71,18 @@ function Down:start()
 end
 
 function Down:post_load()
-  vim.api.nvim_create_autocmd('BufEnter',
-    {
-      callback = function()
-        for _, l in pairs(Down.mod.mods) do
-          Down.mod.load_maps(l)
-          Down.mod.load_opts(l)
-        end
-      end,
-      pattern = "markdown",
-    }
-  )
-  self:post_load()
+  -- vim.api.nvim_create_autocmd('BufEnter',
+  --   {
+  --     callback = function()
+  --       for _, l in pairs(Down.mod.mods) do
+  --         Down.mod.load_maps(l)
+  --         Down.mod.load_opts(l)
+  --       end
+  --     end,
+  --     pattern = "markdown",
+  --   }
+  -- )
+  -- self:post_load()
   self.config.mod = self.mod.mods
   self.config:post_load()
   for _, l in pairs(self.mod.mods) do
