@@ -17,7 +17,7 @@ M.commands = {
     callback = function(e)
       log.trace(('log %s'):format(e.body))
     end,
-    subcommands = {
+    commands = {
       index = {
         args = 0,
         name = 'log.index',

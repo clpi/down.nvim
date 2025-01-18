@@ -6,14 +6,13 @@ local mod = require 'down.mod'
 local M = mod.new 'template'
 
 M.commands = {
-  enabled = false,
   template = {
     min_args = 1,
     enabled = false,
     max_args = 2,
     name = 'template',
     callback = M.create_template,
-    subcommands = {
+    commands = {
       index = {
         enabled = false,
         callback = M.open_index,

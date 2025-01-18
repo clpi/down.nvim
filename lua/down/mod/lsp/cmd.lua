@@ -5,7 +5,7 @@ return {
     callback = function(e)
       log.trace 'lsp'
     end,
-    subcommands = {
+    commands = {
       restart = {
         args = 0,
         name = 'lsp.restart',
@@ -47,7 +47,7 @@ return {
   --   callback = function(e)
   --     log.trace 'actions'
   --   end,
-  --   subcommands = {
+  --   commands = {
   --     workspace = {
   --       args = 1,
   --       name = 'actions.workspace',
@@ -63,7 +63,7 @@ return {
   --   max_args = 1,
   --   name = 'rename',
   --   condition = 'markdown',
-  --   subcommands = {
+  --   commands = {
   --     workspace = {
   --       args = 0,
   --       name = 'rename.workspace',

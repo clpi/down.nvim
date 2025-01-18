@@ -30,7 +30,7 @@ B.commands = {
     args = 1,
     name = 'bookmark',
     callback = function(e) end,
-    subcommands = {
+    commands = {
       list = {
         name = 'bookmark.list',
         args = 1,
@@ -56,9 +56,9 @@ B.load = function() end
 --   cmd = {
 --     bookmark = {
 --       __call = B.commands.bookmark.callback,
---       list = B.commands.bookmark.subcommands.list.callback,
---       remove = B.commands.bookmark.subcommands.remove.callback,
---       add = B.commands.bookmark.subcommands.add.callback,
+--       list = B.commands.bookmark.commands.list.callback,
+--       remove = B.commands.bookmark.commands.remove.callback,
+--       add = B.commands.bookmark.commands.add.callback,
 --     },
 --   },
 -- }

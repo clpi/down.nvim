@@ -348,8 +348,9 @@ Link.commands = {
     callback = function(e)
       log.trace("Link.commands.link: Callback", e.body[1])
     end,
-    subcommands = {
+    commands = {
       backlink = {
+        enabled = false,
         name = "backlink",
         args = 0,
         min_args = 0,
@@ -359,9 +360,10 @@ Link.commands = {
         callback = function(e)
           log.trace("Link.commands.backlink: Callback", e.body[1])
         end,
-        subcommands = {
+        commands = {
           list = {
             name = "backlink.list",
+            enabled = false,
             args = 0,
             condition = "markdown",
             callback = function()
@@ -377,26 +379,29 @@ Link.commands = {
       },
       next = {
         name = "link.next",
+        enabled = false,
         min_args = 0,
         max_args = 1,
         condition = "markdown",
-        subcommands = {},
+        commands = {},
         callback = Link.goto.next,
       },
       previous = {
+        enabled = false,
         name = "link.previous",
         min_args = 0,
         max_args = 1,
         condition = "markdown",
         callback = Link.goto.prev,
-        subcommands = {},
+        commands = {},
       },
       select = {
         name = "link.select",
         min_args = 0,
         max_args = 1,
+        enabled = false,
         condition = "markdown",
-        subcommands = {},
+        commands = {},
         callback = Link.select,
       },
     },

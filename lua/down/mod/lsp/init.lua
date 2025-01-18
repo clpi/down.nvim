@@ -30,7 +30,7 @@ end
 --     callback = function(e)
 --       trc('lsp', e)
 --     end,
---     subcommands = {
+--     commands = {
 --       restart = {
 --         args = 0,
 --         name = 'lsp.restart',
@@ -72,7 +72,7 @@ end
 --     callback = function(e)
 --       log.trace 'actions'
 --     end,
---     subcommands = {
+--     commands = {
 --       workspace = {
 --         args = 1,
 --         name = 'actions.workspace',
@@ -88,7 +88,7 @@ end
 --     max_args = 1,
 --     name = 'rename',
 --     condition = 'markdown',
---     subcommands = {
+--     commands = {
 --       workspace = {
 --         args = 0,
 --         name = 'rename.workspace',

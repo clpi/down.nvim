@@ -13,7 +13,7 @@ M.commands = {
     log.trace 'Snippet callback'
   end,
   snippet = {
-    subcommands = {
+    commands = {
       add = {
         args = 0,
         name = 'code.snippet.add',

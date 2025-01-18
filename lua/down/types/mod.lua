@@ -134,6 +134,6 @@
 --- @field complete? table<string, string[]>
 --- @field callback? fun(e?: down.Event, ...: any)
 --- @field min_args? number
---- @field subcommands? { [string]?:down.Command}
+--- @field commands? { [string]?:down.Command}
 
 --- @alias down.CommandsB {[string]?: down.Command } | function

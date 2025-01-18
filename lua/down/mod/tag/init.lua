@@ -15,7 +15,7 @@ M.commands = {
     callback = function(e)
       log.trace 'tag.commands.tag: cb '
     end,
-    subcommands = {
+    commands = {
       delete = {
         name = 'data.tag.delete',
         condition = 'markdown',

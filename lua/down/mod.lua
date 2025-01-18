@@ -1,6 +1,6 @@
 local Event = require 'down.event'
 local util = require 'down.util'
-local log = require('down.util.log')
+local log = util.log
 
 --- @!TODO : Change to body access where appropriate and now available to avoid complex config for end user
 ---   1. Firsr try with  Ms, then workspace
@@ -14,6 +14,8 @@ local log = require('down.util.log')
 
 ---@class down.Mod
 local Mod = {
+
+
   setup = function()
     return {
       loaded = true,
@@ -397,8 +399,8 @@ Mod.handle_cmd = function(self, e, cmd, cmds, ...)
     end
     cc.callback(e)
     return true
-  elseif cc.subcommands then
-    return Mod.handle_cmd(self, e, cmd, cc.subcommands, ...)
+  elseif cc.commands then
+    return Mod.handle_cmd(self, e, cmd, cc.commands, ...)
   end
   return false
 end

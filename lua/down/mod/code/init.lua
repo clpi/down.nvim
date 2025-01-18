@@ -23,7 +23,7 @@ Code.commands = {
     callback = function(e)
       log.trace(('Code.commands.code callback: %s'):format(e.body))
     end,
-    subcommands = {
+    commands = {
       edit = {
         args = 0,
         condition = 'markdown',

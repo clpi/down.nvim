@@ -31,18 +31,19 @@ M.config = {
 }
 
 M.commands = {
-  enabled = true,
   task = {
     name = 'task',
     args = 0,
     condition = 'markdown',
+    enabled = true,
     max_args = 1,
     callback = function(e)
       log.trace 'task'
     end,
-    subcommands = {
+    commands = {
       toggle = {
         name = 'task.toggle',
+        enabled = true,
         args = 0,
         max_args = 1,
         callback = function(e)
@@ -57,7 +58,7 @@ M.commands = {
         callback = function(e)
           log.trace 'task.list'
         end,
-        subcommands = {
+        commands = {
           today = {
             name = 'task.list.today',
             args = 0,

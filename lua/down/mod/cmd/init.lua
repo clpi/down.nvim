@@ -38,7 +38,7 @@ M.commands = {
   --   callback = function(e)
   --     log.trace 'Cmd callback'
   --   end,
-  --   subcommands = {
+  --   commands = {
   --     add = {
   --       enabled = true,
   --       name = 'cmd.add',
@@ -83,37 +83,17 @@ M.cb = function(data)
   local buf = vim.api.nvim_get_current_buf()
   local is_down = vim.bo[buf].filetype == 'markdown'
 
-  local function check_condition(condition)
-    if condition == nil then
-      return true
-    end
-
-    if condition == 'markdown' and not is_down then
-      return false
-    end
-
-    if type(condition) == 'function' then
-      return condition(buf, is_down)
-    end
-
-    return condition
-  end
-
-  local ref = {
-    subcommands = M.commands,
-  }
+  local ref = { commands = M.commands }
   local argument_index = 0
 
   for i, cmd in ipairs(args) do
-    if not ref.subcommands or vim.tbl_isempty(ref.subcommands) then
+    if not ref.commands or vim.tbl_isempty(ref.commands) then
       break
     end
-
-    ref = ref.subcommands[cmd]
-    if ref.enabled == false then
-      return
+    if ref.commands[cmd] and ref.commands[cmd].enabled ~= nil and ref.commands[cmd].enabled == false then
+      break
     end
-
+    ref = ref.commands[cmd]
     if not ref then
       log.error(
         ('Error when executing `:Down %s` - such a command does not exist!'):format(
@@ -121,7 +101,7 @@ M.cb = function(data)
         )
       )
       return
-    elseif not check_condition(ref.condition) then
+    elseif not M.cond(ref.condition) then
       log.error(
         ('Error when executing `:Down %s` - the command is currently disabled. Some commands will only become available under certain conditions, e.g. being within a `.down` file!')
         :format(
@@ -197,7 +177,7 @@ M.cb = function(data)
   end
 end
 
-M.check_condition = function(condition, buf, is_down)
+M.cond = function(condition, buf, is_down)
   buf = buf or vim.api.nvim_get_current_buf()
   is_down = is_down or vim.api.nvim_buf_get_option(buf, 'filetype') == 'markdown'
   if condition == nil then
@@ -230,18 +210,18 @@ M.generate_completions = function(_, command)
   )
 
   local ref = {
-    subcommands = M.commands,
+    commands = M.commands,
   }
   local last_valid_ref = ref
   local last_completion_level = 0
 
   for _, cmd in ipairs(splitcmd) do
     -- if ref.enabled ~= nil and ref.enabled == false then return end
-    -- if not ref or not M.check_condition(ref.condition) then
-    --   break
-    -- end
+    if not ref or not M.cond(ref.condition) then
+      break
+    end
 
-    ref = ref.subcommands or {}
+    ref = ref.commands or {}
     ref = ref[cmd]
 
     if ref then
@@ -250,7 +230,7 @@ M.generate_completions = function(_, command)
     end
   end
 
-  if not last_valid_ref.subcommands and last_valid_ref.complete then
+  if not last_valid_ref.commands and last_valid_ref.complete then
     if type(last_valid_ref.complete) == 'function' then
       last_valid_ref.complete = last_valid_ref.complete(current_buf, is_down)
     end
@@ -277,19 +257,19 @@ M.generate_completions = function(_, command)
   end
 
   -- TODO: Fix `:down m <tab>` giving invalid completions
-  local keys = ref and vim.tbl_keys(ref.subcommands or {})
+  local keys = ref and vim.tbl_keys(ref.commands or {})
       or (
         vim.tbl_filter(function(key)
           return key:find(splitcmd[#splitcmd])
-        end, vim.tbl_keys(last_valid_ref.subcommands or {}))
+        end, vim.tbl_keys(last_valid_ref.commands or {}))
       )
   table.sort(keys)
   do
-    local subcommands = (ref and ref.subcommands or last_valid_ref.subcommands) or {}
+    local commands = (ref and ref.commands or last_valid_ref.commands) or {}
 
     return vim.tbl_filter(function(key)
-      if type(subcommands[key]) == 'table' then
-        return M.check_condition(subcommands[key].condition)
+      if type(commands[key]) == 'table' then
+        return M.cond(commands[key].condition)
       end
     end, keys)
   end
@@ -349,18 +329,22 @@ end
 M.sync = function()
   for _, lm in pairs(mod.mods) do
     if lm.commands then
-      if lm.commands.enabled ~= nil and lm.commands.enabled == false then
+      if lm.commands.enabled ~= nil and not lm.commands.enabled then
         return
       end
+      for cn, c in pairs(lm.commands) do
+        if type(c) == 'table' and c.enabled ~= false then
+          M.commands[cn] = vim.tbl_extend('force', M.commands[cn] or {}, c)
+        end
+      end
       -- local lc = M.get_commands(lm)
-      local lc = lm.commands
       -- for cn, c in pairs(lm.commands) do
       --   if type(c) == 'table' and c.enabled ~= false then
       --     lc[cn] = c
       --     -- M.commands(mod_name)
       --   end
       -- end
-      M.commands = vim.tbl_extend('force', M.commands, lc)
+      -- M.commands = vim.tbl_extend('force', M.commands, lc)
       -- lm.commands = M.load_cmds(lm)
       -- M.add_commands_from_table(lc)
     end
