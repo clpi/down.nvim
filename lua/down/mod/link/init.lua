@@ -39,49 +39,16 @@ Link.maps = {
   -- {
   --   'n',
   --   '<S-TAB>',
-  --   '<ESC>:<C-U>lua require("down.mod.link").goto_prev_link()<CR>',
+  --   '<ESC>:<C-U>lua require("down.mod.link").goto.prev()<CR>',
   --   { desc = 'Previous link', silent = true, noremap = false, nowait = true },
   -- },
   -- {
   --   'n',
   --   '<TAB>',
-  --   '<ESC>:<C-U>lua require("down.mod.link").goto_next_link()<CR>',
+  --   '<ESC>:<C-U>lua require("down.mod.link").goto.next()<CR>',
   --   { desc = 'Next link', silent = true, noremap = false, nowait = true },
   -- },
 }
-
-Link.commands = {
-  link = {
-    name = 'link',
-    args = 1,
-    condition = 'markdown',
-    callback = function(e)
-      local cmd = e.body[1]
-      log.trace('Link.commands.link: Callback', cmd)
-    end,
-    subcommands = {
-      next = {
-        name = 'link.next',
-        args = 0,
-        condition = 'markdown',
-        callback = Link.goto_next_link,
-      },
-      previous = {
-        name = 'link.previous',
-        args = 0,
-        condition = 'markdown',
-        callback = Link.goto_prev_link,
-      },
-      select = {
-        name = 'link.select',
-        args = 0,
-        condition = 'markdown',
-        callback = Link.select_link,
-      },
-    },
-  },
-}
-
 Link.load = function() end
 
 Link.parser = function() end
@@ -93,7 +60,7 @@ Link.follow = {}
 ---| "web"
 ---| "heading"
 Link.type = {
-  ['local'] = true,
+  ['file'] = true,
   ['heading'] = true,
   ['web'] = true,
 }
@@ -127,15 +94,15 @@ end
 Link.resolve = function(ln)
   local ch = ln:sub(1, 1)
   if ch == config.pathsep then
-    return ln, 'local'
+    return ln, 'file'
   elseif ch == '#' then
     return ln:sub(2), 'heading'
   elseif ch == '~' then
-    return os.getenv 'HOME' .. config.pathsep .. ln:sub(2), 'local'
+    return os.getenv 'HOME' .. config.pathsep .. ln:sub(2), 'file'
   elseif ln:sub(1, 8) == 'https://' or ln:sub(1, 7) == 'http://' then
     return ln, 'web'
   else
-    return vim.fn.expand '%:p:h' .. config.pathsep .. ln, 'local'
+    return vim.fn.expand '%:p:h' .. config.pathsep .. ln, 'file'
   end
 end
 
@@ -153,12 +120,18 @@ Link.parent = function(node)
   return parent, parent:type()
 end
 
-Link.next_node = function(node)
+Link.node = {
+prev = function(node)
+  local next = tsu.get_prev_node(node)
+  return next, next:type()
+end,
+next = function(node)
   local next = tsu.get_next_node(node)
   return next, next:type()
 end
+}
 
-Link.next_link = function(node)
+Link.next = function(node)
   local next = tsu.get_next_node(node)
   if not next then
     return
@@ -166,10 +139,10 @@ Link.next_link = function(node)
   if Link.destination(next) ~= nil then
     return next
   end
-  return Link.next_link(next)
+  return Link.next(next)
 end
 
-Link.prev_link = function(node)
+Link.prev = function(node)
   local prev = tsu.get_prev_node(node)
   if not prev then
     return
@@ -177,27 +150,30 @@ Link.prev_link = function(node)
   if Link.destination(prev) ~= nil then
     return prev
   end
-  return Link.prev_link(prev)
+  return Link.prev(prev)
 end
+Link.goto = {
 
-Link.goto_next_link = function()
-  local node, nodety = Link.cursor()
-  local next = Link.next_link(node)
+next = function()
+  local node, _ = Link.cursor()
+  local next = Link.next(node)
   if next then
     tsu.goto_node(next)
   end
-end
+end,
 
-Link.goto_prev_link = function()
-  local node, nodety = Link.cursor()
-  local prev = Link.prev_link(node)
+prev = function()
+  local node, _ = Link.cursor()
+  local prev = Link.prev(node)
   if prev then
     tsu.goto_node(prev)
   end
 end
 
-Link.select_link = function()
-  local node, nodety = Link.cursor()
+}
+
+Link.select = function()
+  local node, _ = Link.cursor()
   local dest = Link.destination(node)
   if dest then
     vim.fn.setreg('*', dest)
@@ -278,7 +254,7 @@ Link.destination = function(nd)
       end
       return Link.text(node)
     end
-    local next, nextty = Link.next_node(node)
+    local next, nextty = Link.node.next(node)
     if nextty == 'link_destination' then
       return Link.text(next)
     elseif nextty == 'link_label' then
@@ -297,13 +273,12 @@ Link.destination = function(nd)
       end
     end
   end
-  return
 end
 
 ---@class down.mod.link.Config
 Link.config = {}
 
-Link.follow.loc = function(ln)
+Link.follow.file = function(ln)
   local mod_ln, path_ln = nil, vim.split(ln, ':')
   local path, line = path_ln[1], path_ln[2]
   if path:sub(-1) == config.pathsep then
@@ -312,7 +287,7 @@ Link.follow.loc = function(ln)
     if vim.fn.glob(path) == '' then
       local dir, file = vim.fn.fnameescape(path), vim.fn.fnameescape(ix)
       vim.fn.mkdir(dir, 'p')
-      Link.dep['data.history'].push(file)
+      Link.dep['data.history'].add.file(file)
       return vim.cmd(('edit %s'):format(file))
     else
       return vim.cmd(('edit %s'):format(vim.fn.fnameescape(ix)))
@@ -353,8 +328,8 @@ Link.follow.link = function()
   local ld = Link.destination()
   if ld then
     local res, lty = Link.resolve(ld)
-    if lty == 'local' then
-      Link.follow.loc(res)
+    if lty == 'file' then
+      Link.follow.file(res)
     elseif lty == 'heading' then
       Link.follow.heading(res)
     elseif lty == 'web' then
@@ -362,4 +337,69 @@ Link.follow.link = function()
     end
   end
 end
+
+Link.commands = {
+  link = {
+    name = "link",
+    enabled = false,
+    min_args = 0,
+    max_args = 1,
+    condition = "markdown",
+    callback = function(e)
+      log.trace("Link.commands.link: Callback", e.body[1])
+    end,
+    subcommands = {
+      backlink = {
+        name = "backlink",
+        args = 0,
+        min_args = 0,
+        enabled = true,
+        max_args = 1,
+        condition = "markdown",
+        callback = function(e)
+          log.trace("Link.commands.backlink: Callback", e.body[1])
+        end,
+        subcommands = {
+          list = {
+            name = "backlink.list",
+            args = 0,
+            condition = "markdown",
+            callback = function()
+              local hg = Link.dep['data.history'].get()
+              if hg then
+                for _, hi in ipairs(hg.get) do
+                  print(hi, hg)
+                end
+              end
+            end,
+          },
+        },
+      },
+      next = {
+        name = "link.next",
+        min_args = 0,
+        max_args = 1,
+        condition = "markdown",
+        subcommands = {},
+        callback = Link.goto.next,
+      },
+      previous = {
+        name = "link.previous",
+        min_args = 0,
+        max_args = 1,
+        condition = "markdown",
+        callback = Link.goto.prev,
+        subcommands = {},
+      },
+      select = {
+        name = "link.select",
+        min_args = 0,
+        max_args = 1,
+        condition = "markdown",
+        subcommands = {},
+        callback = Link.select,
+      },
+    },
+  },
+}
 return Link

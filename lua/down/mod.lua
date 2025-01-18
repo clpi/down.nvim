@@ -382,7 +382,9 @@ Mod.handle_cmd = function(self, e, cmd, cmds, ...)
   if not cmds or type(cmds) ~= 'table' or not cmds[cmd] then
     return false
   end
+  if cmds.enabled ~= nil and cmds.enabled == false then return false end
   local cc = cmds[cmd]
+  if cc.enabled ~= nil and cc.enabled == false then return false end
   if cc.name and cc.name == cmd and cc.callback then
     if not self.handle then
       self.handle = {}

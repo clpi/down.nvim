@@ -13,7 +13,7 @@ M.setup = function()
   }
 end
 
----@class down.mod.Data
+---@class down.mod.tool.telescope.Config: down.Mod.Config
 M.config = {
   enabled = {
     'files',
@@ -31,7 +31,7 @@ M.config = {
     -- "backlinks.header_backlinks",
   },
 }
----@class down.mod.Config
+---@class down.mod.tool.telescope.Config: down.mod.Config
 M.config = {
   enabled = {
     ['backlinks'] = true,

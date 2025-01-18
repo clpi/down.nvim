@@ -12,6 +12,7 @@ M.commands = {
   log = {
     min_args = 1,
     max_args = 2,
+    enabled = false,
     name = 'log',
     callback = function(e)
       log.trace(('log %s'):format(e.body))
@@ -119,10 +120,10 @@ M.calendar_months = function(e)
         M.open_log(
           nil,
           ('%04d'):format(osdate.year)
-          .. '-'
-          .. ('%02d'):format(osdate.month)
-          .. '-'
-          .. ('%02d'):format(osdate.day)
+            .. '-'
+            .. ('%02d'):format(osdate.month)
+            .. '-'
+            .. ('%02d'):format(osdate.day)
         )
       end),
     })
@@ -160,7 +161,7 @@ M.open_log = function(time, custom_date)
 
   local path = os.date(
     type(M.config.strategy) == 'function' and M.config.strategy(os.date('*t', time))
-    or M.config.strategy,
+      or M.config.strategy,
     time
   )
 
@@ -173,20 +174,20 @@ M.open_log = function(time, custom_date)
   M.dep['workspace'].new_file(folder_name .. config.pathsep .. path, workspace)
 
   if
-      not log_file_exists
-      and M.config.use_template
-      and M.dep['workspace'].file_exists(
-        workspace_path .. config.pathsep .. folder_name .. config.pathsep .. template_name
-      )
+    not log_file_exists
+    and M.config.use_template
+    and M.dep['workspace'].file_exists(
+      workspace_path .. config.pathsep .. folder_name .. config.pathsep .. template_name
+    )
   then
     vim.cmd(
       '$read '
-      .. workspace_path
-      .. config.pathsep
-      .. folder_name
-      .. config.pathsep
-      .. template_name
-      .. '| silent! w'
+        .. workspace_path
+        .. config.pathsep
+        .. folder_name
+        .. config.pathsep
+        .. template_name
+        .. '| silent! w'
     )
   end
 end
@@ -255,7 +256,7 @@ M.create_toc = function()
   local get_fs_handle = function(path)
     path = path or ''
     local handle =
-        vim.loop.fs_scandir(workspace_path .. config.pathsep .. folder_name .. config.pathsep .. path)
+      vim.loop.fs_scandir(workspace_path .. config.pathsep .. folder_name .. config.pathsep .. path)
 
     if type(handle) ~= 'userdata' then
       error(lib.lazy_string_concat("Failed to scan directory '", workspace, path, "': ", handle))
@@ -267,7 +268,7 @@ M.create_toc = function()
   -- Gets the title from the metadata of a file, must be called in a vim.schedule
   local get_title = function(file)
     local buffer =
-        vim.fn.bufadd(workspace_path .. config.pathsep .. folder_name .. config.pathsep .. file)
+      vim.fn.bufadd(workspace_path .. config.pathsep .. folder_name .. config.pathsep .. file)
     local meta = M.dep['workspace'].get_document_metadata(buffer)
     return meta.title
   end
@@ -326,16 +327,16 @@ M.create_toc = function()
                       tonumber(mname),
                       tonumber(file[1]),
                       '{:$'
-                      .. workspace_name_for_link
-                      .. config.pathsep
-                      .. M.config.log_folder
-                      .. config.pathsep
-                      .. name
-                      .. config.pathsep
-                      .. mname
-                      .. config.pathsep
-                      .. file[1]
-                      .. ':}',
+                        .. workspace_name_for_link
+                        .. config.pathsep
+                        .. M.config.log_folder
+                        .. config.pathsep
+                        .. name
+                        .. config.pathsep
+                        .. mname
+                        .. config.pathsep
+                        .. file[1]
+                        .. ':}',
                       title,
                     })
                   end)
@@ -366,12 +367,12 @@ M.create_toc = function()
               parts[2],
               parts[3],
               '{:$'
-              .. workspace_name_for_link
-              .. config.pathsep
-              .. M.config.log_folder
-              .. config.pathsep
-              .. file[1]
-              .. ':}',
+                .. workspace_name_for_link
+                .. config.pathsep
+                .. M.config.log_folder
+                .. config.pathsep
+                .. file[1]
+                .. ':}',
               title,
             })
           end)
@@ -381,25 +382,25 @@ M.create_toc = function()
       vim.schedule(function()
         -- Gets a base format for the entries
         local format = M.config.toc_format
-            or function(entries)
-              local months_text = require 'down.mod.note.util'.months
-              local output = {}
-              local current_year, current_month
-              for _, entry in ipairs(entries) do
-                if not current_year or current_year < entry[1] then
-                  current_year = entry[1]
-                  current_month = nil
-                  output:insert('* ' .. current_year)
-                end
-                if not current_month or current_month < entry[2] then
-                  current_month = entry[2]
-                  output:insert('** ' .. months_text[current_month])
-                end
-                -- Prints the file link
-                output:insert('   ' .. entry[4] .. ('[%s]'):format(entry[5]))
+          or function(entries)
+            local months_text = require 'down.mod.note.util'.months
+            local output = {}
+            local current_year, current_month
+            for _, entry in ipairs(entries) do
+              if not current_year or current_year < entry[1] then
+                current_year = entry[1]
+                current_month = nil
+                output:insert('* ' .. current_year)
               end
-              return output
+              if not current_month or current_month < entry[2] then
+                current_month = entry[2]
+                output:insert('** ' .. months_text[current_month])
+              end
+              -- Prints the file link
+              output:insert('   ' .. entry[4] .. ('[%s]'):format(entry[5]))
             end
+            return output
+          end
 
         M.dep['workspace'].new_file(
           folder_name .. config.pathsep .. index,

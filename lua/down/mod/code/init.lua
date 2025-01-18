@@ -15,6 +15,7 @@ Code.config = {
 Code.code = {}
 
 Code.commands = {
+  enabled = true,
   code = {
     name = 'code',
     condition = 'markdown',

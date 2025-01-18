@@ -8,27 +8,32 @@ local M = mod.new 'template'
 M.commands = {
   template = {
     min_args = 1,
+    enabled = false,
     max_args = 2,
     name = 'template',
     callback = M.create_template,
     subcommands = {
       index = {
+        enabled = true,
         callback = M.open_index,
         args = 0,
         name = 'template.index',
       },
       month = {
         max_args = 1,
+        enabled = false,
         name = 'template.month',
         callback = M.open_month,
       },
       tomorrow = {
         callback = M.template_tomorrow,
+        enabled = false,
         args = 0,
         name = 'template.tomorrow',
       },
       yesterday = {
         args = 0,
+        enabled = false,
         name = 'template.yesterday',
         M.template_yesterday,
       },
@@ -36,14 +41,17 @@ M.commands = {
         args = 0,
         name = 'template.today',
         callback = M.template_today,
+        enabled = false,
       },
       custom = {
         callback = M.create_template,
         max_args = 1,
+        enabled = false,
         name = 'template.custom',
       }, -- format :yyyy-mm-dd
       template = {
         callback = M.create_template,
+        enabled = false,
         args = 0,
         name = 'template.template',
       },

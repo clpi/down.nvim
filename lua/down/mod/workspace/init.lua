@@ -525,7 +525,9 @@ M.is_subpath = function(p, wsname)
 end
 
 M.commands = {
+  -- enabled = false,
   index = {
+    -- enabled = false,
     args = 0,
     max_args = 1,
     name = 'workspace.index',

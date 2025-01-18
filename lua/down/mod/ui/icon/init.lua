@@ -1383,15 +1383,14 @@ M.load = function()
 
   -- M.dep["core.autocommands"].enable_autocommand("BufNewFile")
 
-  mod.await('cmd', function(downcmd)
-    downcmd.add_commands_from_table({
-      toggle = {
-        name = 'icon.toggle',
-        args = 0,
-        condition = 'markdown',
-      },
-    })
-  end)
+  M.commands = {
+    toggle = {
+      enabled = false,
+      name = 'icon.toggle',
+      args = 0,
+      condition = 'markdown',
+    },
+  }
 
   vim.api.nvim_create_autocmd('OptionSet', {
     pattern = 'conceallevel',

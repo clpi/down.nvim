@@ -13,15 +13,58 @@ M.setup = function()
   return { loaded = true, dependencies = {} }
 end
 
-M.commands = {}
+M.commands = {
+  cmd = {
+    enabled = true,
+    name = 'cmd',
+    args = 0,
+    max_args = 1,
+    callback = function(e)
+      log.trace 'Cmd callback'
+    end,
+    subcommands = {
+      add = {
+        name = 'cmd.add',
+        args = 0,
+        max_args = 1,
+        callback = function(e)
+          log.trace 'Cmd add callback'
+        end,
+      },
+      edit = {
+        name = 'cmd.edit',
+        args = 0,
+        max_args = 1,
+        callback = function(e)
+          log.trace 'Cmd edit callback'
+        end,
+      },
+      remove = {
+        name = 'cmd.remove',
+        args = 0,
+        max_args = 1,
+        callback = function(e)
+          log.trace 'Cmd remove callback'
+        end,
+      },
+      update = {
+        name = 'cmd.update',
+        args = 0,
+        max_args = 1,
+        callback = function(e)
+          log.trace 'Cmd update callback'
+        end,
+      },
+    },
+
+  },
+}
 
 --- Handles the calling of the appropriate function based on the command the user entered
 M.cb = function(data)
-  -- vim.print(data)
   local args = data.fargs
-
-  local current_buf = vim.api.nvim_get_current_buf()
-  local is_down = vim.bo[current_buf].filetype == 'markdown'
+  local buf = vim.api.nvim_get_current_buf()
+  local is_down = vim.bo[buf].filetype == 'markdown'
 
   local function check_condition(condition)
     if condition == nil then
@@ -33,7 +76,7 @@ M.cb = function(data)
     end
 
     if type(condition) == 'function' then
-      return condition(current_buf, is_down)
+      return condition(buf, is_down)
     end
 
     return condition
@@ -50,6 +93,7 @@ M.cb = function(data)
     end
 
     ref = ref.subcommands[cmd]
+    if ref.enabled == false then return end
 
     if not ref then
       log.error(
@@ -126,10 +170,10 @@ M.cb = function(data)
     vim.list_slice(args, argument_index + 1)
   )
   if ref.callback then
-    log.trace('Cmd..cb: Running ', ref.name, ' callback')
+    log.trace('Cmd.cb: Running ', ref.name, ' callback')
     ref.callback(e)
   else
-    log.trace('Cmd..cb: Running ', ref.name, ' broadcast')
+    log.trace('Cmd.cb: Running ', ref.name, ' broadcast')
     mod.broadcast(e)
   end
 end
@@ -173,6 +217,7 @@ M.generate_completions = function(_, command)
   local last_completion_level = 0
 
   for _, cmd in ipairs(splitcmd) do
+    if ref.enabled ~= nil and ref.enabled == false then return end
     if not ref or not M.check_condition(ref.condition) then
       break
     end
@@ -224,7 +269,9 @@ M.generate_completions = function(_, command)
     local subcommands = (ref and ref.subcommands or last_valid_ref.subcommands) or {}
 
     return vim.tbl_filter(function(key)
-      return M.check_condition(subcommands[key].condition)
+      if type(subcommands[key]) == 'table' then
+        return M.check_condition(subcommands[key].condition)
+      end
     end, keys)
   end
 end
@@ -249,6 +296,7 @@ M.select_next_cmd_arg = function(qargs, choices)
 
   query({
     prompt = current,
+
   }, function(choice)
     if choice ~= nil then
       vim.cmd(('%s %s'):format(current, choice))
@@ -262,7 +310,9 @@ end
 M.add_commands = function(mod_name)
   local mod_config = mod.get_mod(mod_name)
 
-  if not mod_config or not mod_config.commands then
+  if not mod_config or not mod_config.commands
+      or (mod_config.commands.enabled ~= nil and mod_config.commands.enabled == false)
+  then
     return
   end
 
@@ -270,34 +320,21 @@ M.add_commands = function(mod_name)
 end
 
 --- Recursively merges the provided table with the mod.config.commands table.
----@param functions down.Commands #A table that follows the mod.config.commands structure
-M.add_commands_from_table = function(functions)
-  M.commands = vim.tbl_extend('force', M.commands, functions)
-end
-
---- Takes a relative path (e.g "list.mod") and loads it from the commands/ directory
----@param name string #The relative path of the init we want to load
-M.add_commands_from_file = function(name)
-  -- Attempt to require the file
-  local err, ret = pcall(require, 'down.mod.cmd.' .. name)
-
-  -- If we've failed bail out
-  if not err then
-    log.warn(
-      'Could not load command'
-      .. name
-      .. 'for init base.cmd - the corresponding mod.lua file does not exist.'
-    )
-    return
-  end
-  mod.load_mod_from_table(ret)
+---@param f down.Commands #A table that follows the mod.config.commands structure
+M.add_commands_from_table = function(f)
+  M.commands = vim.tbl_extend('force', M.commands, f)
 end
 
 --- Rereads data from all mod and rebuild the list of available autocompletiinitinitons and commands
 M.sync = function()
   for _, lm in pairs(mod.mods) do
     if lm.commands then
-      M.add_commands_from_table(lm.commands)
+      if lm.commands.enabled ~= nil and lm.commands.enabled == false then
+        return
+      end
+      M.commands = vim.tbl_extend('force', M.commands, lm.commands)
+      -- lm.commands = M.load_cmds(lm)
+      -- M.add_commands_from_table(lm.commands)
     end
   end
 end
@@ -317,32 +354,25 @@ M.load = function()
     nargs = '*',
     complete = M.generate_completions,
   })
-  for _, command in ipairs(M.config.load) do
-    if command == 'default' then
-      for _, basecmd in ipairs(M.config.base) do
-        M.add_commands_from_file(basecmd)
-      end
-    end
-  end
 end
 
 ---@class down.mod.cmd.Config
 M.config = {
-  load = {
-    'default',
-  },
-
-  base = {
-    'mod',
-  },
 }
 ---@class cmd
 
-M.post_load = function()
-  for _, l in pairs(mod.mods) do
-    M.commands = vim.tbl_extend('force', M.commands, l.commands or {})
-    M.add_commands_from_table(l.commands or {})
+M.load_cmds = function(m)
+  for _, c in pairs(m.commands or {}) do
+    local cmds = {}
+    if m.commands.enabled ~= false then
+      cmds = vim.tbl_extend('force', cmds, c)
+    end
+    l = vim.tbl_extend('force', l, cmds)
   end
+  return l
+end
+
+M.post_load = function()
   M.sync()
 end
 

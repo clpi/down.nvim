@@ -3,7 +3,7 @@ local mod = require 'down.mod'
 local log = require 'down.util.log'
 
 ---@class down.mod.cmd.Mod: down.Mod
-local M = mod.new 'cmd.mod'
+local M = mod.new 'mod'
 
 M.commands = {
   mod = {
@@ -85,8 +85,8 @@ M.commands = {
   },
 }
 M.maps = {
-  { 'n', ',dml', '<CMD>Down mod list<CR>',   'List mods' },
-  { 'n', ',dmL', '<CMD>Down mod load<CR>',   'Load mod' },
+  { 'n', ',dml', '<CMD>Down mod list<CR>', 'List mods' },
+  { 'n', ',dmL', '<CMD>Down mod load<CR>', 'Load mod' },
   { 'n', ',dmu', '<CMD>Down mod unload<CR>', 'Unload mod' },
 }
 M.setup = function()

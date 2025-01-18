@@ -15,7 +15,9 @@ Down = {
 }
 
 Down.default = {
-  ['lsp'] = {},
+  -- ['lsp'] = {},
+  ['template'] = {},
+  ['mod'] = {},
   ['cmd'] = {},
   ['link'] = {},
   ['tool.telescope'] = {},
@@ -30,8 +32,8 @@ Down.default = {
 --- @param ... string The arguments to pass into an optional user hook
 function Down.setup(user, ...)
   Down.util.log.trace('Setting up Down')
-  Down.config:setup(user, Down.default, ...)
-  Down:start()
+  Down.config.setup(Down.config, user, Down.default, ...)
+  Down.start(Down)
 end
 
 function Down:start()

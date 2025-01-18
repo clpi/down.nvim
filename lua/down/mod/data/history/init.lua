@@ -1,40 +1,83 @@
 local tbl = require 'table'
 local clear = require 'table.clear'
 local new = require 'table.new'
----@class down.Mod
-local M = require 'down.mod'.new('data.history', {})
+local mod = require 'down.mod'
 
+---@class down.mod.data.History: down.Mod
+local M = mod.new 'data.history'
+
+---@class down.mod.data.history.Config: down.mod.Config
 M.config = {
   silent = true,
+  path = '',
 }
 
+---@class down.mod.data.history.Commands
 M.commands = {
+  next = {
+    args = 0,
+    enabled = true,
+    condition = 'markdown',
+    name = 'data.history.forward',
+    subcommands = {
+      list = {
+        enabled = true,
+        args = 0,
+        condition = 'markdown',
+        name = 'data.history.forward.list',
+      },
+    },
+  },
   back = {
     args = 0,
     condition = 'markdown',
+    enabled = true,
     name = 'data.history.back',
+    subcommands = {
+      list = {
+        args = 0,
+        condition = 'markdown',
+        enabled = true,
+        name = 'data.history.back.list',
+      },
+    },
   },
 }
 
---- Buffer queue
---- @type table<number, integer>
-M.history = {}
+--- @type integer[]
+M.history = {
+  ---@type integer[]
+  hist = {},
+  --- @type integer[]
+  buf = {},
+  ---@type string[]
+  file = {},
+}
 
---- @type table<number, integer>
-M.buf = {}
+M.history.buf = {}
 
 --- Clear the stacks
 M.clear = function()
-  clear(M.history)
-  clear(M.buf)
+  clear(M.history.hist)
+  clear(M.history.file)
+  clear(M.history.buf)
+end
+
+M.add = {}
+
+M.add.file = function(buf)
+  table.insert(M.history.file, buf or vim.api.nvim_get_current_buf())
+end
+M.add.current = function(buf)
+  table.insert(M.history.buf, buf or vim.api.nvim_get_current_buf())
 end
 
 M.push = function(stack, buf)
-  table.insert(stack or M.buf, 1, buf or vim.api.nvim_get_current_buf())
+  table.insert(stack or M.history.buf, 1, buf or vim.api.nvim_get_current_buf())
 end
 
 M.pop = function(stack, buf)
-  table.remove(stack or M.buf, 1)
+  table.remove(stack or M.history.buf, 1)
 end
 
 M.print = function(self)
@@ -45,11 +88,11 @@ end
 
 M.back = function()
   local bn = vim.api.nvim_get_current_buf()
-  if bn > 1 and #M.buf > 0 then
-    M.push(M.history, bn)
-    local prev = M.buf[1]
+  if bn > 1 and #M.history.buf > 0 then
+    M.push(M.history.hist, bn)
+    local prev = M.history.buf[1] or 0
     vim.api.nvim_command('buffer ' .. prev)
-    M.pop(M.buf)
+    M.pop(M.history.buf)
     return true
   else
     if M.config.silent then
@@ -61,11 +104,11 @@ end
 
 M.forward = function()
   local cb = vim.api.nvim_get_current_buf()
-  local hb = M.history[1]
+  local hb = M.history.hist[1]
   if hb then
-    M.push(M.buf, cb)
+    M.push(M.history.buf, cb)
     vim.api.nvim_command('buffer ' .. hb)
-    M.pop(M.history)
+    M.pop(M.history.hist)
     return true
   else
     if not M.config.silent then
@@ -74,10 +117,6 @@ M.forward = function()
     return false
   end
 end
-
----@alias down..history.Store down.Store Store
----@type down..history.Store Store
-M.store = {}
 
 ---@class down..history.Config
 M.config = {
@@ -96,16 +135,23 @@ M.setup = function()
   }
 end
 
-M.handle = function(event)
-  if event.id == 'cmd.events..history.back' then
-    -- Get all the buffers
-  end
-end
+M.commands = {
+  prev = {
+    args = 0,
+    condition = 'markdown',
+    name = 'data.history.back',
+  },
+  next = {
+    args = 0,
+    condition = 'markdown',
+    name = 'data.history.forward',
+  },
+}
 
 M.handle = {
   cmd = {
     ['data.history.back'] = function(e)
-      local buffers = vim.api.nvim_list_bufs()
+      local buffers = vim.api.nvim_list_buf()
 
       local to_delete = {}
       for buffer in vim.iter(buffers):rev() do
