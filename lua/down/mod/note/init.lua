@@ -549,11 +549,9 @@ M.commands = {
     max_args = 1,
     callback = M.open_month_calendar,
     name = 'calendar',
-    enabled = true,
   }, -- format :yyyy-mm-dd
   note = {
     name = 'note',
-    enabled = true,
     callback = function(e)
       log.trace 'note'
     end,

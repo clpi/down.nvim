@@ -13,6 +13,22 @@ M.setup = function()
   return { loaded = true, dependencies = {} }
 end
 
+M.get_commands = function(m)
+  local c = {}
+  if m.commands then
+    if type(c) == 'table' then
+      for cmd, cc in pairs(m.commands) do
+        if type(cc) == 'table' then
+          if c.enabled ~= false then
+            c[cmd] = cc
+          end
+        end
+      end
+    end
+  end
+  return c
+end
+
 M.commands = {
   -- cmd = {
   --   enabled = false,
@@ -107,7 +123,8 @@ M.cb = function(data)
       return
     elseif not check_condition(ref.condition) then
       log.error(
-        ('Error when executing `:Down %s` - the command is currently disabled. Some commands will only become available under certain conditions, e.g. being within a `.down` file!'):format(
+        ('Error when executing `:Down %s` - the command is currently disabled. Some commands will only become available under certain conditions, e.g. being within a `.down` file!')
+        :format(
           table.concat(vim.list_slice(args, 1, i), ' ')
         )
       )
@@ -146,7 +163,8 @@ M.cb = function(data)
 
   if not ref.name then
     log.error(
-      ("Error when executing `:down %s` - the ending command didn't have a `name` variable associated with it! This is an implementation error on the developer's side, so file a report to the author of the mod."):format(
+      ("Error when executing `:down %s` - the ending command didn't have a `name` variable associated with it! This is an implementation error on the developer's side, so file a report to the author of the mod.")
+      :format(
         data.args
       )
     )
@@ -260,11 +278,11 @@ M.generate_completions = function(_, command)
 
   -- TODO: Fix `:down m <tab>` giving invalid completions
   local keys = ref and vim.tbl_keys(ref.subcommands or {})
-    or (
-      vim.tbl_filter(function(key)
-        return key:find(splitcmd[#splitcmd])
-      end, vim.tbl_keys(last_valid_ref.subcommands or {}))
-    )
+      or (
+        vim.tbl_filter(function(key)
+          return key:find(splitcmd[#splitcmd])
+        end, vim.tbl_keys(last_valid_ref.subcommands or {}))
+      )
   table.sort(keys)
   do
     local subcommands = (ref and ref.subcommands or last_valid_ref.subcommands) or {}
@@ -311,9 +329,9 @@ M.add_commands = function(mod_name)
   local mod_config = mod.get_mod(mod_name)
 
   if
-    not mod_config
-    or not mod_config.commands
-    or (mod_config.commands.enabled ~= nil and mod_config.commands.enabled == false)
+      not mod_config
+      or not mod_config.commands
+      or (mod_config.commands.enabled ~= nil and mod_config.commands.enabled == false)
   then
     return
   end
@@ -334,16 +352,17 @@ M.sync = function()
       if lm.commands.enabled ~= nil and lm.commands.enabled == false then
         return
       end
+      -- local lc = M.get_commands(lm)
       local lc = lm.commands
-      for cn, c in pairs(lm.commands) do
-        if type(c) == 'table' and c.enabled ~= false then
-          lc[cn] = c
-          -- M.commands(mod_name)
-        end
-      end
+      -- for cn, c in pairs(lm.commands) do
+      --   if type(c) == 'table' and c.enabled ~= false then
+      --     lc[cn] = c
+      --     -- M.commands(mod_name)
+      --   end
+      -- end
       M.commands = vim.tbl_extend('force', M.commands, lc)
       -- lm.commands = M.load_cmds(lm)
-      M.add_commands_from_table(lc)
+      -- M.add_commands_from_table(lc)
     end
   end
 end
