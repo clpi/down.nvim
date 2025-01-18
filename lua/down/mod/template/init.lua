@@ -6,6 +6,7 @@ local mod = require 'down.mod'
 local M = mod.new 'template'
 
 M.commands = {
+  -- enabled = false,
   template = {
     min_args = 1,
     enabled = false,
@@ -14,7 +15,7 @@ M.commands = {
     callback = M.create_template,
     subcommands = {
       index = {
-        enabled = true,
+        enabled = false,
         callback = M.open_index,
         args = 0,
         name = 'template.index',

@@ -14,50 +14,51 @@ M.setup = function()
 end
 
 M.commands = {
-  cmd = {
-    enabled = true,
-    name = 'cmd',
-    args = 0,
-    max_args = 1,
-    callback = function(e)
-      log.trace 'Cmd callback'
-    end,
-    subcommands = {
-      add = {
-        name = 'cmd.add',
-        args = 0,
-        max_args = 1,
-        callback = function(e)
-          log.trace 'Cmd add callback'
-        end,
-      },
-      edit = {
-        name = 'cmd.edit',
-        args = 0,
-        max_args = 1,
-        callback = function(e)
-          log.trace 'Cmd edit callback'
-        end,
-      },
-      remove = {
-        name = 'cmd.remove',
-        args = 0,
-        max_args = 1,
-        callback = function(e)
-          log.trace 'Cmd remove callback'
-        end,
-      },
-      update = {
-        name = 'cmd.update',
-        args = 0,
-        max_args = 1,
-        callback = function(e)
-          log.trace 'Cmd update callback'
-        end,
-      },
-    },
+  -- cmd = {
+  --   enabled = false,
+  --   name = 'cmd',
+  --   args = 0,
+  --   max_args = 1,
+  --   callback = function(e)
+  --     log.trace 'Cmd callback'
+  --   end,
+  --   subcommands = {
+  --     add = {
+  --       enabled = true,
+  --       name = 'cmd.add',
+  --       args = 0,
+  --       max_args = 1,
+  --       callback = function(e)
+  --         log.trace 'Cmd add callback'
+  --       end,
+  --     },
+  --     edit = {
+  --       name = 'cmd.edit',
+  --       args = 0,
+  --       max_args = 1,
+  --       callback = function(e)
+  --         log.trace 'Cmd edit callback'
+  --       end,
+  --     },
+  --     remove = {
+  --       name = 'cmd.remove',
+  --       args = 0,
+  --       max_args = 1,
+  --       callback = function(e)
+  --         log.trace 'Cmd remove callback'
+  --       end,
+  --     },
+  --     update = {
+  --       name = 'cmd.update',
+  --       args = 0,
+  --       max_args = 1,
+  --       callback = function(e)
+  --         log.trace 'Cmd update callback'
+  --       end,
+  --     },
+  --   },
 
-  },
+  -- },
 }
 
 --- Handles the calling of the appropriate function based on the command the user entered
@@ -218,9 +219,9 @@ M.generate_completions = function(_, command)
 
   for _, cmd in ipairs(splitcmd) do
     if ref.enabled ~= nil and ref.enabled == false then return end
-    if not ref or not M.check_condition(ref.condition) then
-      break
-    end
+    -- if not ref or not M.check_condition(ref.condition) then
+    --   break
+    -- end
 
     ref = ref.subcommands or {}
     ref = ref[cmd]
@@ -332,9 +333,16 @@ M.sync = function()
       if lm.commands.enabled ~= nil and lm.commands.enabled == false then
         return
       end
-      M.commands = vim.tbl_extend('force', M.commands, lm.commands)
+      local lc = lm.commands
+      for cn, c in pairs(lm.commands) do
+        if c.enabled ~= false then
+          lc[cn] = c
+          -- M.commands(mod_name)
+        end
+      end
+      M.commands = vim.tbl_extend('force', M.commands, lc)
       -- lm.commands = M.load_cmds(lm)
-      -- M.add_commands_from_table(lm.commands)
+      M.add_commands_from_table(lc)
     end
   end
 end
@@ -360,17 +368,6 @@ end
 M.config = {
 }
 ---@class cmd
-
-M.load_cmds = function(m)
-  for _, c in pairs(m.commands or {}) do
-    local cmds = {}
-    if m.commands.enabled ~= false then
-      cmds = vim.tbl_extend('force', cmds, c)
-    end
-    l = vim.tbl_extend('force', l, cmds)
-  end
-  return l
-end
 
 M.post_load = function()
   M.sync()
