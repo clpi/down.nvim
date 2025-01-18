@@ -27,10 +27,11 @@ M.print = {
   deps = function(m, tb, pre)
     pre = pre or ''
     if m.dependencies and not vim.tbl_isempty(m.dependencies) then
-      ins(tb, pre .. '' .. '- **Dependencies:**')
+      ins(tb, '')
+      ins(tb, '#### **Dependencies**')
       for i, d in ipairs(m.dependencies) do
-        local ix = M.print.index(i, pre .. '\t')
-        ins(tb, ix .. '' .. '`' .. d .. '`')
+        local ix = M.print.index(i, pre)
+        ins(tb, ix .. '' .. '[' .. d .. '](#' .. d .. ')')
       end
     end
   end,
@@ -54,7 +55,6 @@ M.print = {
     if value ~= '' then
       value = '`' .. value .. '`'
     end
-    title = title or ''
     local ix
     if i then
       ix = i .. '. '
@@ -70,29 +70,34 @@ M.print = {
       enabled = '**enabled**: ' .. '`' .. tostring(v.enabled) .. '`'
     end
     ins(tb, index .. ' __' .. cmd .. "__ `" .. (v.name or '') .. '`' .. ' ' .. enabled)
-    M.print.commands(v, tb, cmd, pre, i)
+    M.print.commands(v, tb, cmd, pre .. '\t', i)
   end,
   commands = function(m, tb, name, pre, i)
-    pre = pre or '\t'
+    pre = pre or ''
     ix = M.print.index(nil, pre)
     if m.commands then
       if vim.tbl_isempty(m.commands) then
         return
       end
       if pre == '' then
-        ins(tb, ix .. '**Commands:**')
+        ins(tb, '')
+        ins(tb, '#### **Commands**')
       end
       local i = 0
       for k, v in pairs(m.commands) do
         i = i + 1
+        if pre == '' then
+        else
+        end
         local ix = M.print.index(i, pre)
-        M.print.command(tb, pre .. '\t', k, v, i)
+        M.print.command(tb, pre, k, v, i)
       end
     end
   end,
   mod = function(m, tb, i, name)
     local ix = M.print.index(i)
-    ins(tb, '### ' .. (i or '') .. '. ' .. string.upper(string.sub(name, 1, 1)) .. string.sub(name, 2))
+    local i = (i or '') .. '.'
+    ins(tb, '### ' .. '' .. ' ' .. name)
     ins(tb, '')
     -- ins(tb, .. '`' .. (name or m.name or '') .. '`')
     -- M.print.commands(m, tb, m.name, '', i)
