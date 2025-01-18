@@ -1,1 +1,1 @@
-# down.lua templates
+# down.nvim templates

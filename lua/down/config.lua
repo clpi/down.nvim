@@ -16,7 +16,7 @@ end
 ---@todo TODO: Setup configuration and parse user config
 ---@todo       in this config module only
 
---- The down.lua configuration
+--- The down.nvim configuration
 --- @class down.Config
 local Config = {
   --- Start in dev mode

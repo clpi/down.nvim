@@ -1,4 +1,4 @@
-# `down.lua` Book Index
+# `down.nvim` Book Index
 
 ## About
 

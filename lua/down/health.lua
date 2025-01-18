@@ -75,7 +75,7 @@ H.check_req = function()
 end
 
 H.check = function()
-  h.start 'down.lua'
+  h.start 'down.nvim'
   H.check_optional()
   H.check_req()
   H.user()

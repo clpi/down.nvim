@@ -1,7 +1,7 @@
 ---@author clpi
----@file down.lua 0.1.0
+---@file down.nvim 0.1.0
 ---@license MIT
----@package down.lua
+---@package down.nvim
 ---@brief neovim note-taking plugin with the
 ---@brief comfort of mmarkdown and the power of org
 

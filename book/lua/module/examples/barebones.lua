@@ -50,7 +50,7 @@ end
 
 ---@brief One such piece of data you may wish to store is the ongoing collection of cells, as well
 ---@brief as their contents and type in the Juypyter notebook. You may even wish to leverage the
----@brief down.lua `lsp.notebook` module to hook into the LSP for Jupyter notebooks.
+---@brief down.nvim `lsp.notebook` module to hook into the LSP for Jupyter notebooks.
 J.cells = {}
 
 ---@brief To keep track of the notebook currently being interacted with
@@ -63,7 +63,7 @@ J.notebook = {
   kernel = 'python3',
 }
 
----@brief Technically, we have now created a proper module that can be loaded into Neovim through down.lua.
+---@brief Technically, we have now created a proper module that can be loaded into Neovim through down.nvim.
 ---@brief However, we will be typically be best off at the beginning characterizing the module with any
 ---@brief setup, dependencies, configuration, commands, and even keymaps you believe it may one day need.
 
@@ -110,5 +110,5 @@ J.config = {
 ---@brief whether builtin or custom-made by the community.
 ---
 ---@brief Regardless, I hope this has provided a good starting point to help you to take the very first steps
----@brief in creating an awesome module to extend and bless the down.lua ecosystem. Good luck and godspeed!
+---@brief in creating an awesome module to extend and bless the down.nvim ecosystem. Good luck and godspeed!
 return J

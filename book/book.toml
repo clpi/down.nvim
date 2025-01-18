@@ -1,6 +1,6 @@
 [book]
-title = "The down.lua book"
-description = "Goes over the down.lua extension for neovim"
+title = "The down.nvim book"
+description = "Goes over the down.nvim extension for neovim"
 authors = ["Chris Pecunies"]
 language = "en"
 multilingual = false
@@ -27,8 +27,8 @@ copy-fonts = true
 # additional-js = "book.js"
 smart-punctuation = true
 no-section-label = false
-git-repository-url = 'github.com/clpi/down.lua'
-edit-url-template = "https://github.com/clpi/down.lua/edit/master/book/{path}"
+git-repository-url = 'github.com/clpi/down.nvim'
+edit-url-template = "https://github.com/clpi/down.nvim/edit/master/book/{path}"
 git-repository-icon = "fa-github"
 input-404 = "404.md"
 

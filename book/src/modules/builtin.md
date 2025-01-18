@@ -4,7 +4,7 @@
 
 Here is the full guide to all the modules, which I intend to keep largely perminantely in this arrangement so far as I can muster, and so far as it provides a good experience for everyone.
 
-I will also not be changing the names to any of the modules, switching them around willy-nilly, etc., and especially not changing the name of the project, which is `down.lua`, after its most recent overhaul.
+I will also not be changing the names to any of the modules, switching them around willy-nilly, etc., and especially not changing the name of the project, which is `down.nvim`, after its most recent overhaul.
 
 This is a project in its extremely early days, so perhaps I may be laying this down too soon and without any real consequence, but I believe that the system, naming, etc. has congealed to the point where I can 
 safely believe in the foundations it has laid.
@@ -17,10 +17,10 @@ safely believe in the foundations it has laid.
 
 ## The primary core modules are
 
-Below, you will find a list of the primary **root** core modules builtin to `down.lua`. There are a few things beyond the obvious that should be stated first:
+Below, you will find a list of the primary **root** core modules builtin to `down.nvim`. There are a few things beyond the obvious that should be stated first:
 
 1. While I have intended for all modules to be useful in their own right in a context not involving internal use, I do have to note that, like all things, there is a certain variance with regards how accessible a given builtin module is, as well as how much use it may serve to you. 
-    To that end, I have tried to begin scaffolding a per-module README.md that should (at some point) provide any others contributing or building on top of `down.lua` what they may and may not get out of the builtin modules here.
+    To that end, I have tried to begin scaffolding a per-module README.md that should (at some point) provide any others contributing or building on top of `down.nvim` what they may and may not get out of the builtin modules here.
 
 2. The hierarchy of modules presented here is very important to understand, both with regards its structure and its purpose. This becomes especially important when considering the control flow of the setup process, both for the plugin as a whole and indeed to a lesser degree for
     the individual modules themselves. It can be easy to at first get lost in the weeds here, but I don't believe it is something that should hinder those exploring the codebase very long at all.

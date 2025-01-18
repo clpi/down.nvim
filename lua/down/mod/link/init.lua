@@ -14,10 +14,10 @@ Link.setup = function()
   return { ---@type down.mod.Setup
     loaded = tsu_ok,
     dependencies = {
-      'cmd',             --- For commands
-      'data.history',    --- For history storage
+      'cmd', --- For commands
+      'data.history', --- For history storage
       'tool.treesitter', --- For treesitter node parsing
-      'workspace',       --- For checking filetype and index file names of current workspace
+      'workspace', --- For checking filetype and index file names of current workspace
     },
   }
 end
@@ -36,18 +36,18 @@ Link.maps = {
     '<ESC>:<C-U>lua require("down.mod.link").follow.link()<CR>',
     { desc = 'Follow link', silent = true, noremap = false, nowait = true },
   },
-  {
-    'n',
-    '<S-TAB>',
-    '<ESC>:<C-U>lua require("down.mod.link").goto_prev_link()<CR>',
-    { desc = 'Previous link', silent = true, noremap = false, nowait = true },
-  },
-  {
-    'n',
-    '<TAB>',
-    '<ESC>:<C-U>lua require("down.mod.link").goto_next_link()<CR>',
-    { desc = 'Next link', silent = true, noremap = false, nowait = true },
-  },
+  -- {
+  --   'n',
+  --   '<S-TAB>',
+  --   '<ESC>:<C-U>lua require("down.mod.link").goto_prev_link()<CR>',
+  --   { desc = 'Previous link', silent = true, noremap = false, nowait = true },
+  -- },
+  -- {
+  --   'n',
+  --   '<TAB>',
+  --   '<ESC>:<C-U>lua require("down.mod.link").goto_next_link()<CR>',
+  --   { desc = 'Next link', silent = true, noremap = false, nowait = true },
+  -- },
 }
 
 Link.commands = {
@@ -211,12 +211,12 @@ end
 Link.ref = function(node)
   local link_label = Link.text(node)
   for _, captures, _ in
-  Link.dep['tool.treesitter'].query([[
+    Link.dep['tool.treesitter'].query([[
     (link_reference_definition
       (link_label) @label (#eq? @label "]] .. link_label .. [[")
       (link_destination) @link_destination
     )]]),
-  'markdown'
+    'markdown'
   do
     local capture = ts.get_node_text(captures[2], 0)
     return capture:gsub('[<>]', '')

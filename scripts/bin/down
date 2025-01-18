@@ -7,7 +7,7 @@ Down = {}
 --+  |    down       v0.1.1-alpha                         |  +--
 --+  |                                                    |  +--
 --+  |    ABOUT                                           |  +--
---+  |      down (down.lua) is a dev-focused note-taking  |  +--
+--+  |      down (down.nvim) is a dev-focused note-taking  |  +--
 --+  |      environment for markdown, in development.     |  +--
 --+  |                                                    |  +--
 --+  |    USAGE                                           |  +--
@@ -47,7 +47,7 @@ local wts_ok, wts = pcall(require, 'down.mod.integration.treesitter')
 
 --+  +---------------------+ extern +---------------------+  +--
 --+  |                                                    |  +--
---+  |  import the down lua dependencies.                 |  +--
+--+  |  import the down.nvim dependencies.                 |  +--
 --+  |                                                    |  +--
 --+  +----------------------------------------------------+  +--
 
@@ -122,7 +122,7 @@ local down = {
     return pre .. ' ' .. h .. ' '
   end,
   version = 'v0.1.0-alpha.2',
-  repo = 'github.com/clpi/down.lua',
+  repo = 'github.com/clpi/down.nvim',
   home = 'down.cli.st',
   updated = '2024-12-15',
   color = true,

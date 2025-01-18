@@ -1,1 +1,1 @@
-# down.lua snippets
+# down.nvim snippets

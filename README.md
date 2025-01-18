@@ -1,16 +1,16 @@
-# down.lua 
+# down.nvim 
 
 the _familiar_, organized future for neovim and beyond!
 
 <a href="https://neovim.io"> ![Neovim](https://img.shields.io/badge/Neovim%200.10+-brightgreen?style=for-the-badge) </a>
 <a href="./LICENSE"> ![License](https://img.shields.io/badge/license-GPL%20v3-brightgreen?style=for-the-badge)</a>
-![LuaRocks](https://img.shields.io/luarocks/v/clpi/down.lua)
+![LuaRocks](https://img.shields.io/luarocks/v/clpi/down.nvim)
 
 ---
 
 > [!Caution]
 >
-> `down.lua` is currently in **early** *ongoing* development.
+> `down.nvim` is currently in **early** *ongoing* development.
 
 <!--toc:start-->
 
@@ -27,9 +27,9 @@ the _familiar_, organized future for neovim and beyond!
 
 ## Introduction
 
-- `down.lua` is a [neovim](#) plugin intended to bring the extensibility of [org-mode](#) or [neorg](github.com/nvim-neorg/neorg) with the **comfort** of [markdown](#).
+- `down.nvim` is a [neovim](#) plugin intended to bring the extensibility of [org-mode](#) or [neorg](github.com/nvim-neorg/neorg) with the **comfort** of [markdown](#).
 
-- In its [current state](#), `down.lua` is in the beginning stages of development, currently functionining as a markdown-based version of [neorg](#), with many planned features to come
+- In its [current state](#), `down.nvim` is in the beginning stages of development, currently functionining as a markdown-based version of [neorg](#), with many planned features to come
 
 - we want to be able to take notes like developers, without leaving behind all the ecosystem benefits of markdown.
 
@@ -39,7 +39,7 @@ the _familiar_, organized future for neovim and beyond!
 
 > [!Note]
 >
-> `down.lua` must have at least [neovim 0.10+](https://neovim.io)
+> `down.nvim` must have at least [neovim 0.10+](https://neovim.io)
 
 ## Quickstart
 
@@ -51,7 +51,7 @@ the _familiar_, organized future for neovim and beyond!
 ```lua
 -- Place in lazy.nvim spec
 {
-    "clpi/down.lua",
+    "clpi/down.nvim",
     opts         = {
       workspace = {
         default = "notes",
@@ -87,12 +87,12 @@ the _familiar_, organized future for neovim and beyond!
 > Not yet tested
 
 ```vim
-Plug "nvim-telescope/telescope.nvim"
+Plug "nvim-telescope/telescope.nvim" " optional
 Plug "nvim-treesitter/treesitter.nvim"
 Plug "nvim-lua/plenary.nvim",
 Plug "MunifTanjim/nui.nvim",
 Plug "pysan3/pathlib.nvim"
-Plug "clpi/down.lua", {
+Plug "clpi/down.nvim", {
     \ "branch" : "master",
     \ "do"     : ':lua require([[down]]).setup({
     \     workspace = {
@@ -122,7 +122,7 @@ Plugin "pysan3/pathlib.nvim"
 Plugin 'nvim-telescope/telescope.nvim'
 Plugin "nvim-lua/plenary.nvim",
 Plugin "MunifTanjim/nui.nvim",
-Plugin 'clpi/down.lua'
+Plugin 'clpi/down.nvim'
 ```
 
 </details>
@@ -144,7 +144,7 @@ call dein#add("nvim-lua/plenary.nvim")
 call dein#add("MunifTanjim/nui.nvim")
 call dein#add('pysan3/pathlib.nvim')
 call dein#add('nvim-telescope/telescope.nvim')
-call dein#add('clpi/down.lua')
+call dein#add('clpi/down.nvim')
 ```
 
 </details>
@@ -163,7 +163,7 @@ call dein#add('clpi/down.lua')
 
 ```lua
 use {
-  "clp/down.lua",
+  "clp/down.nvim",
   requires = {
         "nvim-telescope/telescope.nvim",
         "nvim-lua/plenary.nvim",
@@ -202,7 +202,7 @@ use {
 
 ```lua
 {
-  "clp/down.lua",
+  "clp/down.nvim",
 }
 ```
 
@@ -268,7 +268,7 @@ require("down").setup({ ---@type down.mod.Config
 
 ## Credits
 
-`down.lua` is a project by [clpi](github.com/clpi) and is licensed under the [MIT](./LICENSE) license. For information about **contributing**, please consult the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
+`down.nvim` is a project by [clpi](github.com/clpi) and is licensed under the [MIT](./LICENSE) license. For information about **contributing**, please consult the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
 
 special thanks goes to [nvim-neorg/neorg](https://github.com/nvim-neorg/neorg) for providing the inspiration and basis of this project.
 
@@ -276,10 +276,10 @@ special thanks goes to [nvim-neorg/neorg](https://github.com/nvim-neorg/neorg) f
 
 thank you and keep updated!
 
-- [The `down.lua` book](https://down.cli.st)
-- [The `down.lua` wiki](https://github.com/clpi/down.lua/wiki)
-- [`down.lua` on luarocks](https://luarocks.org/inits/clpi/down.lua)
-- [`down.lua` on dotfyle](https://dotfyle.com/plugins/clpi/down.lua)
+- [The `down.nvim` book](https://down.cli.st)
+- [The `down.nvim` wiki](https://github.com/clpi/down.nvim/wiki)
+- [`down.nvim` on luarocks](https://luarocks.org/inits/clpi/down.nvim)
+- [`down.nvim` on dotfyle](https://dotfyle.com/plugins/clpi/down.nvim)
 
 <!-- <div align="center"> -->
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
