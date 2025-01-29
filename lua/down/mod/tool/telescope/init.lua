@@ -89,7 +89,8 @@ M.load = function()
   assert(tok)
   M.load_pickers()
   if tok then
-    t.load_extension 'down'
+    require("telescope._extensions.down").register()
+    require("telescope._extensions.down").load()
     for _, pic in ipairs(M.config.enabled) do
       vim.keymap.set('n', '<plug>down.telescope.' .. pic .. '', M.pickers[pic])
     end
@@ -99,9 +100,9 @@ M.load = function()
 end
 
 M.maps = {
-  { 'n', ',dF', '<cmd>Telescope down files<CR>', 'Telescope down files' },
-  { 'n', ',dF', '<cmd>Telescope down<CR>', 'Telescope down' },
-  { 'n', ',dL', '<cmd>Telescope down links<CR>', 'Telescope down links' },
+  { 'n', ',dF', '<cmd>Telescope down files<CR>',     'Telescope down files' },
+  { 'n', ',dF', '<cmd>Telescope down<CR>',           'Telescope down' },
+  { 'n', ',dL', '<cmd>Telescope down links<CR>',     'Telescope down links' },
   { 'n', ',dW', '<cmd>Telescope down workspace<CR>', 'Telescope down workspaces' },
   -- { 'n', ',dt', '<cmd>Telescope down tags<CR>',      'Telescope down tags' },
 }

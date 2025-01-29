@@ -1,25 +1,4 @@
---- @alias down.log.Level
---- | "trace"
---- | "debug"
---- | "info"
---- | "warn"
---- | "error"
---- | "fatal"
-
---- @class (exact) down.log.Config
---- @field plugin string                                           Name of the plugin. Prepended to log messages.
---- @field outfile string
---- @field use_console boolean                                     Whether to print the output to Neovim while running.
---- @field highlights boolean                                      Whether highlighting should be used in console (using `:echohl`).
---- @field use_file boolean                                        Whether to write output to a file.
---- @field level down.log.Level                                          Any messages above this level will be logged.
---- @field modes ({ name: down.log.Level, hl: string, level: number })[] Level config.
---- @field float_precision number                                  Can limit the number of decimals displayed for floats.
-
---- @class (exact) down.Log
----   @field levels table<string, number>
----   @field number_level table<number, string>
----   @field config down.log.Config
+---@class down.Log
 local Log = {
   number_level = {
     [0] = 'trace',
@@ -165,7 +144,7 @@ end
 --- @param cfg down.log.Config
 --- @param standalone boolean
 Log.new = function(cfg, standalone)
-  cfg = vim.tbl_deep_extend('force', Log.config, cfg)
+  cfg = vim.tbl_extend('force', cfg, Log.config)
   cfg.plugin = 'down' -- Force the plugin name to be down
   Log.config = cfg
   for m, v in ipairs(cfg.modes) do

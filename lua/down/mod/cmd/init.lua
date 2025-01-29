@@ -1,9 +1,6 @@
 local down = require('down')
-local config = require('down.config')
 local log = require 'down.util.log'
-local map = require 'down.util.maps'
 local mod = require 'down.mod'
-local lib = require 'down.util.lib'
 local util = require 'down.util'
 
 ---@class down.mod.Cmd: down.Mod

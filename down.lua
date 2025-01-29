@@ -7,47 +7,71 @@
 
 ---@class down.down
 local down = {
-  ---@type down.config.Config
   config = require('down.config'),
   mod = require('down.mod'),
   event = require('down.event'),
   util = require('down.util'),
   log = require('down.util.log'),
-  trouble = require('trouble.providers.down'),
-  telescope = require('telescope._extensions.down'),
+}
+
+require("avante_lib").setup()
+down.default = {
+  ['mod'] = {},
+  ['task'] = {},
+  ['cmd'] = {},
+  ['link'] = {},
+  ['tool.telescope'] = {},
+  ['lsp'] = {},
+  -- ['template'] = {},
+  -- ['data.log'] = {},
+  -- ['cmd.back'] = {},
+  -- ['data.history'] = {},
 }
 
 --- Load the user configuration, and load into config
 --- defined modules specifieed and workspaces
---- @param user down.mod.Config user config to load
+--- @param user down.config.User user config to load
 --- @param ... string The arguments to pass into an optional user hook
 function down.setup(user, ...)
   down.util.log.trace('Setting up down')
-  vim.print(vim.inspect(user))
-  down.config:setup(user, ...)
-  down.start(user, ...)
+  down.config.setup(down.config, user, down.default, ...)
+  down.start(down)
 end
 
-function down.start(user, ...)
+function down:start()
   down.util.log.trace('Setting up down')
-  down.mod.load_mod('workspace', down.config.user.workspace or down.config.user.workspaces or {})
-  down.config:load(user)
-  -- for name, usermod in pairs(down.config.user) do
-  --   if require('down.util.mod').check_id(name) and type(usermod) == 'table' then
-  --     if down.mod.load_mod(name, usermod) == nil then
-  --       vim.print('Failed to load mod: ' .. name)
-  --     end
-  --   end
-  --   if type(usermod) == 'table' then
-  --     elseif name == 'workspaces' then
-  --     elseif name == 'workspace' then
-  --     elseif down.mod.load_mod(name, usermod) == nil then
-  --     end
-  --   else
-  --     down.config[name] = usermod
-  --   end
-  -- end
-  down.config:post_load()
+  down.mod.load_mod('workspace', self.config.user.workspace or self.config.user.workspaces or {})
+  for name, usermod in pairs(self.config.user) do
+    if type(usermod) == 'table' then
+      if name == 'lsp' and self.config.dev == false then
+      elseif name == 'log' then
+        if type(usermod) == 'table' then
+          down.config.log = usermod
+        elseif type(usermod) == 'number' and usermod >= 0 and usermod <= 4 then
+          down.config.log.level = down.util.log.number_level[usermod] or 'info'
+        elseif type(usermod) == 'boolean' then
+          down.config.log.level = 'info'
+        elseif type(usermod) == 'string' then
+          if
+              usermod == 'trace'
+              or usermod == 'debug'
+              or usermod == 'info'
+              or usermod == 'warn'
+              or usermod == 'error'
+              or usermod == 'fatal'
+          then
+            down.config.log.level = usermod
+          end
+        end
+      elseif name == 'workspaces' then
+      elseif name == 'workspace' then
+      elseif self.mod.load_mod(name, usermod) == nil then
+      end
+    else
+      self.config[name] = usermod
+    end
+  end
+  self:post_load()
 end
 
 function down:post_load()
@@ -63,6 +87,7 @@ function down:post_load()
   --   }
   -- )
   -- self:post_load()
+  self.config.mod = self.mod.mods
   self.config:post_load()
   for _, l in pairs(self.mod.mods) do
     self.event.load_cb(l)

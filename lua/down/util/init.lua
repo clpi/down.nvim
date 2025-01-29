@@ -1,19 +1,14 @@
-U = {}
--- local vim = require("vim")
-
-U.maps = require('down.util.maps')
-
-local log = require('down.util.log')
+local U = {}
 
 local c, f, a, ts = vim.cmd, vim.fn, vim.api, vim.treesitter
 
-U.autocmd = a.nvim_create_autocmd
-U.cmd = a.nvim_create_command
-U.ns = a.nvim_create_namespace
-U.win_valid = a.nvim_win_is_valid
-U.buf_ext = a.nvim_bug_get_extmarks
-U.print = require('down.util.print')
-U.string = require 'down.util.string'
+---@return down.Os
+U.os = function()
+  return string.lower(require('ffi').os)
+end
+
+
+U.sep = U.os() == 'windows' and '\\' or '/'
 
 U.tobool = function(str)
   local bool = false
@@ -24,7 +19,7 @@ U.tobool = function(str)
   return bool
 end
 
-local version = vim.version() -- TODO: Move to a more local scope
+U.version = vim.version() -- TODO: Move to a more local scope
 
 --- A version agnostic way to call the neovim treesitter query parser
 --- @param language string # Language to use for the query
@@ -42,7 +37,7 @@ end
 --- An OS agnostic way of querying the current user
 --- @return string username
 function U.get_username()
-  local current_os = U.os_info
+  local current_os = U.os()
   if not current_os then
     return ''
   end
@@ -173,9 +168,9 @@ function U.parse_version_string(version_string)
 
   -- Define variables that split the version up into 3 slices
   local split_version, versions, ret =
-    vim.split(version_string, '.', { plain = true }),
-    { 'major', 'minor', 'patch' },
-    { major = 0, minor = 0, patch = 0 }
+      vim.split(version_string, '.', { plain = true }),
+      { 'major', 'minor', 'patch' },
+      { major = 0, minor = 0, patch = 0 }
 
   -- If the sliced version string has more than 3 elements error out
   if #split_version > 3 then
@@ -270,8 +265,7 @@ end
 
 ---@return down.Os
 function U.get_os()
-  local os = vim.loop.os_uname().sysname:lower()
-
+  local os = (vim.loop or vim.uv).os_uname().sysname:lower()
   if os:find('windows_nt') then
     return 'windows'
   elseif os == 'darwin' then
@@ -291,14 +285,12 @@ function U.get_os()
   elseif os:find('bsd') then
     return 'bsd'
   end
-
   error('[down]: Unable to determine the currently active operating system!')
 end
 
 U.buf = require('down.util.buf')
 U.lib = require('down.util.lib')
 U.log = require('down.util.log')
--- U.job = require("down.util.job")
-U.style = require('down.util.style')
+U.string = require 'down.util.string'
 
 return U

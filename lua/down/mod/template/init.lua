@@ -1,6 +1,8 @@
 local config = require 'down.config'
+local util = require 'down.util'
 local log = require 'down.util.log'
 local mod = require 'down.mod'
+local sep = util.sep
 
 ---@class down.mod.template: down.Mod
 local M = mod.new 'template'
@@ -79,7 +81,7 @@ end
 M.config = {
   strategies = {
     flat = '%Y-%m-%d.md',
-    nested = '%Y' .. config.pathsep .. '%m' .. config.pathsep .. '%d.md',
+    nested = '%Y' .. sep .. '%m' .. sep .. '%d.md',
   },
   -- Which workspace to use for the template files, the base behaviour
   -- is to use the current workspace.
@@ -139,26 +141,26 @@ M.open_template = function(time, custom_date)
   )
 
   local template_file_exists = M.dep['workspace'].file_exists(
-    workspace_path .. config.pathsep .. folder_name .. config.pathsep .. path
+    workspace_path .. sep .. folder_name .. sep .. path
   )
 
-  M.dep['workspace'].new_file(folder_name .. config.pathsep .. path, workspace)
+  M.dep['workspace'].new_file(folder_name .. sep .. path, workspace)
 
-  M.dep['workspace'].new_file(folder_name .. config.pathsep .. path, workspace)
+  M.dep['workspace'].new_file(folder_name .. sep .. path, workspace)
 
   if
       not template_file_exists
       and M.config.use_template
       and M.dep['workspace'].file_exists(
-        workspace_path .. config.pathsep .. folder_name .. config.pathsep .. template_name
+        workspace_path .. sep .. folder_name .. sep .. template_name
       )
   then
     vim.cmd(
       '$read '
       .. workspace_path
-      .. config.pathsep
+      .. sep
       .. folder_name
-      .. config.pathsep
+      .. sep
       .. template_name
       .. '| silent! w'
     )
@@ -187,7 +189,7 @@ M.create_template = function()
   local template_name = M.config.template_name
 
   M.dep.workspace.new_file(
-    folder_name .. config.pathsep .. template_name,
+    folder_name .. sep .. template_name,
     workspace or M.dep.workspace.get_current_workspace()[1]
   )
 end

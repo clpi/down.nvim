@@ -157,27 +157,20 @@
 ---   config?: down.mod.config.Config,
 --- }
 
---- TODO: make mod field merge to [string]: down.Mod
---- TODO:   down.Config.mod ->
---- TODO:     #field [string]? down.Mod
+--- @alias down.Pathsep "\\" | "/"
 ---
---- @class (exact) down.Config
+--- @class  down.Config
 ---   @field log? down.log.Config
+---   @field defaults? boolean|string[]
 ---   @field dev? boolean  Whether to start in dev mode
+---   @field debug? boolean Whether to start in debug mode
+---   @field bench? boolean Whether to start in benchmark mode
+---   @field test? boolean Whether to start in test mode
+---   @field load? boolean Whether to load the user config
+---   @field user down.mod.Config The user config to load in
 ---   @field hook? fun()   A hook that is run when down is started
----   @field workspace? string[]
----   @field mod table<string, down.Mod> Acts as a copy of the user's config that may be modified at runtime.
----   @field os down.Os                           The operating system that down is currently running under.
----   @field pathsep "\\"|"/"                                  The operating system that down is currently running under.
 ---   @field started boolean                                   Set to `true` when down is fully initialized.
----   @field user down.config.User              Stores the config provided by the user.
 ---   @field version string                                    The version of down that is currently active. Automatically updated by CI on every release.
----   @field public [string]? down.Mod
----   @field load {
----     opts: fun(),
----     maps: fun(),
----     lsp: fun()
----   }
 ---   @field setup fun(user: down.config.User, default: string[], ...: any): boolean Loads user config
 ---   @field homedir fun(...: string): string
 ---   @field vimdir fun(...: string): string

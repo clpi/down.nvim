@@ -1,19 +1,80 @@
 local Path = require 'pathlib'
 local Event = require 'down.event'
-local config = require 'down.config'
 local log = require 'down.util.log'
 local util = require 'down.mod.workspace.util'
-local map = require 'down.util.maps'
 local mod = require 'down.mod'
 local utils = require 'down.util'
 local path = require 'plenary.path'
 local notify = util.notify
 
 ---@alias down.mod.Workspace down.Mod
----@type down.mod.Workspace
+---@class down.mod.workspace.Workspace: down.Mod
 local M = mod.new 'workspace'
 
----@todo TODO: Merge M.config.default and M.config.workspaces.default
+M.homedir = function()
+  return vim.fs.normalize(vim.fn.resolve(vim.loop or vim.uv).os_homedir())
+end
+
+---@return string
+M.path = function(name)
+  if M.config.workspaces[name] then
+    return vim.fs.normalize(vim.fn.resolve(M.config.workspaces[name] or M.homedir()))
+  end
+  M.init(name, vim.fn.getcwd(0))
+end
+
+
+  ---@class down.mod.workspace.Item
+M.workspace = setmetatable({
+  ---@type any
+  key = "",
+  ---@type any
+  value = {},
+  namespace = function(key)
+    return "down.workspace." .. key
+  end,
+  get = function(key)
+    local data, ws = M.dep.data.get(key), M.workspace[key]
+    if not ws == data then
+      M.workspace.sync(key)
+    end
+    return M.workspace[key]
+  end,
+  set = function(key, val)
+    M.workspace[key] = val
+    M.dep.data.set(key, val)
+  end,
+  join = function(...)
+    local key = vim.fn.join({...}, '.')
+    return M.workspace.namespace(key)
+  end,
+  sync = function(key)
+    log.trace("Syncing " .. key)
+    local val = M.dep.data.get()
+    if M.workspace[key] ~= M.dep.data.get(key) then
+      if not M.workspace[key] then
+        M.workspace[key] = val
+      elseif not M.dep.data.get(key) then
+        M.dep.data.set(key, M.workspace[key])
+      else
+      end
+    end
+  end,
+}, {
+
+  __call = function(...)
+     vim.iter({...}):each(function(k)
+        M.workspace.sync(k)
+     end)
+  end,
+  __index = function(self, k) return self.get(k) end,
+  __newindex = function(self, k, v) return self.set(k, v) end,
+  ---@param a down.mod.workspace.Item
+  ---@param b down.mod.workspace.Item
+  __eq = function(a, b) return
+    a.key == b.key and b.value == a.value
+  end,
+})
 
 ---@class down.mod.workspace.Config
 M.config = {
@@ -25,9 +86,10 @@ M.config = {
     cwd = vim.fn.getcwd(0),
   },
   ---- The active workspace
-  active = Path.cwd(),
+  active = vim.fn.getcwd(0),
   --- The filetype of new douments, markdown is supported only for now
   ft = 'markdown',
+
   open_last_workspace = false,
   --- The default index to use
   index = 'index',
@@ -44,34 +106,47 @@ M.setup = function()
   }
 end
 
+M.data = {
+  previous = 'default',
+
+  workspaces = {},
+
+}
+
 M.maps = {
   { 'n', ',di',  '<CMD>Down index<CR>',               'Down index' },
   { 'n', ',dw',  '<CMD>Down workspace<CR>',           'Down workspaces' },
   { 'n', ',dfw', '<CMD>Telescope down workspace<CR>', 'Telescope down workspaces' },
-  { 'n', ',d.',  '<CMD>Down workspace cwd<CR>',       'Down workspace in cwd' },
+  { 'n', ',d.',  '<CMD>Down workspace cwd<CR>',       'Down workspace in cw' },
 }
 
+---@return Iter
+M.iter = function()
+  return vim.iter(pairs(M.config.workspaces))
+end
+
 M.load = function()
-  for name, wsloc in pairs(M.config.workspaces) do
-    M.config.workspaces[name] = Path(wsloc):resolve():to_absolute()
-  end
+  M.iter():map(function(n, p)
+    M.config.workspaces[n] = M.path(p)
+  end)
+  M.workspace.set('workspaces', M.config.workspaces)
   vim.api.nvim_create_autocmd('BufEnter', {
     pattern = '*',
     callback = function()
       mod.await('cmd', function(cmd)
         cmd.add_commands_from_table(M.commands)
       end)
-    end
+    end,
   })
   M.sync()
-  if M.config.open_last_workspace and vim.fn.argc(-1) == 0 then
-    if M.config.open_last_workspace == 'default' then
+  if M.workspace.previous and vim.fn.argc(-1) == 0 then
+    if M.previous.previous == 'default' then
       if not M.config.default then
         log.warn 'Configuration error in `default.workspace`: the `open_last_workspace` option is set to "default", but no default workspace is provided in the `default_workspace` configuration variable. defaulting to opening the last known workspace.'
         M.set_last_workspace()
         return
       end
-      M.open_workspace(M.config.default)
+      M.open(M.config.default)
     else
       M.set_last_workspace()
     end
@@ -84,130 +159,129 @@ end
 M.indexfmt = function()
   return M.config.index .. M.config.ext
 end
----@type { [1]: string, [2]: PathlibPath }
-M.current_workspace = { 'default', Path.cwd() }
+---@type { [1]: string, [2]: string }
+M.active = { 'default', vim.fn.getcwd(0) }
+
 M.history = {}
-M.new_missing_file = function(path) end
-M.current = function()
-  return M.current_workspace
+
+M.current = function(n)
+  return M.active
 end
-M.files = function(ws)
-  local res = {}
-  local w = M.get_workspace(ws)
-  if not w then
-    return
-  end
-  for p in w:fs_iterdir(true, 20) do
-    if p:is_file(true) and path:suffix() == '.md' then
-      table.insert(res, path)
-    end
-  end
-  return res
-end
----Resolve `$<workspace>/path/to/file` and return the real path
----@param path string | PathlibPath # path
----@param raw_path boolean? # If true, returns resolved path, otherwise, returns resolved path
----and append ".down"
----@param host_file string | PathlibPath | nil file the link resides in, if the link is
----relative, this file is used instead of the current file
----@return PathlibPath?, boolean? # Resolved path. If path does not start with `$` or not absolute, adds
----relative from current file.
-M.expand_pathlib = function(path, raw_path, host_file)
-  local relative = false
-  if not host_file then
-    host_file = vim.fn.expand '%:p'
-  end
-  local filepath = Path(path)
-  local custom_wspath = filepath:match '^%$([^/\\]*)[/\\]'
-  if custom_wspath then
-    if #custom_wspath == 0 then
-      filepath = M.get_current_workspace()[2] / filepath:relative_to(Path '$')
-    else
-      local workspace = ws.get_workspace(custom_wspath)
-      if not workspace then
-        log.warn("Unable to expand path: workspace '%s' does not exist"):format(custom_wspath)
-        return
-      end
-      filepath = ws / filepath:relative_to(Path('$' .. custom_wspath))
-    end
-  elseif filepath:is_relative() then
-    relative = true
-    local this_file = Path(host_file):absolute()
-    filepath = this_file:parent_assert() / filepath
-  else
-    filepath = filepath:absolute()
-  end
-  if not raw_path then
-    if type(path) == 'string' and (path:sub(#path) == '/' or path:sub(#path) == '\\') then
-      log.error(({
-        'md file loc cannot point to a directory.',
-        ("Current link points to '%s'"):format(path),
-        'which ends with a `/`.',
-      }):concat(' '))
-      return
-    end
-    filepath = filepath:add_suffix '.md'
-  end
-  return filepath, relative
+
+---@return string[]
+M.files = function(ws, patt)
+  return vim.fn.globpath(M.get(ws), patt or '**/*', true, true)
 end
 
 ---Call attempt to edit a file, catches and suppresses the error caused by a swap file being
 ---present. Re-raises other errors via log.error
 ---@param path string
-M.edit_file = function(path)
+M.edit = function(path)
   local ok, err = pcall(vim.cmd.edit, path)
-  if not ok then
-    if err and not err:match 'Vim:E325' then
-      log.error(('Failed to edit file %s. Error:\n%s'):format(path, err))
-    end
+  if not ok and err and not string.match(err, 'Vim:E325') then
+    log.error(string.format('Failed to edit file %s. Error:\n%s', path, err))
   end
 end
+-- --- @class down.mod.workspace.Workspace.Opts: {
+-- ---   default?: boolean,
+-- ---   private?: boolean,
+-- ---   namespace?: string.buffer,
+-- --- }
+--
+-- ---@class down.mod.workspace.Workspace
+-- ---  @field public id string The name of the workspace
+-- ---  @field public path string The path to the workspace
+-- ---  @field public opts? down.mod.workspace.Workspace.Opts opts
+-- M.workspace = setmetatable({
+--   name = 'default',
+--   path = path or vim.fn.getcwd(0),
+--   opts = {
+--     namespace = 'down.mod.workspace.default:',
+--     default = true,
+--   },
+--   ns = function(n, p) return 'down.workspace.'..n..':'..p end,
+--   new = function(name, path, default) return {
+--     name = name,
+--     path = path or M.active[2],
+--     opts = {
+--       namespace = M.workspace.ns(name, path or M.active[2]),
+--       default = default or false
+--     }
+--   } end
+-- }, {
+--     ---@param a down.mod.workspace.Workspace
+--   __eq = function(a, b) return a.name ~= b.name end,
+--     ---@param a down.mod.workspace.Workspace
+--   __tostring = function(a) return a.opts.namespace end,
+--     ---@param a down.mod.workspace.Workspace
+--   __call = function(a) return a.path end,
+--     ---@param a down.mod.workspace.Workspace
+--     ---@param b down.mod.workspace.Workspace
+--   __concat = function(a, b) return vim.fs.joinpath(a.path, b.path) end,
+--     ---@param a down.mod.workspace.Workspace
+--   __index = function(a, k) return a[k] end,
+--     ---@param a down.mod.workspace.Workspace
+--   __mode = function(a) return a.name end,
+--     ---@param a down.mod.workspace.Workspace
+--   __newindex = function(a, k, v)
+--       a[k] = v
+--   end,
+--     ---@param a down.mod.workspace.Workspace
+--    __len = function(a)
+--       return table.len(vim.fn.globpath(a.path, '**/*.md', true, true))
+--     end,
+--   __metatable = 'down.workspace',
+--
+-- })
+-- ---@class down.mod.workspace.Metatable: metatable
+-- M.workspace.mt = {
+-- }
+--
+M.list = function(filt)
+  return vim.tbl_filter(filt or function(v)
+    return true
+  end, M.config.workspaces)
+end
 
----Resolve `$<workspace>/path/to/file` and return the real path
--- NOTE: Use `expand_pathlib` which returns a PathlibPath object instead.
----
----\@deprecate Use `expand_pathlib` which returns a PathlibPath object instead. TODO: deprecate this <2024-03-27>
----@param path string|PathlibPath # path
----@param raw_path boolean? # If true, returns resolved path, otherwise, returns resolved path and append ".down"
----@return string? # Resolved path. If path does not start with `$` or not absolute, adds relative from current file.
-M.expand_path = function(path, raw_path)
-  local res = M.expand_pathlib(path, raw_path)
-  return res and res:tostring() or nil
-end
-M.get_workspaces = function()
-  return M.config.workspaces
-end
----@return string[]
-M.get_wsnames = function()
-  return vim.tbl_keys(M.config.workspaces)
-end
 --- If present retrieve a workspace's path by its name, else returns nil
 ---@param name string #The name of the workspace
-M.get_workspace = function(name)
+M.get = function(name)
   return M.config.workspaces[name]
 end
+
+M.set = function(name, path)
+  M.config.workspaces[name] = util.path(path)
+end
 --- Returns a table in the format { "wsname", "path" }
-M.get_current_workspace = function()
-  return M.current_workspace
+M.get_active = function()
+  return M.active
+end
+M.init = function(n, p)
+  vim.iter(M.gets()):any(function(w)
+    return w[1] ~= n and w[2] ~= n
+  end)
 end
 --- Sets the workspace to the one specified (if it exists) and broadcasts the wschanged event
 ---@param ws_name string #The name of a valid namespace we want to switch to
+---@param create? boolean
 ---@return boolean #True if the workspace is set correctly, false otherwise
-M.set_workspace = function(ws_name)
-  local workspace = M.config.workspaces[ws_name]
-  local new_workspace = { ws_name, workspace }
-  if not workspace then
+M.set_workspace = function(ws_name, create)
+  local wsexists, wspath = pcall(M.get, ws_name)
+  if not wsexists then
+    if create and create == true then
+      M.init(wspath)
+    end
+  end
+  local workspace = { ws_name, vim.fn.resolve(M.config.workspaces[ws_name]) }
+  if not workspace[2] then
     log.warn('Unable to set workspace to' .. workspace .. '- that workspace does not exist')
     return false
   end
-  workspace:mkdir(Path.const.o755, true)
-  local current_ws = vim.deepcopy(M.current_workspace)
-  M.current_workspace = new_workspace
-  if ws_name ~= 'default' then
-    M.dep['data'].put('last_workspace', ws_name)
-  end
-  local e =
-      mod.new_event(M, 'workspace.events.wschanged', { old = current_ws, new = new_workspace })
+  vim.fn.mkdir(workspace[2], 'p')
+  local ws = vim.deepcopy(M.active)
+  M.active = workspace
+  M.dep['data'].put('workspace.previous', ws_name)
+  local e = mod.new_event(M, 'workspace.events.wschanged', { old = ws, new = workspace })
   mod.broadcast(e)
 
   return true
@@ -220,27 +294,26 @@ M.add_workspace = function(wsname, wspath)
   if M.config.workspaces[wsname] then
     return false
   end
-  wspath = Path(wspath):resolve():to_absolute()
+  wspath = M.path(wspath)
   M.config.workspaces[wsname] = wspath
+  M.dep.data.set('workspace.workspaces', M.config.workspaces)
   mod.broadcast(mod.new_event(M, 'workspace.events.wsadded', { wsname, wspath }))
   M.sync()
   return true
 end
 --- If the file we opened is within a workspace directory, returns the name of the workspace, else returns nil
 M.get_wsmatch = function()
-  -- Cache the current working directory
-  M.config.workspaces.default = Path.cwd()
-
-  local file = Path(vim.fn.expand '%:p')
-
-  -- Name of matching workspace. Falls back to "default"
+  M.config.workspaces.default = util.path(vim.fn.getcwd())
+  local file = util.path(vim.fn.expand '%:p')
   local ws_name = 'default'
-
-  -- data the depth of the longest match
-  local longest_match = 0
-
-  -- Find a matching workspace
-  for workspace, loc in pairs(M.config.workspaces) do
+  local longest_match, depth = 0, 0
+  -- vim.iter(pairs(M.gets())):each(function(n, w)
+  --   if n == 'default' and or > longest_match then
+  --     ws_name = workspace
+  --     longest_match = depth + 1
+  --   end
+  -- end)
+  for wwn, loc in M.iter() do
     if workspace ~= 'default' then
       if file:is_relative_to(loc) and loc:depth() > longest_match then
         ws_name = workspace
@@ -253,13 +326,8 @@ M.get_wsmatch = function()
 end
 --- Uses the `get_wsmatch()` function to determine the root of the workspace defaultd on the
 --- current working directory, then changes into that workspace
-M.set_closest_wsmatch = function()
-  local ws_match = M.get_wsmatch()
-  if ws_match then
-    M.set_workspace(ws_match)
-  else
-    M.set_workspace 'default'
-  end
+M.closest = function()
+  M.set_workspace(M.get_wsmatch() or 'default')
 end
 --- Updates completions for the :down command
 M.sync = function()
@@ -280,7 +348,7 @@ end
 M.select = function(prompt, fmt, fn)
   local format = fmt
       or function(item)
-        local current = M.get_current_workspace()
+        local current = M.get_active()
         if item == current then
           return '• ' .. item
         end
@@ -288,7 +356,7 @@ M.select = function(prompt, fmt, fn)
       end
   local func = fn
       or function(item, idx)
-        local current = M.get_current_workspace()
+        local current = M.get_active()
         if not item then
           return
         elseif item == current then
@@ -297,9 +365,9 @@ M.select = function(prompt, fmt, fn)
           utils.notify('Workspace set to ' .. item)
           M.set_workspace(item)
         end
-        M.open_workspace(item)
+        M.open(item)
       end
-  return vim.ui.select(vim.tbl_keys(M.get_workspaces()), {
+  return vim.ui.select(vim.tbl_keys(M.gets()), {
     prompt = prompt or 'Select workspace',
     format_items = format,
   }, func)
@@ -322,9 +390,9 @@ M.new_file = function(path, workspace, opts)
   opts = opts or { open = true, force = false }
   local fullpath
   if workspace ~= nil then
-    fullpath = M.get_workspace(workspace)
+    fullpath = M.get(workspace)
   else
-    fullpath = M.get_current_workspace()[2]
+    fullpath = M.get_active()[2]
   end
   if fullpath == nil then
     log.error 'Error in fetching workspace path'
@@ -337,9 +405,7 @@ M.new_file = function(path, workspace, opts)
     vim.loop.fs_close(fd)
   end
   local bufnr = M.get_file_bufnr(destination:tostring())
-  mod.broadcast(
-    mod.new_event(M, 'workspace.events.file_created', { buffer = bufnr, opts = opts })
-  )
+  mod.broadcast(mod.new_event(M, 'workspace.events.file_created', { buffer = bufnr, opts = opts }))
   if opts.open then
     vim.cmd('e ' .. destination:tostring() .. '| silent! w')
   end
@@ -349,7 +415,7 @@ end
 ---@param wsname string #The name of the workspace to use
 ---@param path string|PathlibPath #A path to open the file (e.g directory/filename.down)
 M.open_file = function(wsname, path)
-  local workspace = M.get_workspace(wsname)
+  local workspace = M.get(wsname)
   if workspace == nil then
     return
   end
@@ -363,7 +429,7 @@ M.set_last_workspace = function()
   end
   local last_workspace = M.dep['data'].get 'last_workspace'
   last_workspace = type(last_workspace) == 'string' and last_workspace or M.config.default or ''
-  local wspath = M.get_workspace(last_workspace)
+  local wspath = M.get(last_workspace)
   if not wspath then
     log.trace(
       "Unable to switch to workspace '" .. last_workspace .. "'. The workspace does not exist."
@@ -392,7 +458,7 @@ end
 ---@param wsname string
 ---@return PathlibPath[]|nil
 M.get_note_files = function(wsname)
-  local workspace = M.get_workspace(wsname)
+  local workspace = M.get(wsname)
   if not workspace then
     return
   end
@@ -411,7 +477,7 @@ end
 ---@return PathlibPath[]|nil
 M.get_dirs = function(wsname)
   local res = {}
-  local workspace = M.get_workspace(wsname)
+  local workspace = M.get(wsname)
   if not workspace then
     return
   end
@@ -424,10 +490,10 @@ M.get_dirs = function(wsname)
 end
 --- Returns a list of all files relative path from a `wsname`
 ---@param wsname string
----@return PathlibPath[]|nil
-M.get_files = function(wsname)
+---@return string[]
+M.files = function(wsname)
   local res = {}
-  local workspace = M.get_workspace(wsname)
+  local workspace = M.get(wsname)
   if not workspace then
     return
   end
@@ -438,26 +504,24 @@ M.get_files = function(wsname)
   end
   return res
 end
+
+M.names = function()
+  return vim.tbl_keys(M.config.workspaces)
+end
+
+M.paths = function()
+  return vim.tbl_values(M.config.workspaces)
+end
 --- Returns a list of all files relative path from a `wsname`
----@param wsname string
----@return PathlibPath[]|nil
-M.get_markdown_files = function(wsname)
-  local res = {}
-  local workspace = M.get_workspace(wsname)
-  if not workspace then
-    return
-  end
-  for p in workspace:fs_iterdir(true, 20) do
-    if p:is_file(true) and p:suffix() == '.md' then
-      table.insert(res, p)
-    end
-  end
-  return res
+---@param name string
+---@return string[]?
+M.markdown = function(name)
+  return vim.fn.globpath(M.path(name), '**/*.md', true, true)
 end
 --- Sets the current workspace and opens that workspace's index file
 ---@param workspace string #The name of the workspace to open
-M.open_workspace = function(workspace)
-  local ws_match = M.get_workspace(workspace)
+M.open = function(workspace)
+  local ws_match = M.get(workspace)
   if not ws_match then
     log.error('Unable to switch to workspace - "' .. workspace .. '" does not exist')
     return
@@ -468,14 +532,14 @@ M.open_workspace = function(workspace)
   end
 end
 --- Touches a file in workspace
----@param path string|PathlibPath
+---@param p string
 ---@param workspace string
 M.touch = function(p, workspace)
   vim.validate {
     path = { p, 'string', 'table' },
     workspace = { workspace, 'string' },
   }
-  local ws_match = M.get_workspace(workspace)
+  local ws_match = M.get(workspace)
   if not workspace then
     return false
   end
@@ -508,9 +572,9 @@ end
 
 M.get_dir = function(wsname)
   if not wsname then
-    return M.current_workspace[2]
+    return M.active[2]
   else
-    return M.get_workspace(wsname)
+    return M.get(wsname)
   end
 end
 
@@ -533,15 +597,15 @@ M.commands = {
     name = 'workspace.index',
     complete = { M.get_wsnames() },
     callback = function(e)
-      local current_ws = M.get_current_workspace()
+      local current_ws = M.get_active()
       local index_path = current_ws[2] / M.indexfmt()
       if vim.fn.filereadable(index_path:tostring '/') == 0 then
         if not index_path:touch(Path.const.o644, true) then
           return
         end
       end
-      M.edit_file(index_path:cmd_string())
-    end
+      M.edit(index_path:cmd_string())
+    end,
   },
   workspace = {
     max_args = 1,
@@ -549,9 +613,9 @@ M.commands = {
     complete = { M.get_wsnames() },
     callback = function(event)
       if event.body[1] then
-        M.open_workspace(event.body[1])
+        M.open(event.body[1])
         vim.schedule(function()
-          local new_workspace = M.get_workspace(event.body[1])
+          local new_workspace = M.get(event.body[1])
           if not new_workspace then
             M.select()
           end
@@ -560,7 +624,7 @@ M.commands = {
       else
         M.select()
       end
-    end
+    end,
   },
 }
 
@@ -586,7 +650,7 @@ M.handle = {
     end,
     wschanged = function(e)
       log.trace('wschanged', e)
-    end
+    end,
   },
 }
 

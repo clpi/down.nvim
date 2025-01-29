@@ -120,6 +120,50 @@
 ---   | down.mod.ui.calendar.month.Config
 ---   | down.mod.ui.calendar.week.Config
 ---
+---  @alias down.Mod.Id
+---  | "log"
+---  | "data"
+---  | "edit"
+---  | "cmd"
+---  | "tool"
+---  | "workspace"
+---  | "note"
+---  | "ui"
+---  | "keymap"
+---  | "lsp"
+---  | "tag"
+---  | "time"
+---  | "code"
+---  | "link"
+---  | "template"
+---  | "task"
+---  | "export"
+---  | "ui.calendar"
+---  | "ui.calendar.day"
+---  | "ui.calendar.month"
+---  | "ui.calendar.week"
+---  | "data.bookmark"
+---  | "data.store"
+---  | "data.history"
+---  | "task.agenda"
+---  | "parse"
+---  | "ui.win"
+---  | "ui.icon"
+---  | "edit.indent"
+---
+---
+---  The user configuration passed into down.setup
+---  @class (exact) down.mod.Config: {
+---    [down.Mod.Id]?: down.Mod.Config,
+---    dev?: boolean,
+---    test?: boolean|string[],
+---    bench?: boolean|string[],
+---    load?: boolean|string[],
+---    defaults?: boolean,
+---    debug?: boolean,
+---    hook?: fun(...: any)
+---  }
+---
 --- The base configuration
 --- @class (exact) down.config.BaseConfig: {
 ---   [string]?: any,

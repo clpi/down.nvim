@@ -2,6 +2,7 @@ local log = require 'down.util.log'
 
 ---@class down.Event
 local Event = {
+  autocmd = require("down.event.autocmd"),
   id = '',
   ref = '',
   split = {},

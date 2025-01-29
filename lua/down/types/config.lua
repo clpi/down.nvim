@@ -60,3 +60,9 @@
 --- @class (exact) down.config.init.Sync Sync init
 ---   @field public enabled boolean Enable
 ---
+--- @alias down.config.Toggle
+--- | "dev"
+--- | "debug"
+--- | "bench"
+--- | "test"
+--- | "defaults

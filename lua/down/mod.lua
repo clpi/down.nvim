@@ -13,9 +13,7 @@ local log = util.log
 ---       and eliminate Mod.handler(e)
 
 ---@class down.Mod
-local Mod = {
-
-
+local Mod = setmetatable({
   setup = function()
     return {
       loaded = true,
@@ -41,7 +39,27 @@ local Mod = {
   dep = {},
   import = {},
   tests = {},
-}
+}, {
+  __eq = function(m1, m2)
+    return m1.id == m2.id
+  end,
+  __tostring = function(self)
+    return self.id or ''
+  end,
+  __concat = function(self, b)
+    return self.id .. b.id
+  end,
+  ---@param id? string
+  ---@param self down.Mod.Mod
+  ---@return down.Mod
+  __call = function(self, id, config)
+    if id then
+      self.id = id or ''
+      self.namespace = vim.api.nvim_create_namespace('down.mod.' .. id)
+      self.load_mod(id, config or {})
+    end
+  end,
+})
 
 Mod.metatable = {
   ---@type metatable
@@ -75,14 +93,7 @@ Mod.metatable = {
     end,
   },
   ---@type metatable
-  mod = {
-    __index = function(self, k)
-      return self.dep[k]
-    end,
-    __eq = function(m1, m2)
-      return m1.id == m2.id
-    end,
-  },
+  mod = getmetatable(Mod),
 }
 
 Mod.mods = {}
@@ -96,7 +107,6 @@ Mod.default = {
     -- 'data.log',
     -- 'template',
   },
-  ---@type fun():down.mod.Setup
   setup = function()
     return {
       loaded = true,
@@ -106,10 +116,10 @@ Mod.default = {
     }
   end,
   ---@return down.Mod
-  mod = function(n)
+  mod = function(n, loaded, deps)
     ---@type down.Mod
     return setmetatable({
-      setup = Mod.setup,
+      setup = Mod.default.setup(loaded or true, deps or {}),
       commands = {},
       load = function()
         -- print 'default load n'
@@ -128,7 +138,7 @@ Mod.default = {
       dep = {},
       import = {},
       tests = {},
-    }, Mod.metatable)
+    }, getmetatable(Mod))
   end,
 }
 
@@ -153,7 +163,6 @@ end
 ---@return nil
 Mod.delete = function(mod)
   Mod.mods[mod] = nil
-  return nil
 end
 
 --- @param m down.Mod.Mod The actual mod to load.
@@ -361,8 +370,8 @@ end
 --- @return table<integer, down.Mod>
 Mod.modules = function(ms)
   local modmap = {}
-  for _, module in ipairs(ms or Mod.default.mods) do
-    modmap[module] = Mod.get(module)
+  for mname, module in pairs(ms or Mod.default.mods) do
+    modmap[mname] = Mod.load_mod(mname) or Mod.get(mname)
   end
   return modmap
 end

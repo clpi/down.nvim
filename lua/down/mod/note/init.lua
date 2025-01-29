@@ -3,6 +3,7 @@ local mod = require 'down.mod'
 local util = require 'down.util'
 local config = require 'down.config'
 local noteutil = require 'down.mod.note.util'
+local sep = util.sep
 local lib = util.lib
 local log = util.log
 local map = util.maps
@@ -25,8 +26,8 @@ M.year_index = function()
   local yr = os.date '%Y'
   local ws = M.config.workspace or M.dep['workspace'].get_current_workspace()[1]
   local ws_path = M.dep['workspace'].get_workspace(ws)
-  local ix = M.config.note_folder .. config.pathsep .. yr .. config.pathsep .. M.config.index
-  local path = ws_path .. config.pathsep .. ix
+  local ix = M.config.note_folder .. sep .. yr .. sep .. M.config.index
+  local path = ws_path .. sep .. ix
   local index_exists = M.dep['workspace'].file_exists(path)
   if not index_exists then
     M.dep['workspace'].new_file(ix, ws)
@@ -39,13 +40,13 @@ M.month_index = function()
   local ws = M.config.workspace or M.dep['workspace'].get_current_workspace()[1]
   local ws_path = M.dep['workspace'].get_workspace(ws)
   local ix = M.config.note_folder
-      .. config.pathsep
+      .. sep
       .. yr
-      .. config.pathsep
+      .. sep
       .. mo
-      .. config.pathsep
+      .. sep
       .. M.config.index
-  local path = ws_path .. config.pathsep .. ix
+  local path = ws_path .. sep .. ix
   local index_exists = M.dep['workspace'].file_exists(path)
   if index_exists then
     M.dep['workspace'].open_file(ws, ix)
@@ -58,8 +59,8 @@ M.select_month = function() end
 M.note_index = function()
   local ws = M.config.workspace or M.dep['workspace'].get_current_workspace()[1]
   local ws_path = M.dep['workspace'].get_workspace(ws)
-  local ix = M.config.note_folder .. config.pathsep .. M.config.index
-  local path = ws_path .. config.pathsep .. ix
+  local ix = M.config.note_folder .. sep .. M.config.index
+  local path = ws_path .. sep .. ix
   local index_exists = M.dep['workspace'].file_exists(path)
   if not index_exists then
     M.dep['workspace'].new_file(ix, ws)
@@ -94,24 +95,24 @@ M.open_year = function(time, custom_date)
   )
 
   local note_file_exists = M.dep['workspace'].file_exists(
-    workspace_path .. config.pathsep .. folder_name .. config.pathsep .. path
+    workspace_path .. sep .. folder_name .. sep .. path
   )
 
-  M.dep['workspace'].new_file(folder_name .. config.pathsep .. path, workspace)
+  M.dep['workspace'].new_file(folder_name .. sep .. path, workspace)
 
   if
       not note_file_exists
       and M.config.template.enable
       and M.dep['workspace'].file_exists(
-        workspace_path .. config.pathsep .. folder_name .. config.pathsep .. tmpl
+        workspace_path .. sep .. folder_name .. sep .. tmpl
       )
   then
     vim.cmd(
       '$read '
       .. workspace_path
-      .. config.pathsep
+      .. sep
       .. folder_name
-      .. config.pathsep
+      .. sep
       .. tmpl
       .. '| silent! w'
     )
@@ -147,24 +148,24 @@ M.open_month = function(time, custom_date)
   )
 
   local note_file_exists = M.dep['workspace'].file_exists(
-    workspace_path .. config.pathsep .. folder_name .. config.pathsep .. path
+    workspace_path .. sep .. folder_name .. sep .. path
   )
 
-  M.dep['workspace'].new_file(folder_name .. config.pathsep .. path, workspace)
+  M.dep['workspace'].new_file(folder_name .. sep .. path, workspace)
 
   if
       not note_file_exists
       and M.config.template.enable
       and M.dep['workspace'].file_exists(
-        workspace_path .. config.pathsep .. folder_name .. config.pathsep .. tmpl
+        workspace_path .. sep .. folder_name .. sep .. tmpl
       )
   then
     vim.cmd(
       '$read '
       .. workspace_path
-      .. config.pathsep
+      .. sep
       .. folder_name
-      .. config.pathsep
+      .. sep
       .. tmpl
       .. '| silent! w'
     )
@@ -210,9 +211,9 @@ M.open_note = function(time, custom_date)
   )
 
   local note_file_exists =
-      M.dep['workspace'].file_exists(workspace_path .. '/' .. folder_name .. config.pathsep .. path)
+      M.dep['workspace'].file_exists(workspace_path .. '/' .. folder_name .. sep .. path)
 
-  M.dep['workspace'].new_file(folder_name .. config.pathsep .. path, workspace)
+  M.dep['workspace'].new_file(folder_name .. sep .. path, workspace)
 
   if
       not note_file_exists
@@ -265,7 +266,7 @@ M.create_month_template = function()
   local folder_name = M.config.note_folder
   local tmpl = M.config.template.month
   M.dep['workspace'].new_file(
-    folder_name .. config.pathsep .. tmpl,
+    folder_name .. sep .. tmpl,
     workspace or M.dep['workspace'].get_current_workspace()[1]
   )
 end
@@ -275,7 +276,7 @@ M.create_year_template = function()
   local folder_name = M.config.note_folder
   local tmpl = M.config.template.year
   M.dep['workspace'].new_file(
-    folder_name .. config.pathsep .. tmpl,
+    folder_name .. sep .. tmpl,
     workspace or M.dep['workspace'].get_current_workspace()[1]
   )
 end
@@ -285,7 +286,7 @@ M.create_day_template = function()
   local tmpl = M.config.template.day
 
   M.dep['workspace'].new_file(
-    folder_name .. config.pathsep .. tmpl,
+    folder_name .. sep .. tmpl,
     workspace or M.dep['workspace'].get_current_workspace()[1]
   )
 end
@@ -297,8 +298,8 @@ M.open_toc = function()
   local folder_name = M.config.note_folder
 
   -- If the toc exists, open it, if not, create it
-  if M.dep['workspace'].file_exists(folder_name .. config.pathsep .. index) then
-    M.dep['workspace'].open_file(workspace, folder_name .. config.pathsep .. index)
+  if M.dep['workspace'].file_exists(folder_name .. sep .. index) then
+    M.dep['workspace'].open_file(workspace, folder_name .. sep .. index)
   else
     M.create_toc()
   end
@@ -320,7 +321,7 @@ M.create_toc = function()
   local get_fs_handle = function(path)
     path = path or ''
     local handle =
-        vim.loop.fs_scandir(workspace_path .. config.pathsep .. folder_name .. config.pathsep .. path)
+        vim.loop.fs_scandir(workspace_path .. sep .. folder_name .. sep .. path)
 
     if type(handle) ~= 'userdata' then
       error(lib.lazy_string_concat("Failed to scan directory '", workspace, path, "': ", handle))
@@ -332,13 +333,13 @@ M.create_toc = function()
   -- Gets the title from the metadata of a file, must be called in a vim.schedule
   local get_title = function(file)
     local buffer =
-        vim.fn.bufadd(workspace_path .. config.pathsep .. folder_name .. config.pathsep .. file)
+        vim.fn.bufadd(workspace_path .. sep .. folder_name .. sep .. file)
     local meta = M.dep['workspace'].get_document_metadata(buffer)
     return meta.title
   end
 
   vim.loop.fs_scandir(
-    workspace_path .. config.pathsep .. folder_name .. config.pathsep,
+    workspace_path .. sep .. folder_name .. sep,
     function(err, handle)
       assert(
         not err,
@@ -360,7 +361,7 @@ M.create_toc = function()
             end
 
             if mtype == 'directory' then
-              local months_handle = get_fs_handle(name .. config.pathsep .. mname)
+              local months_handle = get_fs_handle(name .. sep .. mname)
               while true do
                 local dname, dtype = vim.loop.fs_scandir_next(months_handle)
                 if not dname then
@@ -375,7 +376,7 @@ M.create_toc = function()
                   vim.schedule(function()
                     -- Get the title from the metadata, else, it just base to the name of the file
                     local title = get_title(
-                      name .. config.pathsep .. mname .. config.pathsep .. dname
+                      name .. sep .. mname .. sep .. dname
                     ) or file[1]
 
                     -- Insert a new entry
@@ -385,13 +386,13 @@ M.create_toc = function()
                       tonumber(file[1]),
                       '{:$'
                       .. workspace_name_for_link
-                      .. config.pathsep
+                      .. sep
                       .. M.config.note_folder
-                      .. config.pathsep
+                      .. sep
                       .. name
-                      .. config.pathsep
+                      .. sep
                       .. mname
-                      .. config.pathsep
+                      .. sep
                       .. file[1]
                       .. ':}',
                       title,
@@ -428,9 +429,9 @@ M.create_toc = function()
               parts[3],
               '{:$'
               .. workspace_name_for_link
-              .. config.pathsep
+              .. sep
               .. M.config.note_folder
-              .. config.pathsep
+              .. sep
               .. file[1]
               .. ':}',
               title,
@@ -464,7 +465,7 @@ M.create_toc = function()
             end
 
         M.dep['workspace'].new_file(
-          folder_name .. config.pathsep .. index,
+          folder_name .. sep .. index,
           workspace or M.dep['workspace'].get_current_workspace()[1]
         )
 
@@ -516,7 +517,7 @@ M.config = {
 
 M.config.strategies = {
   flat = '%Y-%m-%d.md',
-  nested = '%Y' .. config.pathsep .. '%m' .. config.pathsep .. '%d.md',
+  nested = '%Y' .. sep .. '%m' .. sep .. '%d.md',
 }
 
 M.open_month_calendar = function(event)

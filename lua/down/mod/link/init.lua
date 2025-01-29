@@ -71,17 +71,17 @@ Link.dir = function(dir)
 end
 
 Link.cwd = function(path)
-  return vim.fn.expand '%:p:h' .. config.pathsep .. (path or '')
+  return vim.fn.expand '%:p:h' .. util.sep .. (path or '')
 end
 
 Link.mk.dir = function(path)
-  return vim.fn.mkdir(vim.fn.expand '%:p:h' .. config.pathsep .. path, 'p')
+  return vim.fn.mkdir(vim.fn.expand '%:p:h' .. util.sep .. path, 'p')
 end
 
 Link.mk.file = function(path)
   if path:sub(-3) == '.md' then
     return Link.cwd(path)
-  elseif path:sub(-1) == config.pathsep then
+  elseif path:sub(-1) == util.sep then
     Link.mk.dir(path)
     io.write(path .. 'index' .. '.md', vim.fn.expand '%:p' .. 'index.md')
   else
@@ -90,19 +90,19 @@ Link.mk.file = function(path)
 end
 
 ---@param ln string
----@return string, "local" | "web" | "heading"
+---@return string, "file" | "web" | "heading"
 Link.resolve = function(ln)
   local ch = ln:sub(1, 1)
-  if ch == config.pathsep then
+  if ch == util.sep then
     return ln, 'file'
   elseif ch == '#' then
     return ln:sub(2), 'heading'
   elseif ch == '~' then
-    return os.getenv 'HOME' .. config.pathsep .. ln:sub(2), 'file'
+    return os.getenv 'HOME' .. util.sep .. ln:sub(2), 'file'
   elseif ln:sub(1, 8) == 'https://' or ln:sub(1, 7) == 'http://' then
     return ln, 'web'
   else
-    return vim.fn.expand '%:p:h' .. config.pathsep .. ln, 'file'
+    return vim.fn.expand '%:p:h' .. util.sep .. ln, 'file'
   end
 end
 
@@ -162,10 +162,38 @@ next = function()
   end
 end,
 
+  ---@return { id: string, path: string, opts: { default: boolean } }
+Link.current = function()
+  local uri = vim.uri_from_bufnr(vim.api.nvim_get_current_buf())
+  local path = vim.fn.resolve(vim.fn.fnameescape(vim.uri_to_fname(uri)))
+  vim.iter(Link.dep['workspace'].config.workspaces):any(function(w)
+    if Link.dep['workspace'].is_subpath(path, w[1]) then
+        return true
+      end
+      return false
+    end)
+
+
+        ws = w
+      end
+    end)
+    local ws = Link.dep.workspace.is_subpath(path, )
+    return {
+      uri = tostring(uri),
+      path = 
+      workspace = Link.dep['workspace'].is_subpath()
+    }
+  end
+
 prev = function()
   local node, _ = Link.cursor()
   local prev = Link.prev(node)
   if prev then
+    vim.notify('Previous link: ' .. uri, vim.log.levels.INFO, { })
+    vim.fn.histadd('uri', { uri = uri, path = })
+    vim.fn.strftime()
+    vim.fn.string()
+
     tsu.goto_node(prev)
   end
 end
@@ -203,10 +231,12 @@ Link.format_link = function(ln)
   return ln
 end
 
-Link.query = function(n, lang)
+---@param node TSNode
+Link.query = function(node, lang)
+  
   lang = lang or vim.bo.filetype
   local lt = ts.get_parser(0, lang):parse()[1]:root()
-  local pq = tsq.parse(lang, n)
+  local pq = tsq.parse(lang, node)
   return pq:iter_matches(lt, 0)
 end
 
@@ -281,7 +311,7 @@ Link.config = {}
 Link.follow.file = function(ln)
   local mod_ln, path_ln = nil, vim.split(ln, ':')
   local path, line = path_ln[1], path_ln[2]
-  if path:sub(-1) == config.pathsep then
+  if path:sub(-1) == util.sep then
     local ix = path .. 'index' .. '.md'
     path = path:sub(1, -2)
     if vim.fn.glob(path) == '' then
@@ -312,18 +342,7 @@ Link.follow.heading = function(ln)
   ln = ln:gsub('-', '[- ]*')
   vim.fn.search('\\c^#\\+ *' .. ln, 'ew')
 end
-Link.follow.web = function(ln)
-  ---TODO: vim.fn.open
-  if config.os == 'linux' then
-    vim.fn.system('xdg-open ' .. vim.fn.shellescape(ln))
-  elseif config.os == 'mac' then
-    vim.fn.system('open ' .. vim.fn.shellesscape(ln))
-  elseif config.os == 'windows' then
-    vim.fn.system('cmd.exe /c start "" ' .. vim.fn.shellescape(ln))
-  else
-    vim.fn.system('xdg-open ' .. vim.fn.shellescape(ln))
-  end
-end
+
 Link.follow.link = function()
   local ld = Link.destination()
   if ld then
@@ -333,7 +352,7 @@ Link.follow.link = function()
     elseif lty == 'heading' then
       Link.follow.heading(res)
     elseif lty == 'web' then
-      Link.follow.web(res)
+      vim.ui.open(res)
     end
   end
 end

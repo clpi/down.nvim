@@ -1,54 +1,76 @@
--- local mod = require('down.util.mod')
 local log = require 'down.util.log'
-
----@return down.Os
-local function get_os()
-  local ffi = require('ffi')
-  if ffi.os == 'Windows' then
-    return 'windows'
-  elseif ffi.os == 'OSX' then
-    return 'mac'
-  elseif ffi.os == 'Linux' then
-    return 'linux'
-  end
-end
-
----@todo TODO: Setup configuration and parse user config
----@todo       in this config module only
+local downmod = require 'down.mod'
+local modconf = require 'down.util.mod'
 
 --- The down.nvim configuration
---- @class down.Config
+--- @class down.config.Config
 local Config = {
   --- Start in dev mode
   dev = false,
-  ---@type down.log.Config
-  log = require 'down.util.log'.config,
-  workspace = {
-    default = vim.fn.getcwd(0),
-  },
+  defaults = true,
+  debug = false,
+  bench = false,
+  test = false,
   --- The user config to load in
-  ---@type down.config.User
-  user = {},
-  ---@type table<string, down.Mod.Config>
-  mod = {},
+  ---@type down.mod.Config
+  user = modconf.defaults,
   version = '0.1.2-alpha',
-  os = get_os(),
-  hook = nil,
   started = false,
-  pathsep = get_os() == 'windows' and '\\' or '/',
-  load = {
-    maps = function()
-      -- vim.keymap.set('n', 'dd', '<CMD>Down<CR>')
-      --  vim.keymap.set('n', ',D', '<CMD>Down<CR>')
-      vim.keymap.set('n', '~', '<CMD>Down<CR>')
-      vim.keymap.set('n', '|', '<CMD>Down<CR>')
-    end,
-    opts = function()
-      -- vim.o.conceallevel = 2
-      -- vim.o.concealcursor = [[nc]]
-    end,
-  },
 }
+
+---@type down.config.Toggle[]
+Config.toggles = {
+  'dev',
+  'debug',
+  'test',
+  'defaults',
+  'bench',
+}
+
+function Config:check_hook(...)
+  if self.user.hook and type(self.user.hook) == 'function' then
+    return self.user.hook(...)
+  end
+end
+
+---@param k? down.config.Toggle
+---@param v? boolean
+function Config:check_toggle(k, v)
+  if
+    k
+    and type(k) == 'string'
+    and v
+    and type(v) == 'boolean'
+    and vim.tbl_contains(self.toggles, k)
+  then
+    self[k] = v
+  end
+end
+
+---@param user down.mod.Config user config
+---@param ... any
+---@return down.config.Config
+function Config:load(user, ...)
+  if self.started and self.started == false then
+    return self
+  elseif not type(user) == 'table' then
+    return self
+  elseif user.defaults and user.defaults == false then
+    self.user = user
+  else
+    self.user = vim.tbl_extend('force', user, modconf.defaults)
+  end
+  vim.iter(pairs(self.user)):map(function(k, v)
+    self:check_toggle(k, v)
+  end)
+  self:check_hook(...)
+  self.started = true
+  return self
+end
+
+function Config:post_load()
+  return self:check_tests(require('down.mod').mods or self.user) ---@type boolean?
+end
 
 --- @param ... string
 --- @return string
@@ -67,10 +89,10 @@ function Config.homedir(...)
   return d
 end
 
---- @param file string | nil
+--- @param fp? string
 --- @return string
-function Config.file(fp)
-  local f = vim.fs.joinpath(fp or Config.vimdir('down.json'))
+function Config:file(fp)
+  local f = vim.fs.joinpath(fp or self.vimdir('down.json'))
 end
 
 --- @param f string | nil
@@ -85,44 +107,69 @@ end
 function Config:save(f)
   local json = vim.json.encode(self.user)
   json = vim.fn.str2list(json)
-  return vim.fn.writefile(json, self.file(f), 'S')
+  return vim.fn.writefile(json, self:file(f), 'S')
 end
 
---- @param self down.Config
+--- @param self down.config.Config
 ---@param user down.config.User
----@param default string[]
----@return boolean
-function Config.setup(self, user, default, ...)
-  if self.started or not user or vim.tbl_isempty(user) then
+---@param ... any
+---@return down.config.Config
+function Config:setup(user, ...)
+  log.new(log.config, false)
+  log.info('Config.setup: Log started')
+  return self:load(user, ...)
+end
+
+---@param mods? { [down.Mod.Id]?: down.Mod.Mod }
+---@return boolean?
+function Config:check_tests(mods)
+  if not self.test then
+    return
+  elseif self.test == false then
     return false
+  elseif self.test and self.test == true then
+    return self:tests(mods or vim.iter(self.user or mods):filter(function(m)
+      return self.check_mod_test(m)
+    end))
   end
-  log.new(self.log, false)
-  log.info("Config.setup: Log started")
-  user = vim.tbl_deep_extend('force', user, default)
-  self.user = vim.tbl_deep_extend('force', self.user, user)
-  if self.user.hook then
-    self.user.hook(...)
-  end
-  -- self:save()
-  return true
 end
 
-function Config:post_load()
-  Config.load.maps()
-  Config.load.opts()
-  Config.started = true
-  return Config.started
+function Config.check_mod_test(mod)
+  return mod
+    and mod.id
+    and modconf.check_id(mod.id)
+    and type(mod) == 'table'
+    and mod.tests
+    and type(mod.tests) == 'table'
+    and not vim.tbl_isempty(mod.tests)
 end
 
-function Config:test()
-  vim.print('Testing config', self)
+---@param mods? down.Mod.Mod[]
+---@return boolean
+function Config:tests(mods)
+  vim.print('Testing config', vim.inspect(self))
+  return vim.iter(mods or self.user):filter(self.check_mod_test):all(function(m)
+    return self.test(m)
+  end)
 end
 
-return setmetatable(Config, {
-  __index = function(mode, key)
-    return Config.mod[key]
-  end,
-  __newindex = function(cfg, key, val)
-    Config.mod[key] = val
-  end,
-})
+---@param mod down.Mod.Mod
+---@return boolean
+function Config.test(mod)
+  vim.print('Testing ' .. tostring(vim.inspect(mod.id)))
+  return vim
+    .iter(pairs(mod.tests))
+    :filter(function(tn, t)
+      return tn and type(t) == 'function'
+    end)
+    :all(function(tn, tt)
+      if not type(tt) == 'function' then
+        return false
+      end
+      local res = tt(mod) or false ---@type boolean
+      vim.print('Testing mod ' .. mod.id .. ' test: ' .. tn .. ': ' .. tostring(res))
+      return res
+    end)
+end
+
+return Config
