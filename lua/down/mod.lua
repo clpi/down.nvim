@@ -1,5 +1,6 @@
-local Event = require 'down.event'
-local util = require 'down.util'
+local Event = require("down.event")
+local modutil = require("down.util.mod")
+local util = require("down.util")
 local log = util.log
 
 --- @!TODO : Change to body access where appropriate and now available to avoid complex config for end user
@@ -32,8 +33,8 @@ local Mod = setmetatable({
   maps = {},
   commands = {},
   handle = {},
-  id = '',
-  namespace = vim.api.nvim_create_namespace('down.mod'),
+  id = "",
+  namespace = vim.api.nvim_create_namespace("down.mod"),
   config = {},
   events = {},
   dep = {},
@@ -44,7 +45,7 @@ local Mod = setmetatable({
     return m1.id == m2.id
   end,
   __tostring = function(self)
-    return self.id or ''
+    return self.id or ""
   end,
   __concat = function(self, b)
     return self.id .. b.id
@@ -54,24 +55,28 @@ local Mod = setmetatable({
   ---@return down.Mod
   __call = function(self, id, config)
     if id then
-      self.id = id or ''
-      self.namespace = vim.api.nvim_create_namespace('down.mod.' .. id)
+      self.id = id or ""
+      self.namespace = vim.api.nvim_create_namespace("down.mod." .. id)
       self.load_mod(id, config or {})
     end
   end,
 })
 
+Mod.check_id = function(id)
+  return modutil.check_id(id)
+end
+
 Mod.metatable = {
   ---@type metatable
   handle = {
     __index = function(self, k)
-      if type(k) == 'table' then
+      if type(k) == "table" then
         if k.split then
           return self[k.split[1]][k.split[2]]
         end
         return self[k[1]][k[2]]
-      elseif type(k) == 'string' then
-        local ks = string.split(k, '%.')
+      elseif type(k) == "string" then
+        local ks = string.split(k, "%.")
         if #ks == 1 then
           return self[ks[1]]
         end
@@ -84,7 +89,7 @@ Mod.metatable = {
     end,
     __call = function(self, e, ...)
       if e then
-        if self[e] and type(self[e]) == 'function' then
+        if self[e] and type(self[e]) == "function" then
           return self[e](e)
         end
         return self[e](e)
@@ -100,12 +105,9 @@ Mod.mods = {}
 
 Mod.default = {
   mods = {
-    'tool.telescope',
-    -- 'lsp',
-    'note',
-    'workspace',
-    -- 'data.log',
-    -- 'template',
+    "tool.telescope",
+    "note",
+    "workspace",
   },
   setup = function()
     return {
@@ -116,10 +118,10 @@ Mod.default = {
     }
   end,
   ---@return down.Mod
-  mod = function(n, loaded, deps)
+  mod = function(n)
     ---@type down.Mod
     return setmetatable({
-      setup = Mod.default.setup(loaded or true, deps or {}),
+      setup = Mod.default.setup(),
       commands = {},
       load = function()
         -- print 'default load n'
@@ -132,7 +134,7 @@ Mod.default = {
       -- handle = setmetatable({}, Mod..metatable.handle),
       handle = {},
       id = n,
-      namespace = vim.api.nvim_create_namespace('down.mod.' .. n),
+      namespace = vim.api.nvim_create_namespace("down.mod." .. n),
       config = {},
       events = {},
       dep = {},
@@ -148,9 +150,13 @@ Mod.new = function(nm, im)
   local n = Mod.default.mod(nm)
   if im then
     for _, imp in ipairs(im) do
-      local fp = table.concat({ nm, imp }, '.')
+      local fp = table.concat({ nm, imp }, ".")
       if not Mod.load_mod(fp) then
-        log.error("Unable to load import '" .. fp .. "'! An error  (see traceback below):")
+        log.error(
+          "Unable to load import '"
+            .. fp
+            .. "'! An error  (see traceback below):"
+        )
         assert(false)
       end
       n.import[fp] = Mod.mods[fp]
@@ -171,10 +177,11 @@ Mod.load_mod_from_table = function(m, cfg)
   if Mod.mods[m.id] ~= nil then
     return Mod.mods[m.id]
   end
+  ---@type down.mod.Setup
   local mod_load = m.setup and m.setup() or Mod.default.setup()
   ---@type down.Mod
   local mod_to_replace
-  if mod_load.replaces and mod_load.replaces ~= '' then
+  if mod_load.replaces and mod_load.replaces ~= "" then
     mod_to_replace = vim.deepcopy(Mod.mods[mod_load.replaces])
   end
   Mod.mods[m.id] = m
@@ -194,7 +201,7 @@ Mod.load_mod_from_table = function(m, cfg)
       return Mod.delete(m.id)
     end
     if mod_load.merge then
-      m = vim.tbl_deep_extend('force', m, mod_to_replace)
+      m = vim.tbl_deep_extend("force", m, mod_to_replace)
     end
     m.replaced = true
   end
@@ -205,12 +212,12 @@ end
 --- @param n string
 --- @return down.config.Mod?
 function Mod.check_mod(n)
-  local modl = require('down.mod.' .. n)
+  local modl = require("down.mod." .. n)
   if not modl then
-    log.error('Mod.load_mod: could not load mod ' .. n)
+    log.error("Mod.load_mod: could not load mod " .. n)
     return nil
   elseif modl == true then
-    log.error('did not return valid mod: ' .. n)
+    log.error("did not return valid mod: " .. n)
     return nil
   end
   return modl
@@ -241,9 +248,9 @@ end
 --- @param parent_mod string|down.Mod If a string, then the parent is searched for in the loaded mod. If a table, then the mod is treated as a valid mod as returned by mod.new()
 function Mod.load_mod_as_dependency_from_table(md, parent_mod)
   if Mod.load_mod_from_table(md) then
-    if type(parent_mod) == 'string' then
+    if type(parent_mod) == "string" then
       Mod.mods[parent_mod].dep[md.id] = md
-    elseif type(parent_mod) == 'table' then
+    elseif type(parent_mod) == "table" then
       parent_mod.dep[md.id] = md
     end
   end
@@ -264,22 +271,25 @@ end
 --- @return table?
 function Mod.mod_config(modn)
   if not Mod.is_loaded(modn) then
-    log.trace('Attempt to get mod config with name' .. modn .. 'failed - mod is not loaded.')
+    log.trace(
+      "Attempt to get mod config with name"
+        .. modn
+        .. "failed - mod is not loaded."
+    )
     return
   end
   return Mod.mods[modn].config
 end
 
 --- Retrieves the public API exposed by the mod.
---- @generic T
---- @param modn `T` The name of the mod to retrieve.
---- @return T?
+--- @return down.Mod.Mod?
 function Mod.get_mod(modn)
-  if not Mod.is_loaded(modn) then
-    log.trace('Attempt to get mod with name' .. modn .. 'failed - mod is not loaded.')
-    return
+  if Mod.is_loaded(modn) then
+    return Mod.mods[modn]
   end
-  return Mod.mods[modn]
+  log.trace(
+    "Attempt to get mod with name" .. modn .. "failed - mod is not loaded."
+  )
 end
 
 --- Returns true if mod with name modn is loaded, false otherwise
@@ -299,7 +309,7 @@ function Mod.await(modn, cb)
   if Mod.is_loaded(modn) then
     cb(assert(Mod.get_mod(modn)))
   else
-    Event.callback('mod_loaded', function(_, m)
+    Event.callback("mod_loaded", function(_, m)
       cb(m)
     end, function(e)
       return e.body.id == modn
@@ -310,11 +320,11 @@ end
 ---@field k table|function
 ---@field kt? function
 function Mod.load_kind(mk, kt)
-  if type(mk) == 'function' then
+  if type(mk) == "function" then
     mk()
-  elseif type(mk) == 'nil' then
+  elseif type(mk) == "nil" then
     return
-  elseif type(mk) == 'table' then
+  elseif type(mk) == "table" then
     for k, v in pairs(mk) do
       kt(k, v)
     end
@@ -336,14 +346,14 @@ function Mod.load_maps(m)
       nowait = true,
       silent = true,
     }
-    if type(v[4]) == 'string' then
+    if type(v[4]) == "string" then
       opts.desc = v[4]
-    elseif type(v[4]) == 'table' then
+    elseif type(v[4]) == "table" then
       opts = v[4]
-    elseif type(v[4]) == 'nil' then
-      opts.desc = v[3] or ''
+    elseif type(v[4]) == "nil" then
+      opts.desc = v[3] or ""
     end
-    vim.keymap.set(v[1] or 'n', v[2], v[3], opts)
+    vim.keymap.set(v[1] or "n", v[2], v[3], opts)
   end)
 end
 
@@ -358,11 +368,11 @@ function Mod.mod_load(m)
 end
 
 Mod.get = function(m)
-  local ok, pc = pcall(require, 'down.mod.' .. m)
+  local ok, pc = pcall(require, "down.mod." .. m)
   if ok then
     return pc
   else
-    log.error('Mod.get: could not load mod ' .. 'down.mod.' .. m)
+    log.error("Mod.get: could not load mod " .. "down.mod." .. m)
     return nil
   end
 end
@@ -378,33 +388,37 @@ end
 
 ---@param m down.Mod
 Mod.test = function(m)
-  log.info('Mod.test: Performing tests for ', m.id, ': ')
+  log.info("Mod.test: Performing tests for ", m.id, ": ")
   if m.tests then
     for tn, test in m.tests do
-      log.info('Mod.test: Running test ', tn, ' for ', m.id, ': ', test(m))
+      log.info("Mod.test: Running test ", tn, " for ", m.id, ": ", test(m))
     end
   end
 end
 
----@param cmds down.Commands
+---@param cmds down.Command[]
 ---@return boolean
 Mod.handle_cmd = function(self, e, cmd, cmds, ...)
-  log.trace('Mod.handle_cmd: Handling cmd ', cmd, ' for mod ', self.id)
-  if not cmds or type(cmds) ~= 'table' or not cmds[cmd] then
+  log.trace("Mod.handle_cmd: Handling cmd ", cmd, " for mod ", self.id)
+  if not cmds or type(cmds) ~= "table" or not cmds[cmd] then
     return false
   end
-  if cmds.enabled ~= nil and cmds.enabled == false then return false end
+  if cmds.enabled ~= nil and cmds.enabled == false then
+    return false
+  end
   local cc = cmds[cmd]
-  if cc.enabled ~= nil and cc.enabled == false then return false end
+  if cc.enabled ~= nil and cc.enabled == false then
+    return false
+  end
   if cc.name and cc.name == cmd and cc.callback then
     if not self.handle then
       self.handle = {}
     end
-    if not self.handle['cmd'] then
-      self.handle['cmd'] = {}
+    if not self.handle["cmd"] then
+      self.handle["cmd"] = {}
     end
-    if not self.handle['cmd'][cmd] then
-      self.handle['cmd'][cmd] = cc.callback
+    if not self.handle["cmd"][cmd] then
+      self.handle["cmd"][cmd] = cc.callback
     end
     cc.callback(e)
     return true
@@ -419,11 +433,15 @@ end
 --- @param ... any
 --- @return boolean
 Mod.handle_event = function(self, e, ...)
-  log.trace('Mod.handle_event: Handling event ', e.id, ' for mod ', self.id)
-  if self.handle and self.handle[e.split[1]] and self.handle[e.split[1]][e.split[2]] then
+  log.trace("Mod.handle_event: Handling event ", e.id, " for mod ", self.id)
+  if
+    self.handle
+    and self.handle[e.split[1]]
+    and self.handle[e.split[1]][e.split[2]]
+  then
     self.handle[e.split[1]][e.split[2]](e)
     return true
-  elseif e.split[1] == 'cmd' then
+  elseif e.split[1] == "cmd" then
     return Mod.handle_cmd(self, e, e.split[2], self.commands, ...)
   end
   return false
@@ -447,10 +465,10 @@ end
 ---@param e down.Event
 function Mod.broadcast(e)
   Event.handle(e)
-  log.trace('Mod.broadcast: Broadcasting event', e.id)
+  log.trace("Mod.broadcast: Broadcasting event", e.id)
   for mn, m in pairs(Mod.mods) do
     if Mod.handle_event(m, e) then
-      log.trace('Mod.broadcast: Broadcast success: ', e.id, ' to mod ', mn)
+      log.trace("Mod.broadcast: Broadcast success: ", e.id, " to mod ", mn)
     end
   end
 end
@@ -462,10 +480,12 @@ end
 function Mod.get_event(self, id)
   local split = Event.split_id(id)
   if not split then
-    log.warn('Unable to get event template for event' .. tid .. 'and mod' .. self.id)
+    log.warn(
+      "Unable to get event template for event" .. tid .. "and mod" .. self.id
+    )
     return
   end
-  log.trace('Returning' .. split[2] .. 'for mod' .. split[1])
+  log.trace("Returning" .. split[2] .. "for mod" .. split[1])
   return self.events[split[2]]
 end
 

@@ -36,15 +36,16 @@
 --- @class down.Mod
 ---   @field public config? down.mod.Config The config for the mod.
 ---   @field public import? table<string, down.Mod> Imported submod of the given mod. Contrary to `dep`, which only exposes the public API of a mod, imported mod can be accessed in their entirety.
----   @field public commands?  down.Commands that adds all the commands for the mod.
+---   @field public commands?  down.Command[] that adds all the commands for the mod.
 ---   @field public maps? down.Maps
 ---   @field public opts? down.Opts Function that adds all the options for the mod.
 ---   @field public load? fun() Function that is invoked once the mod is considered "stable", i.e. after all dependencies are loaded. Perform your main loading routine here.
 ---   @field public bench? fun() Function that is invoked when the mod is being benchmarked.
 ---   @field public id string The name of the mod.
 ---   @field public namespace string The name of the mod.
+---   @field public data down.Data
 ---   @field public post_load? fun() Function that is invoked after all mod are loaded. Useful if you want the down environment to be fully set up before performing some task.
----   @field public dep? table<string, down.Mod.Data> Contains the public tables of all mod that were dep via the `dependencies` array provided in the `setup()` function of this mod.
+---   @field public dep? table<string, down.Mod.Mod> Contains the public tables of all mod that were dep via the `dependencies` array provided in the `setup()` function of this mod.
 ---   @field public setup? fun(): down.mod.Setup Function that is invoked before any other loading occurs. Should perform preliminary startup tasks.
 ---   @field public replaced? boolean If `true`, this means the mod is a replacement for a base mod. This flag is set automatically whenever `setup().replaces` is set to a value.
 ---   @field public handle? down.Handlers callback that is invoked any time an event the mod has subscribed to has fired.
@@ -52,44 +53,42 @@
 ---   @field public events? down.mod.Events
 ---   @field public [any]? any
 ---
---- @class (exact) down.mod.Setup: {
----   [any]?: any,
----   loaded: boolean,
----   dependencies?: string[],
----   replaces?: string,
----   merge?: boolean,
---- }
+--- @class (exact) down.mod.Setup
+--- @field loaded? boolean
+--- @field dependencies? down.Mod.Id[]
+--- @field replaces? string
+--- @field merge? boolean
 ---
 --- @class (exact) down.mod.Events: { [string]: down.Event }
 ---
 --- The entire mod configuration
 --- @alias down.Mod.Mod
----   | down.mod.Lsp
----   | down.mod.Code
----   | down.mod.Time
----   | down.mod.Config
----   | down.mod.Export
----   | down.mod.Tag
----   | down.mod.Parse
----   | down.mod.Edit
+---   | down.mod.lsp.Lsp
+---   | down.mod.code.Code
+---   | down.mod.time.Time
+---   | down.mod.export.Export
+---   | down.mod.tag.Tag
+---   | down.mod.parse.Parse
+---   | down.mod.edit.Edit
 ---   | down.mod.Data
 ---   | down.mod.Link
 ---   | down.mod.Task
----   | down.mod.Template
----   | down.mod.Log
----   | down.mod.Cmd
----   | down.mod.Tool
----   | down.mod.Workspace
----   | down.mod.Note
----   | down.mod.Ui
----   | down.mod.data.Bookmark
+---   | down.mod.template.Template
+---   | down.mod.log.Log
+---   | down.mod.cmd.Cmd
+---   | down.mod.tool.Tool
+---   | down.mod.workspace.Workspace
+---   | down.mod.note.Note
+---   | down.mod.ui.Ui
+---   | down.mod.data.bookmark.Bookmark
 ---   | down.mod.data.Store
----   | down.mod.data.History
----   | down.mod.task.Agenda
+---   | down.mod.data.history.History
+---   | down.mod.task.agenda.Agenda
+---   | down.mod.task.Task
 ---   | down.mod.ui.Calendar
 ---   | down.mod.ui.calendar.Day
----   | down.mod.Keymap
----   | down.mod.ui.calendar.Month
+---   | down.mod.keymap.Keymap
+---   | down.mod.ui.calendar.month.Month
 ---
 --- @alias down.Mod.Config
 ---   | down.mod.keymap.Config
@@ -122,6 +121,11 @@
 ---
 ---  @alias down.Mod.Id
 ---  | "log"
+---  | "mod"
+---  | "data.store"
+---  | 'tool.telescope'
+---  | 'find.telescope'
+---  | 'find'
 ---  | "data"
 ---  | "edit"
 ---  | "cmd"
@@ -141,6 +145,8 @@
 ---  | "ui.calendar"
 ---  | "ui.calendar.day"
 ---  | "ui.calendar.month"
+---  | "tool.treesitter"
+---  | "task.agenda"
 ---  | "ui.calendar.week"
 ---  | "data.bookmark"
 ---  | "data.store"

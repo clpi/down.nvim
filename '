@@ -1,5 +1,5 @@
+local downmod = require("down.mod")
 local log = require("down.util.log")
-local mod = require("down.mod")
 local modconf = require("down.util.mod")
 
 --- The down.nvim configuration
@@ -61,10 +61,12 @@ function Config:load(user, ...)
     self.user = vim.tbl_extend("force", user, modconf.defaults)
   end
   vim.iter(pairs(self.user)):map(function(k, v)
+    print(k, v)
     self:check_toggle(k, v)
   end)
   self:check_hook(...)
   self.started = true
+  return self
 end
 
 function Config:post_load()

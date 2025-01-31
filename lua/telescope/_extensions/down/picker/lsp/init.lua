@@ -5,7 +5,7 @@ local conf = require("telescope.config").values -- allows us to use the values f
 local make_entry = require("telescope.make_entry")
 local downld, down = pcall(require, 'down')
 
-assert(downld, "down is not loaded - load it before telescope")
+-- assert(downld, "down is not loaded - load it before telescope")
 
 local function get_md_files()
   local ws = Mod.get_mod("workspace") ---@type mod.workspace

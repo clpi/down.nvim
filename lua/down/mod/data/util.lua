@@ -1,3 +1,10 @@
-local U = {}
+return function(id, tbl)
+  return setmetatable({
 
-return U
+  namespace = 'down.mod.' .. id,
+
+
+
+}, {
+
+}) end

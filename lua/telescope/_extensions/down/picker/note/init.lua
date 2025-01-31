@@ -1,9 +1,9 @@
 local downok, down = pcall(require, 'down')
 local w = require 'down.mod.workspace'
 local pickers = require('telescope.pickers')
-local action = require('telescope.action')
-local astate = require('telescope.action.state')
-local set = require('telescope.action.set')
+-- local action = require('telescope.action')
+-- local astate = require('telescope.action.state')
+-- local set = require('telescope.action.set')
 local finders = require('telescope.finders')
 local conf = require('telescope.config').values -- allows us to use the values from the users config
 local make_entry = require('telescope.make_entry')

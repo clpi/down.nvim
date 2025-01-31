@@ -14,7 +14,7 @@ local downok, down = pcall(require, 'down')
 local modok, mod = pcall(require, 'down.mod')
 local configok, config = pcall(require, 'down.config')
 
-assert(downok, 'down is not loaded - please make sure to load down first')
+-- assert(downok, 'down is not loaded - please make sure to load down first')
 
 local ns = vim.api.nvim_create_namespace('down-tele-tag-preview')
 
@@ -31,60 +31,60 @@ return function(options)
   end
 
   local opts = options
-    or themes.get_dropdown({
-      border = true,
-      layout_config = {
-        prompt_position = 'top',
-      },
-    })
+      or themes.get_dropdown({
+        border = true,
+        layout_config = {
+          prompt_position = 'top',
+        },
+      })
 
   local files = {}
 
   pickers
-    .new(opts, {
-      prompt_title = 'Switch Workspace',
-      preview_title = 'Details',
-      results_title = 'Workspaces',
-      finder = finders.new_table({
-        results = workspaces,
-        entry_maker = function(ws)
-          return {
-            value = ws,
-            display = ws.name,
-            ordinal = ws.name,
-          }
-        end,
-      }),
-      sorter = conf.generic_sorter(opts),
-      previewer = previewers.new_buffer_previewer({
-        define_preview = function(self, entry, status)
-          local workspace = entry.value
-          local lines = {}
-          table.insert(lines, 'Path:')
-          table.insert(lines, tostring(workspace.path))
-          table.insert(lines, 'Files:')
+      .new(opts, {
+        prompt_title = 'Switch Workspace',
+        preview_title = 'Details',
+        results_title = 'Workspaces',
+        finder = finders.new_table({
+          results = workspaces,
+          entry_maker = function(ws)
+            return {
+              value = ws,
+              display = ws.name,
+              ordinal = ws.name,
+            }
+          end,
+        }),
+        sorter = conf.generic_sorter(opts),
+        previewer = previewers.new_buffer_previewer({
+          define_preview = function(self, entry, status)
+            local workspace = entry.value
+            local lines = {}
+            table.insert(lines, 'Path:')
+            table.insert(lines, tostring(workspace.path))
+            table.insert(lines, 'Files:')
 
-          if not files[workspace.name] then
-            files[workspace.name] = w.get_workspaces(workspace.name)
-          end
-          for _, file in ipairs(files[workspace.name]) do
-            table.insert(lines, tostring(file))
-          end
-          vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, true, lines)
-          vim.api.nvim_buf_add_highlight(self.state.bufnr, ns, 'Special', 0, 0, -1)
-          vim.api.nvim_buf_add_highlight(self.state.bufnr, ns, 'Special', 2, 0, -1)
+            if not files[workspace.name] then
+              files[workspace.name] = w.get_workspaces(workspace.name)
+            end
+            for _, file in ipairs(files[workspace.name]) do
+              table.insert(lines, tostring(file))
+            end
+            vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, true, lines)
+            vim.api.nvim_buf_add_highlight(self.state.bufnr, ns, 'Special', 0, 0, -1)
+            vim.api.nvim_buf_add_highlight(self.state.bufnr, ns, 'Special', 2, 0, -1)
+          end,
+        }),
+        attach_mappings = function(prompt_bufnr)
+          action_set.select:replace(function()
+            local entry = state.get_selected_entry()
+            actions.close(prompt_bufnr)
+            if entry then
+              w.open_workspace(entry.value.name)
+            end
+          end)
+          return true
         end,
-      }),
-      attach_mappings = function(prompt_bufnr)
-        action_set.select:replace(function()
-          local entry = state.get_selected_entry()
-          actions.close(prompt_bufnr)
-          if entry then
-            w.open_workspace(entry.value.name)
-          end
-        end)
-        return true
-      end,
-    })
-    :find()
+      })
+      :find()
 end

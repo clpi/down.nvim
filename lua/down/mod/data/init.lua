@@ -123,6 +123,8 @@ M.put = function(key, data)
   M.data[key] = data
 end
 
+M.set = M.put
+
 --- Removes a key from store
 ---@param key string #The name of the key to remove
 M.del = function(key)

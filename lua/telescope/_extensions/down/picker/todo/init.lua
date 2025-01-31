@@ -1,11 +1,11 @@
-local mod = require("down.mod")
+local modok, mod = pcall(require, "down.mod")
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values -- allows us to use the values from the users config
 local make_entry = require("telescope.make_entry")
 local downld, down = pcall(require, 'down')
 
-assert(downld, "down is not loaded - load it before telescope")
+-- assert(downld, "down is not loaded - load it before telescope")
 
 local function get_md_files()
   local ws = Mod.get_mod("workspace") ---@type mod.workspace

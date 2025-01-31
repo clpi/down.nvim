@@ -153,7 +153,13 @@ Link.prev = function(node)
   return Link.prev(prev)
 end
 Link.goto = {
-
+prev = function()
+  local node, _ = Link.cursor()
+  local prev = Link.prev(node)
+  if next then
+    tsu.goto_node(prev)
+  end
+end,
 next = function()
   local node, _ = Link.cursor()
   local next = Link.next(node)
@@ -161,43 +167,6 @@ next = function()
     tsu.goto_node(next)
   end
 end,
-
-  ---@return { id: string, path: string, opts: { default: boolean } }
-Link.current = function()
-  local uri = vim.uri_from_bufnr(vim.api.nvim_get_current_buf())
-  local path = vim.fn.resolve(vim.fn.fnameescape(vim.uri_to_fname(uri)))
-  vim.iter(Link.dep['workspace'].config.workspaces):any(function(w)
-    if Link.dep['workspace'].is_subpath(path, w[1]) then
-        return true
-      end
-      return false
-    end)
-
-
-        ws = w
-      end
-    end)
-    local ws = Link.dep.workspace.is_subpath(path, )
-    return {
-      uri = tostring(uri),
-      path = 
-      workspace = Link.dep['workspace'].is_subpath()
-    }
-  end
-
-prev = function()
-  local node, _ = Link.cursor()
-  local prev = Link.prev(node)
-  if prev then
-    vim.notify('Previous link: ' .. uri, vim.log.levels.INFO, { })
-    vim.fn.histadd('uri', { uri = uri, path = })
-    vim.fn.strftime()
-    vim.fn.string()
-
-    tsu.goto_node(prev)
-  end
-end
-
 }
 
 Link.select = function()
