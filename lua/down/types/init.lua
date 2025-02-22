@@ -29,6 +29,7 @@
 
 ---
 --- @class (exact) down.mod.Config: { [string]?: any }
+--- @field public enabled? boolean
 ---   @field public [string]? any
 
 --- TODO: merge data field to [string]?: down.mod.Data

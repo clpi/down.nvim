@@ -100,8 +100,6 @@
 ---   | down.mod.workspace.Config
 ---   | down.mod.note.Config
 ---   | down.mod.ui.Config
----   | down.mod.config.Config
----   | down.mod.export.Config
 ---   | down.mod.parse.Config
 ---   | down.mod.code.Config
 ---   | down.mod.link.Config
@@ -124,7 +122,10 @@
 ---  | "mod"
 ---  | "data.store"
 ---  | 'tool.telescope'
----  | 'find.telescope'
+---  | 'find.fzflua'
+---  | 'find.builtin'
+---  | 'find.snacks'
+---  | 'find.mini'
 ---  | 'find'
 ---  | "data"
 ---  | "edit"

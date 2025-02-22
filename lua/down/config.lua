@@ -133,12 +133,14 @@ function Config:check_tests(mods)
   end
 end
 
+---@param mod down.Mod.Mod`
+---@return boolean
 function Config.check_mod_test(mod)
-  return mod
-    and mod.id
+  return mod ~= nil
+    and mod.id ~= nil
     and modconf.check_id(mod.id)
     and type(mod) == "table"
-    and mod.tests
+    and mod.tests ~= nil
     and type(mod.tests) == "table"
     and not vim.tbl_isempty(mod.tests)
 end

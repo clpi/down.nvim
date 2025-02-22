@@ -13,8 +13,6 @@ local down = {
   event = require("down.event"),
   util = require("down.util"),
   log = require("down.util.log"),
-  trouble = require("trouble.providers.down"),
-  telescope = require("telescope._extensions.down"),
 }
 
 --- Load the user configuration, and load into config

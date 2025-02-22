@@ -5,13 +5,19 @@ M.defaults = {
   mod = {},
   cmd = {},
   link = {},
-  ["tool.telescope"] = {},
+  find = {},
 }
 
 ---@type down.Mod.Id[]
 M.ids = {
   "log",
   "data",
+  "find",
+  "find.telescope",
+  "find.fzflua",
+  "find.mini",
+  "find.builtin",
+  "find.snacks",
   "workspace",
   "edit",
   "code",

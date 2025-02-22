@@ -105,7 +105,8 @@ Mod.mods = {}
 
 Mod.default = {
   mods = {
-    "tool.telescope",
+    -- "tool.telescope",
+    "find",
     "note",
     "workspace",
   },
