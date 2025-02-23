@@ -1,11 +1,12 @@
+local cfg = require("down.config")
 local mod = require("down.mod")
 
 ---@alias down.mod.find.Finder "telescope" | "mini" | "snacks" | "fzflua" | "builtin"
 
-local has_telescope, telescope = pcall(require, "telescope")
-local has_mini, mini = pcall(require, "mini.pick")
-local has_snacks, snacks = pcall(require, "mini.snacks")
-local has_fzflua, fzflua = pcall(require, "fzflua")
+local has_telescope, _ = pcall(require, "telescope")
+local has_mini, _ = pcall(require, "mini.pick")
+local has_snacks, _ = pcall(require, "mini.snacks")
+local has_fzflua, _ = pcall(require, "fzflua")
 
 ---@class down.mod.find.Find: down.Mod
 local F = mod.new("find")
@@ -34,9 +35,11 @@ F.config = {
 ---@return fun()|table
 F.picker = function(n)
   local p = require("down.mod.find." .. F.config.default)
-  if p and p.picker then F.picker = p.picker end
+  if p and p.picker then
+    F.picker = p.picker
+  end
   if n and p.down and p.down[n] then
-    if type(p.down[n]) == 'function' then
+    if type(p.down[n]) == "function" then
       return p.down[n]
     end
   end
@@ -49,46 +52,62 @@ F.commands = {
     args = 0,
     name = "find",
     enabled = true,
-    callback = function(e) F.picker("file")() end,
+    callback = function(e)
+      F.picker("file")()
+    end,
     commands = {
       tags = {
-        callback = function(e) F.picker("tag")()end,
+        callback = function(e)
+          F.picker("tag")()
+        end,
         enabled = false,
         name = "find.links",
         args = 0,
       },
       project = {
-        callback = function(e) F.picker("project")()end,
+        callback = function(e)
+          F.picker("project")()
+        end,
         enabled = false,
         name = "find.links",
         args = 0,
       },
       notes = {
-        callback = function(e) F.picker("note")()end,
+        callback = function(e)
+          F.picker("note")()
+        end,
         enabled = false,
         name = "find.links",
         args = 0,
       },
       links = {
-        callback = function(e) F.picker("link") ()end,
+        callback = function(e)
+          F.picker("link")()
+        end,
         enabled = true,
         name = "find.links",
         args = 0,
       },
       tasks = {
-        callback = function(e) F.picker("task")()end,
+        callback = function(e)
+          F.picker("task")()
+        end,
         enabled = true,
         name = "find.tags",
         args = 0,
       },
       files = {
-        callback = function(e)F.picker("file")()end,
+        callback = function(e)
+          F.picker("file")()
+        end,
         enabled = true,
         name = "find.files",
         args = 0,
       },
       workspace = {
-        callback = function(e)F.picker("workspace")()end,
+        callback = function(e)
+          F.picker("workspace")()
+        end,
         enabled = true,
         name = "find.workspace",
         args = 0,
@@ -141,7 +160,6 @@ F.load = function()
     end
   end
   F.picker = require("down.mod.find." .. F.config.default).picker
-  vim.print(F)
 end
 
 F.setup = function()
@@ -152,7 +170,7 @@ F.setup = function()
 end
 
 F.post_load = function()
-  vim.print("FIND POST LOAD")
+  -- TODO: should load and register telescope extension if it is available
 end
 
 return F

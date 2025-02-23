@@ -1,8 +1,11 @@
-local Event = require("down.event")
+local event = require("down.event")
 local log = require("down.util.log")
 local mod = require("down.mod")
 local util = require("down.mod.workspace.util")
 local utils = require("down.util")
+
+local fn, fs, it, uv, dbg =
+  vim.fn, vim.fs, vim.iter, (vim.uv or vim.loop), vim.print
 
 ---@class down.Workspace: string
 ---@class down.Workspaces: { [string]?: string }
@@ -12,11 +15,11 @@ local M = mod.new("workspace")
 
 ---@return string
 M.path = function(name)
-  return vim.fs.normalize(vim.fn.resolve(M.data.workspaces[name]))
+  return fs.normalize(fn.resolve(M.data.workspaces[name]))
 end
 
 M.home = function()
-  return M.path((vim.loop or vim.uv).os_homedir())
+  return M.path(uv.os_homedir())
 end
 
 ---@class down.mod.workspace.Data
@@ -107,7 +110,7 @@ M.maps = {
     "n",
     ",D",
     function()
-      vim.print(require("down.mod.workspace").data)
+      dbg(M.data)
     end,
     "hi",
   },
@@ -137,7 +140,7 @@ end
 M.load = function()
   M.data.workspaces = M.config.workspaces or M.data.workspaces
   for n, p in pairs(M.data.workspaces) do
-    M.data.workspaces[n] = vim.fn.resolve(vim.fs.normalize(p))
+    M.data.workspaces[n] = fn.resolve(fs.normalize(vim.fn.expand(p)))
   end
   M.data.default = M.config.default or M.data.default or "default"
   M.data.previous = M.data.previous or "default"
@@ -208,7 +211,7 @@ M.set_workspace = function(n, create)
     return false
   end
   local p = M.path(M.data.workspaces[n])
-  vim.fn.mkdir(p, "p")
+  fn.mkdir(p, "p")
   M.data.previous = M.data.active
   M.data.active = n
   -- local e = mod.new_event(M, 'workspace.events.wschanged', { old = ws, new = workspace })
@@ -300,13 +303,12 @@ M.new_file = function(path, workspace, opts)
     fullpath = M.current()[2]
   end
   if fullpath == nil then
-    log.error("Error in fetching workspace path")
-    return
+    return log.error("Error in fetching workspace path")
   end
-  local destination = vim.fs.joinpath(fullpath, path)
-  local parent = vim.fs.dirname(destination)
-  if not vim.fn.isdirectory(parent) then
-    vim.fn.mkdir(parent, "p")
+  local destination = fs.joinpath(fullpath, path)
+  local parent = fs.dirname(destination)
+  if not fn.isdirectory(parent) then
+    fn.mkdir(parent, "p")
   end
   -- mod.broadcast(
   --   mod.new_event(
@@ -328,7 +330,7 @@ M.open_file = function(wsname, path)
   if workspace == nil then
     return
   end
-  vim.cmd("e " .. vim.fs.joinpath(workspace, path) .. " | silent! w")
+  vim.cmd("e " .. fs.joinpath(workspace, path) .. " | silent! w")
 end
 M.set_last_workspace = function()
   local prev = M.data.previous or M.data.default or ""
@@ -349,7 +351,7 @@ end
 --- Checks for file existence by supplying a full path in `filepath`
 ---@param filepath string
 M.exists = function(filepath)
-  return vim.fn.filereadable(filepath)
+  return fn.filereadable(filepath)
 end
 --- Get the bufnr for a `filepath` (full path)
 ---@param filepath string
@@ -387,7 +389,7 @@ end
 ---@param name string
 ---@return string[]?
 M.markdown = function(name)
-  return vim.fn.globpath(M.get(name), "**/*.md", true, true)
+  return fn.globpath(M.get(name), "**/*.md", true, true)
 end
 --- Sets the current workspace and opens that workspace's index file
 ---@param workspace string #The name of the workspace to open
@@ -416,7 +418,7 @@ M.touch = function(p, workspace)
   if not workspace then
     return false
   end
-  return vim.fn.writefile({}, vim.fs.joinpath(ws_match, p))
+  return fn.writefile({}, fs.joinpath(ws_match, p))
 end
 M.new_note = function()
   if M.config.use_popup then
@@ -442,7 +444,7 @@ end
 
 M.subpath = function(p, wsname)
   local wsp = M.get_dir(wsname)
-  return vim.fs.joinpath(wsp, p)
+  return fs.joinpath(wsp, p)
 end
 
 M.is_subpath = function(p, wsname)
@@ -450,54 +452,63 @@ M.is_subpath = function(p, wsname)
   return not not p:match("^" .. wsp)
 end
 
+--- Edit index of current directory
+--- @param ws string? The workspace
+M.edit_index = function(ws)
+  local ws = fs.normalize(fn.expand(M.get(M.current())))
+  fn.mkdir(ws, "p")
+  local index = M.index(ws)
+  if fn.filereadable(index) == 0 then
+    if not fn.writefile({}, index) then
+      return vim.notify("Failed to create index file")
+    end
+  end
+  M.edit(index)
+end
+
+--- Select workspace
+M.menu = function()
+  if event.body[1] then
+    M.open(event.body[1])
+    vim.schedule(function()
+      local new_workspace = M.get(event.body[1])
+      if not new_workspace then
+        M.select()
+      end
+      vim.notify("New workspace: " .. event.body[1] .. " -> " .. new_workspace)
+    end)
+  else
+    M.select()
+  end
+end
+
+---@class down.mod.workspace.Commands: { [string]: down.Command }
 M.commands = {
-  -- enabled = false,
   index = {
-    -- enabled = false,
+    enabled = true,
     args = 0,
     max_args = 1,
     name = "workspace.index",
     complete = { M.names() },
     callback = function(e)
-      local index_path = M.index(M.get(M.current()))
-      local parent = vim.fs.dirname(index_path)
-      if vim.fn.filereadable(index_path) == 0 then
-        if not vim.fn.writefile({}, index_path) then
-          return
-        end
-      end
-      M.edit(index_path)
+      M.edit_index()
     end,
   },
   workspace = {
     max_args = 1,
+    enabled = true,
     name = "workspace.workspace",
     complete = { M.names() },
-    callback = function(event)
-      if event.body[1] then
-        M.open(event.body[1])
-        vim.schedule(function()
-          local new_workspace = M.get(event.body[1])
-          if not new_workspace then
-            M.select()
-          end
-          vim.notify(
-            "New workspace: " .. event.body[1] .. " -> " .. new_workspace
-          )
-        end)
-      else
-        M.select()
-      end
-    end,
+    callback = M.menu,
   },
 }
 
 ---@class down.mod.workspace.Events
 M.events = {
-  wschanged = Event.define(M, "wschanged"),
-  wsadded = Event.define(M, "wsadded"),
-  wscache_empty = Event.define(M, "wscache_empty"),
-  file_created = Event.define(M, "file_created"),
+  wschanged = event.define(M, "wschanged"),
+  wsadded = event.define(M, "wsadded"),
+  wscache_empty = event.define(M, "wscache_empty"),
+  file_created = event.define(M, "file_created"),
 }
 
 ---@class down.mod.workspace.Subscribed

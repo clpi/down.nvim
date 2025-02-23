@@ -3,10 +3,7 @@ local down = require("down")
 local mod = require("down.mod")
 local noteutil = require("down.mod.note.util")
 local util = require("down.util")
-local sep = util.sep
-local lib = util.lib
-local log = util.log
-local map = util.maps
+local sep, lib, log, map = util.sep, util.lib, util.log, util.map
 
 ---@class down.mod.note.Note: down.Mod
 local M = mod.new("note")
@@ -28,7 +25,7 @@ M.week_index = function()
 end
 M.year_index = function()
   local yr = os.date("%Y")
-  local ws = M.dep["workspace"].current()
+  local ws = M.config.workspace or M.dep["workspace"].current()
   local ws_path = M.dep["workspace"].get(ws)
   local ix = M.config.note_folder .. sep .. yr .. sep .. M.config.index
   local path = ws_path .. sep .. ix
@@ -59,6 +56,7 @@ M.month_index = function()
     M.dep["workspace"].open_file(ws, ix)
   end
 end
+---TODO: select onth from vim.ui.select
 M.select_month = function() end
 M.note_index = function()
   local ws = M.config.workspace or M.dep["workspace"].current()
