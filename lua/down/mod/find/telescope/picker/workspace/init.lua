@@ -1,3 +1,6 @@
+local lsp = require("down.mod.lsp")
+local ws = require("down.mod.workspace")
+
 local actions = require("telescope.actions")
 local astate = require("telescope.actions.state")
 local autil = require("telescope.actions.utils")
@@ -21,7 +24,7 @@ return function(o)
       results_title = "Workspaces",
       sorter = sorters.get_generic_fuzzy_sorter({}),
       finder = finders.new_table({
-        results = ws.workspaces(),
+        results = ws.as_lsp_workspaces(),
       }),
       previewer = preview.vim_buffer_vimgrep.new({}),
       result_display = function(entry)

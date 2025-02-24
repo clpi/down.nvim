@@ -1,3 +1,4 @@
+local picker = require("down.mod.find.telescope.picker")
 ---@class down.mod.find.telescope.Telescope: down.Mod
 local T = require("down.mod").new("find.telescope")
 
@@ -22,7 +23,7 @@ T.setup = function()
 end
 
 T.load = function()
-  T.picker = { down = require("down.mod.find.telescope.picker") }
+  T.picker = picker
   tel.register_extension({
     exports = T.picker.down,
   })

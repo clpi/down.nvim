@@ -1,11 +1,11 @@
-local mod = require 'down.mod'
-local log = require 'down.util.log'
-local config = require 'down.config'
+local config = require("down.config")
+local log = require("down.util.log")
+local mod = require("down.mod")
 
 ---@class down.mod.Data: down.Mod
-local M = mod.new 'data'
+local M = mod.new("data")
 
----@class down.mod..Data
+---@class down.mod.data.Data
 M.data = {}
 ---@type down.Store<down.File>
 M.file = {
@@ -14,7 +14,7 @@ M.file = {
 
 --- @return down.mod.Setup
 M.setup = function()
-  vim.api.nvim_create_autocmd('VimLeavePre', {
+  vim.api.nvim_create_autocmd("VimLeavePre", {
     callback = function()
       M.flush()
     end,
@@ -31,14 +31,14 @@ M.load = function() end
 
 ---@class down.mod..Config
 M.config = {
-  path = vim.fn.stdpath 'data' .. '/down.mpack',
+  path = vim.fn.stdpath("data") .. "/down.mpack",
   dir = {
-    vim = vim.fs.joinpath(vim.fn.stdpath 'data', 'down/'),
-    home = vim.fs.joinpath(os.getenv 'HOME' or '~/', '.down/'),
+    vim = vim.fs.joinpath(vim.fn.stdpath("data"), "down/"),
+    home = vim.fs.joinpath(os.getenv("HOME") or "~/", ".down/"),
   },
   file = {
-    vim = vim.fs.joinpath(vim.fn.stdpath 'data', 'down/', 'down.json'),
-    home = vim.fs.joinpath(os.getenv 'HOME' or '~/', '.down/', 'down.json'),
+    vim = vim.fs.joinpath(vim.fn.stdpath("data"), "down/", "down.json"),
+    home = vim.fs.joinpath(os.getenv("HOME") or "~/", ".down/", "down.json"),
   },
 }
 
@@ -51,11 +51,11 @@ end
 --- @return table<string>
 M.files = function(path, cond)
   local f = {}
-  local dir = path or vim.fs.root(vim.fn.cwd(), '.down/')
+  local dir = path or vim.fs.root(vim.fn.cwd(), ".down/")
   for name, type in vim.fs.dir(dir) do
-    if type == 'file' and cond or name:endswith '.md' then
+    if type == "file" and cond or name:endswith(".md") then
       table.insert(f, name)
-    elseif type == 'directory' and not name:startswith '.' then
+    elseif type == "directory" and not name:startswith(".") then
       local fs = M.get_files(M.concat(path, name))
       for _, v in ipairs(fs) do
         table.insert(f, v)
@@ -66,7 +66,7 @@ end
 
 M.directory_map = function(path, callback)
   for name, type in vim.fs.dir(path) do
-    if type == 'directory' then
+    if type == "directory" then
       M.directory_map(M.concat(path, name), callback)
     else
       callback(name, type, path)
@@ -80,7 +80,7 @@ end
 --- succeed if the directory already exists.
 ---@return boolean #If true, the directory copying succeeded
 M.copy_directory = function(old_path, new_path)
-  local file_permissions = tonumber('744', 8)
+  local file_permissions = tonumber("744", 8)
   local ok, err = vim.loop.fs_mkdir(new_path, file_permissions)
 
   if not ok then
@@ -88,14 +88,16 @@ M.copy_directory = function(old_path, new_path)
   end
 
   for name, type in vim.fs.dir(old_path) do
-    if type == 'file' then
-      ok, err = vim.loop.fs_copyfile(M.concat(old_path, name), M.concat(new_path, name))
+    if type == "file" then
+      ok, err =
+        vim.loop.fs_copyfile(M.concat(old_path, name), M.concat(new_path, name))
 
       if not ok then
         return ok, err ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
       end
-    elseif type == 'directory' and not vim.endswith(new_path, name) then
-      ok, err = M.copy_directory(M.concat(old_path, name), M.concat(new_path, name))
+    elseif type == "directory" and not vim.endswith(new_path, name) then
+      ok, err =
+        M.copy_directory(M.concat(old_path, name), M.concat(new_path, name))
 
       if not ok then
         return ok, err ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
@@ -107,11 +109,11 @@ M.copy_directory = function(old_path, new_path)
 end
 --- Grabs the data present on disk and overwrites it with the data present in memory
 M.sync = function()
-  local file = io.open(M.config.path, 'r')
+  local file = io.open(M.config.path, "r")
   if not file then
     return
   end
-  local content = file:read '*a'
+  local content = file:read("*a")
   file:close()
   M.data = vim.mpack.decode and vim.mpack.decode(content)
 end
@@ -121,6 +123,7 @@ end
 ---@param data any #The data to store at the specific key
 M.put = function(key, data)
   M.data[key] = data
+  M.flush()
 end
 
 M.set = M.put
@@ -141,18 +144,20 @@ end
 M.json = function(path)
   local dir = M.config.dir.home
   local vim = M.config.dir.vim
-  vim.fn.mkdir(dir, 'p')
-  vim.fn.mkdir(vim, 'p')
-  local f = io.open(path or M.config.file.vim, 'w')
+  vim.fn.mkdir(dir, "p")
+  vim.fn.mkdir(vim, "p")
+  local f = io.open(path or M.config.file.vim, "w")
   f:write(vim.json.encode(M.data))
 end
 --- Flushes the contents in memory to the location specified
 M.flush = function(path)
-  local file = io.open(path or M.config.path, 'w')
+  local file = io.open(path or M.config.path, "w")
   if not file then
     return
   end
-  file:write(vim.mpack.encode and vim.mpack.encode(M.data) or vim.mpack.pack(M.data))
+  file:write(
+    vim.mpack.encode and vim.mpack.encode(M.data) or vim.mpack.pack(M.data)
+  )
   file:close()
 end
 

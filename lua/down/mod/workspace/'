@@ -41,10 +41,8 @@ M.data = setmetatable({
     end
   end,
   __newindex = function(self, key, val)
-    -- vim.notify("setting " .. key .. " to " .. vim.inspect(val))
     rawset(self, key, val)
     M.dep["data"].set("workspace." .. key, self[key])
-    M.dep.data.flush()
   end,
   __metatable = "workspace",
   __tostring = function(self)
@@ -55,13 +53,11 @@ M.data = setmetatable({
     end
     return vim.inspect(self)
   end,
-  __name = "workspace",
   __index = function(self, key)
     key = "workspace." .. key
     local res = rawget(self, key)
     if not res == M.dep["data"].get("workspace." .. key) then
       M.dep["data"].set("workspace." .. key, res)
-      M.dep.data.flush()
     end
     return res
   end,
@@ -69,11 +65,8 @@ M.data = setmetatable({
   __call = function(self, opts)
     if opts and opts.load and opts.load == true then
       for k, v in pairs(self) do
-        if not M.dep.data.get("workspace." .. k) then
-          M.dep.data.set("workspace." .. k, v)
-        end
         if not M.dep.data.get("workspace." .. k) == v then
-          rawset(self, k, M.dep.data.get("workspace." .. k))
+          rawset(self, k, v)
         end
       end
     else
@@ -83,7 +76,6 @@ M.data = setmetatable({
         end
       end
     end
-    M.dep.data.flush()
   end,
 })
 
@@ -165,11 +157,13 @@ end
 
 --- Loads the workspace module
 M.load = function()
-  M.data.workspaces = M.config.workspaces or M.data.workspaces or {}
-  M.data.history = M.data.history or {}
+  M.data.workspaces = M.config.workspaces or M.data.workspaces
+  for n, p in pairs(M.data.workspaces) do
+    M.data.workspaces[n] = fn.resolve(fs.normalize(vim.fn.expand(p)))
+  end
   M.data.default = M.config.default or M.data.default or "default"
   M.data.previous = M.data.previous or "default"
-  M.data.active = M.data.active or M.data.default or "default"
+  M.data.active = M.data.active or M.data.default
   vim.api.nvim_create_autocmd("BufEnter", {
     pattern = "*",
     callback = function()
@@ -265,15 +259,11 @@ end
 
 --- Updates completions for the :down command
 M.sync = function()
-  M.data.workspaces = M.data.workspaces
-  M.dep.data.data.workspaces = M.data.workspaces
-  -- M.dep.data.set("workspace.workspaces", M.data.workspaces)
   M.commands.workspace.complete = { M.names() }
   M.data.previous = M.data.previous
-  M.data.workspaces = M.config.workspaces or {}
+  M.data.workspaces = M.config.workspaces
   M.data.active = M.data.active or M.data.default
   M.data.history = M.data.history or {}
-  M.dep.data.flush()
   mod.await("cmd", function(cmd)
     cmd.add_commands_from_table(M.commands)
   end)
@@ -484,10 +474,9 @@ M.is_subpath = function(p, wsname)
 end
 
 --- Edit index of current directory
---- @param e down.Event
-M.edit_index = function(e)
-  local c = e.body[1] or M.current()
-  local ws = fs.normalize(fn.expand(M.get(c)))
+--- @param ws string? The workspace
+M.edit_index = function(ws)
+  local ws = fs.normalize(fn.expand(M.get(M.current())))
   fn.mkdir(ws, "p")
   local index = M.index(ws)
   if fn.filereadable(index) == 0 then
@@ -499,41 +488,32 @@ M.edit_index = function(e)
 end
 
 --- Select workspace
---- @param e down.Event
-M.menu = function(e)
-  if e.body and e.body[1] then
-    M.open(e.body[1])
+--- @param event down.Event
+M.menu = function(event)
+  if event.body[1] then
+    M.open(event.body[1])
     vim.schedule(function()
-      local new_workspace = M.get(e.body[1])
+      local new_workspace = M.get(event.body[1])
       if not new_workspace then
         M.select()
       end
-      vim.notify("Workspace: " .. e.body[1] .. " -> " .. new_workspace)
+      vim.notify("New workspace: " .. event.body[1] .. " -> " .. new_workspace)
     end)
   else
     M.select()
   end
 end
 
-M.fmt = function()
-  return vim
-    .iter(M.workspaces())
-    :map(function(k, v)
-      return k .. " -> " .. v
-    end)
-    :totable()
-end
-
 ---@class down.mod.workspace.Commands: { [string]: down.Command }
 M.commands = {
   index = {
     enabled = true,
-    min_args = 0,
+    args = 0,
     max_args = 1,
     name = "workspace.index",
     complete = { M.names() },
     callback = function(e)
-      M.edit_index(e)
+      M.edit_index()
     end,
   },
   workspace = {
@@ -541,9 +521,7 @@ M.commands = {
     enabled = true,
     name = "workspace.workspace",
     complete = { M.names() },
-    callback = function(e)
-      M.menu(e)
-    end,
+    callback = M.menu,
   },
 }
 

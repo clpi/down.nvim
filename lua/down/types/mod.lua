@@ -45,7 +45,7 @@
 ---   @field public namespace string The name of the mod.
 ---   @field public data down.Data
 ---   @field public post_load? fun() Function that is invoked after all mod are loaded. Useful if you want the down environment to be fully set up before performing some task.
----   @field public dep? table<string, down.Mod.Mod> Contains the public tables of all mod that were dep via the `dependencies` array provided in the `setup()` function of this mod.
+---   @field public dep? { [down.Mod.Id]: down.Mod.Mod } Contains the public tables of all mod that were dep via the `dependencies` array provided in the `setup()` function of this mod.
 ---   @field public setup? fun(): down.mod.Setup Function that is invoked before any other loading occurs. Should perform preliminary startup tasks.
 ---   @field public replaced? boolean If `true`, this means the mod is a replacement for a base mod. This flag is set automatically whenever `setup().replaces` is set to a value.
 ---   @field public handle? down.Handlers callback that is invoked any time an event the mod has subscribed to has fired.
