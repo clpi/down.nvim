@@ -31,7 +31,7 @@ M.load = function() end
 
 ---@class down.mod..Config
 M.config = {
-  path = vim.fn.stdpath("data") .. "/down.mpack",
+  path = vim.fn.stdpath("data") .. "/down.json",
   dir = {
     vim = vim.fs.joinpath(vim.fn.stdpath("data"), "down/"),
     home = vim.fs.joinpath(os.getenv("HOME") or "~/", ".down/"),
@@ -115,7 +115,7 @@ M.sync = function()
   end
   local content = file:read("*a")
   file:close()
-  M.data = vim.mpack.decode and vim.mpack.decode(content)
+  M.data = vim.json.decode and vim.json.decode(content)
 end
 
 --- Stores a key-value pair in the store
@@ -155,9 +155,7 @@ M.flush = function(path)
   if not file then
     return
   end
-  file:write(
-    vim.mpack.encode and vim.mpack.encode(M.data) or vim.mpack.pack(M.data)
-  )
+  file:write(vim.json.encode and vim.json.encode(M.data))
   file:close()
 end
 

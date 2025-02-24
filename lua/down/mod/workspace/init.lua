@@ -46,7 +46,6 @@ M.data = setmetatable({
     M.dep["data"].set("workspace." .. key, self[key])
     M.dep.data.flush()
   end,
-  __metatable = "workspace",
   __tostring = function(self)
     if type(self) == "table" then
       return vim.inspect(self)
@@ -165,6 +164,9 @@ end
 
 --- Loads the workspace module
 M.load = function()
+  vim.iter(M.config.workspaces):each(function(k, v)
+    M.config.workspaces[k] = fs.normalize(fn.resolve(fn.expand(v)))
+  end)
   M.data.workspaces = M.config.workspaces or M.data.workspaces or {}
   M.data.history = M.data.history or {}
   M.data.default = M.config.default or M.data.default or "default"
