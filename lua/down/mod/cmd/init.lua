@@ -2,6 +2,7 @@ local down = require("down")
 local log = require("down.util.log")
 local mod = require("down.mod")
 local util = require("down.util")
+local api, bo, fn = vim.api, vim.bo, vim.fn
 
 ---@class down.mod.cmd.Cmd: down.Mod
 local M = mod.new("cmd")
@@ -74,8 +75,8 @@ M.commands = {
 }
 M.cb = function(data)
   local args = data.fargs
-  local buf = vim.api.nvim_get_current_buf()
-  local is_down = vim.bo[buf].filetype == "markdown"
+  local buf = api.nvim_get_current_buf()
+  local is_down = bo[buf].filetype == "markdown"
 
   local ref = { commands = M.commands }
   local argument_index = 0

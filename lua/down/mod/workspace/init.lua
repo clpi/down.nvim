@@ -56,13 +56,14 @@ M.data = setmetatable({
   end,
   __name = "workspace",
   __index = function(self, key)
-    key = "workspace." .. key
-    local res = rawget(self, key)
-    if not res == M.dep["data"].get("workspace." .. key) then
-      M.dep["data"].set("workspace." .. key, res)
-      M.dep.data.flush()
-    end
-    return res
+    --   local res = rawget(self, key)
+    --   if not res == M.dep["data"].get("workspace." .. key) then
+    --     M.dep["data"].set("workspace." .. key, res)
+    --     M.dep.data.flush()
+    --   end
+    --   return res
+    -- key = "workspace." .. key
+    return rawget(self, key)
   end,
   ---@param opts { load: boolean, }
   __call = function(self, opts)
@@ -268,9 +269,11 @@ end
 --- Updates completions for the :down command
 M.sync = function()
   M.data.workspaces = M.data.workspaces
+  M.data.workspace_folders = M.as_lsp_workspaces()
   M.dep.data.data.workspaces = M.data.workspaces
   -- M.dep.data.set("workspace.workspaces", M.data.workspaces)
   M.commands.workspace.complete = { M.names() }
+  M.commands.index.complete = { M.names() }
   M.data.previous = M.data.previous
   M.data.workspaces = M.config.workspaces or {}
   M.data.active = M.data.active or M.data.default
@@ -500,6 +503,47 @@ M.edit_index = function(e)
   M.edit(index)
 end
 
+--- @param prompt? string | nil
+--- @param fmt? fun(item: string): string
+--- @param fn? fun(item: number|string, idx: number|string)|nil
+M.select_file = function(prompt, fmt, fn)
+  local format = fmt
+    or function(item)
+      local current = vim.fn.expand("%:p")
+      if item == current then
+        return "• " .. item
+      end
+      return item
+    end
+  local func = fn
+    or function(item, idx)
+      local current = vim.fn.expand("%:p")
+      if not item then
+        return
+      elseif item == current then
+        vim.notify("Already editing " .. current)
+      else
+        vim.notify("Editing " .. item)
+        M.edit(item)
+      end
+      M.edit(item)
+    end
+  return vim.ui.select(M.markdown(M.current()) or {}, {
+    prompt = prompt or "Select markdown file in workspace",
+    format_items = format,
+  }, func)
+end
+
+--- Select markdown file in current workspace
+---@param e down.Event
+M.filemenu = function(e)
+  if e.body and e.body[1] then
+    M.edit(e.body[1])
+  else
+    M.select_file()
+  end
+end
+
 --- Select workspace
 --- @param e down.Event
 M.menu = function(e)
@@ -539,6 +583,7 @@ M.commands = {
     end,
   },
   workspace = {
+    min_args = 0,
     max_args = 1,
     enabled = true,
     name = "workspace.workspace",
@@ -546,6 +591,18 @@ M.commands = {
     callback = function(e)
       M.menu(e)
     end,
+  },
+  edit = {
+    min_args = 0,
+    max_args = 1,
+    enabled = true,
+    name = "workspace.edit",
+    callback = function(e)
+      M.filemenu(e)
+    end,
+    complete = {
+      M.markdown(M.current()),
+    },
   },
 }
 

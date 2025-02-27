@@ -1,20 +1,18 @@
 local config = require("down.config")
 local log = require("down.util.log")
 local mod = require("down.mod")
+local api, fn, fs, uv = vim.api, vim.fn, vim.fs, (vim.uv or vim.loop)
+local stdp, join = fn.stdpath, fs.joinpath
 
----@class down.mod.Data: down.Mod
+---@class down.mod.data.Data: down.Mod
 local M = mod.new("data")
 
----@class down.mod.data.Data
+---@class down.mod.data.Data.Data
 M.data = {}
----@type down.Store<down.File>
-M.file = {
-  store = {},
-}
 
 --- @return down.mod.Setup
 M.setup = function()
-  vim.api.nvim_create_autocmd("VimLeavePre", {
+  api.nvim_create_autocmd("VimLeavePre", {
     callback = function()
       M.flush()
     end,
@@ -31,19 +29,82 @@ M.load = function() end
 
 ---@class down.mod..Config
 M.config = {
-  path = vim.fn.stdpath("data") .. "/down.json",
+  path = stdp("data") .. "/down.json",
   dir = {
-    vim = vim.fs.joinpath(vim.fn.stdpath("data"), "down/"),
-    home = vim.fs.joinpath(os.getenv("HOME") or "~/", ".down/"),
+    vim = join(stdp("data") or fn.expand("~/.local/share/nvim"), "down/"),
+    home = join(os.getenv("HOME") or "~/", ".down/"),
   },
   file = {
-    vim = vim.fs.joinpath(vim.fn.stdpath("data"), "down/", "down.json"),
-    home = vim.fs.joinpath(os.getenv("HOME") or "~/", ".down/", "down.json"),
+    vim = join(
+      stdp("data") or fn.expand("~/.local/share/nvim"),
+      "down/",
+      "down.json"
+    ),
+    home = join(os.getenv("HOME") or "~/", ".down/", "down.json"),
   },
 }
 
+---@param name string
+---@type fun(name: string): metatable
+---@return metatable
+M.mt = function(name)
+  ---@type metatable
+  return {
+    ---@param self down.Mod.Mod
+    __tostring = function(self)
+      return name
+    end,
+    ---@param self down.Mod.Mod
+    __index = function(self, key)
+      if not self[name .. "." .. key] then
+        return
+      end
+      if not B.dep.data.get(key) == self[key] then
+        B.dep.data.set(name .. "." .. key, self[key])
+      end
+      return self[key]
+    end,
+    __name = name,
+    ---@param self down.Mod.Mod
+    __newindex = function(self, key, val)
+      self[key] = val
+      B.dep.data.set(name .. "." .. key, val)
+    end,
+    ---@param a down.Mod.Mod
+    __concat = function(a, b)
+      if type(b) == "string" then
+        return tostring(a) .. "." .. b
+      end
+      return tostring(a) .. tostring(b)
+    end,
+    ---@param self down.Mod.Mod
+    ---@param load? boolean
+    __call = function(self, load)
+      for key, val in pairs(self) do
+        if load then
+          self[key] = M.data.get(name .. "." .. key)
+        elseif
+          not M.dep.data.get(name .. "." .. key)
+          or not M.dep.data.get(name .. "." .. key) == val
+        then
+          M.dep.data.set(name .. "." .. key, val)
+        end
+      end
+      M.flush()
+    end,
+  }
+end
+
+---@generic T: table
+---@param name string
+---@param t T
+---@return T
+M.tbl = function(name, t)
+  return setmetatable(t, M.mt(name))
+end
+
 M.concat = function(p1, p2)
-  return table.concat({ p1, config.pathsep, p2 })
+  return table.concat({ p1, require("down.util").sep, p2 })
 end
 
 --- @param path string

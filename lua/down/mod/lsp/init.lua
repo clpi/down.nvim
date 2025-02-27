@@ -1,5 +1,6 @@
 local config = require("down.config")
 local log = require("down.util.log")
+local lsputil = require("down.mod.lsp.util")
 local mod = require("down.mod")
 local settings = require("down.mod.lsp.settings")
 local ws = require("down.mod.workspace")
@@ -18,7 +19,11 @@ Lsp.on_attach = function()
   -- vim.print("attached down.lsp")
 end
 
+--- Load the lsp and clone the repo
 Lsp.load = function()
+  if vim.fn.exepath("down.lsp") == "" then
+    lsputil.install({ update = true })
+  end
   -- print("loading")
   Lsp.autocmd()
 end
@@ -46,10 +51,12 @@ Lsp.setup = function()
   }
 end
 
+--- @class down.mod.lsp.Commands: { [string]: down.Command }
 Lsp.commands = {
   lsp = {
     name = "lsp",
     condition = "markdown",
+    enabled = true,
     callback = function(e)
       trc("lsp", e)
     end,
@@ -60,6 +67,26 @@ Lsp.commands = {
         condition = "markdown",
         callback = function(e)
           log.trace("lsp.restart", e)
+        end,
+      },
+      install = {
+        enabled = true,
+        args = 0,
+        name = "lsp.install",
+        condition = "markdown",
+        callback = function(e)
+          log.trace("lsp.install", e)
+          lsputil.install()
+        end,
+      },
+      update = {
+        enabled = true,
+        args = 0,
+        name = "lsp.update",
+        condition = "markdown",
+        callback = function(e)
+          log.trace("lsp.update", e)
+          lsputil.install({ update = true })
         end,
       },
       start = {
@@ -81,6 +108,7 @@ Lsp.commands = {
       stop = {
         args = 0,
         name = "lsp.stop",
+        enabled = true,
         condition = "markdown",
         callback = function(e)
           log.trace("lsp.stop")
@@ -114,7 +142,10 @@ Lsp.commands = {
     commands = {
       workspace = {
         args = 0,
+        max_args = 1,
+        min_args = 0,
         name = "rename.workspace",
+        complete = { require("down.mod.workspace").workspaces() },
         condition = "markdown",
         callback = function(e)
           trc("rename.workspace", e)
@@ -138,6 +169,8 @@ Lsp.commands = {
       },
       file = {
         args = 0,
+        max_args = 1,
+        complete = { require("down.mod.workspace").files() },
         name = "rename.file",
         condition = "markdown",
         callback = function(e)

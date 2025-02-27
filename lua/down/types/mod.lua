@@ -43,7 +43,7 @@
 ---   @field public bench? fun() Function that is invoked when the mod is being benchmarked.
 ---   @field public id string The name of the mod.
 ---   @field public namespace string The name of the mod.
----   @field public data down.Data
+---   @field public data down.Data.Data
 ---   @field public post_load? fun() Function that is invoked after all mod are loaded. Useful if you want the down environment to be fully set up before performing some task.
 ---   @field public dep? { [down.Mod.Id]: down.Mod.Mod } Contains the public tables of all mod that were dep via the `dependencies` array provided in the `setup()` function of this mod.
 ---   @field public setup? fun(): down.mod.Setup Function that is invoked before any other loading occurs. Should perform preliminary startup tasks.
@@ -70,9 +70,9 @@
 ---   | down.mod.tag.Tag
 ---   | down.mod.parse.Parse
 ---   | down.mod.edit.Edit
----   | down.mod.Data
----   | down.mod.Link
----   | down.mod.Task
+---   | down.mod.data.Data
+---   | down.mod.link.Link
+---   | down.mod.task.Task
 ---   | down.mod.template.Template
 ---   | down.mod.log.Log
 ---   | down.mod.cmd.Cmd
@@ -84,11 +84,38 @@
 ---   | down.mod.data.Store
 ---   | down.mod.data.history.History
 ---   | down.mod.task.agenda.Agenda
----   | down.mod.task.Task
----   | down.mod.ui.Calendar
----   | down.mod.ui.calendar.Day
----   | down.mod.keymap.Keymap
+---   | down.mod.ui.calendar.Calendar
+---   | down.mod.ui.calendar.day.Day
 ---   | down.mod.ui.calendar.month.Month
+---   | down.mod.ui.calendar.week.Week
+---   | down.mod.keymap.Keymap
+---
+--- @alias down.Mod.Data
+---   | down.mod.keymap.Data
+---   | down.mod.lsp.Data
+---   | down.mod.data.Data.Data
+---   | down.mod.edit.Data
+---   | down.mod.cmd.Data
+---   | down.mod.tool.Data
+---   | down.mod.workspace.Data
+---   | down.mod.note.Data
+---   | down.mod.ui.Data
+---   | down.mod.parse.Data
+---   | down.mod.code.Data
+---   | down.mod.link.Data
+---   | down.mod.task.Data
+---   | down.mod.tag.Data
+---   | down.mod.template.Data
+---   | down.mod.export.Data
+---   | down.mod.log.Data
+---   | down.mod.task.agenda.Data
+---   | down.mod.data.bookmark.Data
+---   | down.mod.data.store.Data
+---   | down.mod.data.history.Data
+---   | down.mod.ui.calendar.Config
+---   | down.mod.ui.calendar.day.Data
+---   | down.mod.ui.calendar.month.Data
+---   | down.mod.ui.calendar.week.Data
 ---
 --- @alias down.Mod.Config
 ---   | down.mod.keymap.Config
@@ -150,7 +177,6 @@
 ---  | "task.agenda"
 ---  | "ui.calendar.week"
 ---  | "data.bookmark"
----  | "data.store"
 ---  | "data.history"
 ---  | "task.agenda"
 ---  | "parse"

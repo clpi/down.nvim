@@ -13,7 +13,7 @@ local log = util.log
 --- TODO: Make Mod.subscribed be [string]: function() instead of [string]: boolean
 ---       and eliminate Mod.handler(e)
 
----@class down.Mod
+---@class down.mod.Root: down.Mod
 local Mod = setmetatable({
   setup = function()
     return {
