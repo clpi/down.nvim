@@ -7,11 +7,11 @@
 ---@tags markdown, org-mode, note-taking, knowledge-management, developer-tools, productivity
 ---
 ---@brief The Neovim plugin for the *down* _markdown_ developer-focused
----@briefnote-taking and knowledge management environment, offering the comfort familiarity, and compatibility of a traditional markdown note-taking environment with the power of org-mode.
+---@brief note-taking and knowledge management environment, offering the comfort familiarity, and compatibility of a traditional markdown note-taking environment with the power of org-mode.
 
 --- The main entry point for the down plugin
 ---@class down.Down
-local Down = {
+Down = {
   --- The configuration for the plugin
   config = require("down.config"),
   --- The module logic for the plugin
@@ -34,7 +34,7 @@ Down.setup = function(user, ...)
   Down:start()
 end
 
---- Start the plugin
+--- *Start* the ^down.nvim^ plugin
 --- Load the workspace and user modules
 function Down:start()
   self.util.log.trace("Setting up down")
@@ -54,7 +54,7 @@ end
 function Down:after()
   self.config:after()
   for _, l in pairs(self.mod.mods) do
-    self.event.load_cb(l)
+    self.event.load_callback(l)
     l.after()
   end
   self:broadcast("started")

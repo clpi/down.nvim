@@ -149,8 +149,8 @@ Mod.new = function(nm, im)
       if not Mod.load_mod(fp) then
         log.error(
           "Unable to load import '"
-          .. fp
-          .. "'! An error  (see traceback below):"
+            .. fp
+            .. "'! An error  (see traceback below):"
         )
         assert(false)
       end
@@ -167,8 +167,8 @@ Mod.delete = function(mod)
 end
 
 --- @param m down.Mod.Mod The actual mod to load.
---- @return down.Mod|nil # Whether the mod successfully loaded.
-Mod.load_mod_from_table = function(m, cfg)
+--- @return down.Mod.Mod|nil # Whether the mod successfully loaded.
+Mod.from_table = function(m, cfg)
   if Mod.mods[m.id] ~= nil then
     return Mod.mods[m.id]
   end
@@ -205,14 +205,14 @@ Mod.load_mod_from_table = function(m, cfg)
 end
 
 --- @param n string
---- @return down.config.Mod?
+--- @return down.Mod.Mod
 function Mod.check_mod(n)
   local modl = require("down.mod." .. n)
   if not modl then
     log.error("Mod.load_mod: could not load mod " .. n)
     return nil
   elseif modl == true then
-    log.error("did not return valid mod: " .. n)
+    log.error("Mod.load_mod: could not load mod " .. n)
     return nil
   end
   return modl
@@ -220,7 +220,7 @@ end
 
 --- @param modn string A path to a mod on disk. A path in down is '.', not '/'.
 --- @param cfg table? A config that reflects the structure of `down.config.user.setup["mod.id"].config`.
---- @return down.Mod|nil # Whether the mod was successfully loaded.
+--- @return down.Mod.Mod|nil # Whether the mod was successfully loaded.
 function Mod.load_mod(modn, cfg)
   if Mod.mods[modn] then
     if cfg ~= nil then
@@ -235,30 +235,7 @@ function Mod.load_mod(modn, cfg)
   if cfg and not vim.tbl_isempty(cfg) then
     modl.config = util.extend(modl.config, cfg)
   end
-  return Mod.load_mod_from_table(modl)
-end
-
---- Has the same principle of operation as load_mod_from_table(), except it then sets up the parent mod's "dep" table, allowing the parent to access the child as if it were a dependency.
---- @param md down.Mod A valid table as returned by mod.new()
---- @param parent_mod string|down.Mod If a string, then the parent is searched for in the loaded mod. If a table, then the mod is treated as a valid mod as returned by mod.new()
-function Mod.load_mod_as_dependency_from_table(md, parent_mod)
-  if Mod.load_mod_from_table(md) then
-    if type(parent_mod) == "string" then
-      Mod.mods[parent_mod].dep[md.id] = md
-    elseif type(parent_mod) == "table" then
-      parent_mod.dep[md.id] = md
-    end
-  end
-end
-
---- Normally loads a mod, but then sets up the parent mod's "dep" table, allowing the parent mod to access the child as if it were a dependency.
---- @param modn string A path to a mod on disk. A path  in down is '.', not '/'
---- @param parent_mod string The name of the parent mod. This is the mod which the dependency will be attached to.
---- @param cfg? table A config that reflects the structure of down.config.user.setup["mod.id"].config
-function Mod.load_mod_as_dependency(modn, parent_mod, cfg)
-  if Mod.load_mod(modn, cfg) and Mod.is_loaded(parent_mod) then
-    Mod.mods[parent_mod].dep[modn] = Mod.mod_config(modn)
-  end
+  return Mod.from_table(modl)
 end
 
 --- Returns the mod.config table if the mod is loaded
@@ -268,8 +245,8 @@ function Mod.mod_config(modn)
   if not Mod.is_loaded(modn) then
     log.trace(
       "Attempt to get mod config with name"
-      .. modn
-      .. "failed - mod is not loaded."
+        .. modn
+        .. "failed - mod is not loaded."
     )
     return
   end
@@ -326,14 +303,16 @@ function Mod.load_kind(mk, kt)
   end
 end
 
----@param m down.Mod
+--- Load the opts for the mod
+---@param m down.Mod.Mod
 function Mod.load_opts(m)
   Mod.load_kind(m.opts, function(k, v)
     vim.bo[k] = v
   end)
 end
 
----@param m down.Mod
+--- Load the maps for the mod
+---@param m down.Mod.Mod
 function Mod.load_maps(m)
   Mod.load_kind(m.maps, function(_, v)
     local opts = {
@@ -352,11 +331,12 @@ function Mod.load_maps(m)
   end)
 end
 
----@param m down.Mod
+--- Perform initialization for the mod
+---@param m down.Mod.Mod
 function Mod.mod_load(m)
   Mod.load_maps(m)
   Mod.load_opts(m)
-  Event.load_cb(m)
+  Event.load_callback(m)
   if m.load then
     m.load()
   end
@@ -372,7 +352,7 @@ Mod.get = function(m)
   end
 end
 --- @param ms? table<any, string> list of modules to load
---- @return table<integer, down.Mod>
+--- @return down.Mod.Mod[]
 Mod.modules = function(ms)
   local modmap = {}
   for mname, module in pairs(ms or Mod.default.mods) do
@@ -381,7 +361,7 @@ Mod.modules = function(ms)
   return modmap
 end
 
----@param m down.Mod
+---@param m down.Mod.Mod
 Mod.test = function(m)
   log.info("Mod.test: Performing tests for ", m.id, ": ")
   if m.tests then
@@ -401,8 +381,10 @@ Mod.unloaded = modutil.ids
 --- @param m down.Mod.Id
 --- @return nil
 Mod.unload = function(m)
-  if Mod.mods[m] ~= nil then
+  local old = vim.deepcopy(Mod.mods[m])
+  if old ~= nil then
     Mod.mods[m] = nil
+    return old
   else
     if Mod.check_id(m) then
       log.warn("Mod.unload: Attempt to unload unloaded mod ", m)
@@ -421,7 +403,7 @@ Mod.reload = function(m)
 end
 
 --- Syncs the unloaded modules with the loaded modules
-Mod.sync_unloaded = function()
+Mod.sync = function()
   for _, i in ipairs(Mod.util.ids) do
     if not vim.list_contains(vim.tbl_keys(Mod.mods), i) then
       Mod.unloaded[i] = Mod.get(i)
@@ -429,16 +411,21 @@ Mod.sync_unloaded = function()
   end
 end
 
+Mod.sync_unloaded = Mod.sync
+
 ---@param cmds down.Command[]
+---@param self down.Mod.Mod
+---@param e down.Event
+---@param cmd string
 ---@return boolean
 Mod.handle_cmd = function(self, e, cmd, cmds, ...)
   log.trace("Mod.handle_cmd: Handling cmd ", cmd, " for mod ", self.id)
   if not cmds or type(cmds) ~= "table" or not cmds[cmd] then
     return false
   end
-  if cmds.enabled ~= nil and cmds.enabled == false then
-    return false
-  end
+  -- if cmds.enabled ~= nil and cmds.enabled == false then
+  --   return false
+  -- end
   local cc = cmds[cmd]
   if cc.enabled ~= nil and cc.enabled == false then
     return false
@@ -461,16 +448,17 @@ Mod.handle_cmd = function(self, e, cmd, cmds, ...)
   return false
 end
 
+--- Handles an event for a mod.
 --- @param e down.Event
---- @param self down.Mod
+--- @param self down.Mod.Mod
 --- @param ... any
 --- @return boolean
 Mod.handle_event = function(self, e, ...)
   log.trace("Mod.handle_event: Handling event ", e.id, " for mod ", self.id)
   if
-      self.handle
-      and self.handle[e.split[1]]
-      and self.handle[e.split[1]][e.split[2]]
+    self.handle
+    and self.handle[e.split[1]]
+    and self.handle[e.split[1]][e.split[2]]
   then
     self.handle[e.split[1]][e.split[2]](e)
     return true
@@ -507,14 +495,14 @@ function Mod.broadcast(e)
 end
 
 --- Returns an event template defined in `mod.events`.
---- @param m down.Mod.Mod A reference to the mod invoking the function
+--- @param self down.Mod.Mod A reference to the mod invoking the function
 --- @param id string A full path to a valid event type (e.g. `mod.events.some_event`)
 --- @return down.Event?
 function Mod.get_event(self, id)
   local split = Event.split_id(id)
   if not split then
     log.warn(
-      "Unable to get event template for event" .. tid .. "and mod" .. self.id
+      "Unable to get event template for event" .. id .. "and mod" .. self.id
     )
     return
   end

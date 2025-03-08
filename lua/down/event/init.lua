@@ -33,9 +33,10 @@ local Event = {
   },
 }
 
+--- Callback
 --- @class down.Callback
----   @field callbacks table<string, { [1]: fun(event: down.Event, content: table|any), [2]?: fun(event: down.Event): boolean }>
-local Cb = {
+---   @field cb table<string, { [1]: fun(event: down.Event, content: table|any), [2]?: fun(event: down.Event): boolean }>
+local Callback = {
   ---@type table<string, { [1]: fun(event: down.Event, content: table|any), [2]?: fun(event: down.Event): boolean }>
   cb = {},
 
@@ -44,9 +45,9 @@ local Cb = {
 }
 
 --- @param ty? string
---- @return { [1]: fun(event: down.Event, content: table|any)> }
+--- @return { [1]: fun(event: down.Event, content: table|any) }
 function Event:get_cb(ty)
-  return Cb.cb[ty or self.id]
+  return Callback.cb[ty or self.id]
 end
 
 --- Triggers a new callback to execute whenever an event of the requested type is executed.
@@ -55,21 +56,21 @@ end
 --- @param filt? fun(event: down.Event): boolean # A filtering function to test if a certain event meets our expectations.
 function Event.callback(self, cb, filt)
   local ty = (self and self.id) or self
-  Cb.cb[ty] = Cb.cb[ty] or {}
-  table.insert(Cb.cb[ty], { cb, filt })
+  Callback.cb[ty] = Callback.cb[ty] or {}
+  table.insert(Callback.cb[ty], { cb, filt })
 end
 
 --- @param cb? fun(event: down.Event, content: table|any)
 function Event.set_callback(self, cb)
-  Cb.cb[self.id] = Cb.cb[self.id] or {}
-  table.insert(Cb.cb[self.id], cb)
+  Callback.cb[self.id] = Callback.cb[self.id] or {}
+  table.insert(Callback.cb[self.id], cb)
 end
 
 --- Used internally by down to call all C with an event.
 --- @param self down.Event
 function Event.handle(self)
   log.trace("Event.handle: Handling ", self.id)
-  local cbentry = Cb.cb[self.id]
+  local cbentry = Callback.cb[self.id]
   if cbentry then
     for _, cb in ipairs(cbentry) do
       if not cb[2] or cb[2](self) then
@@ -79,7 +80,9 @@ function Event.handle(self)
   end
 end
 
-function Event.load_cb(m)
+--- Load callback
+--- @param m down.Mod.Mod
+function Event.load_callback(m)
   for hk, ht in pairs(m.handle) do
     for ck, ct in pairs(ht) do
       if type(ct) == "function" then
@@ -89,8 +92,11 @@ function Event.load_cb(m)
   end
 end
 
----@type fun(module: down.Mod.Mod, name: string, body?: any): down.Event
----@return down.Event
+--- Define a new event
+---@param module down.Mod.Mod The module
+---@param name string The name of the event
+---@param body any? The body payload
+---@return down.Event event The result event
 Event.define = function(module, name, body)
   local mn = ""
   if type(module) == "table" then
@@ -116,8 +122,9 @@ Event.define = function(module, name, body)
   }
 end
 
+--- Split id
 --- @param id string The full path of a init event
---- @return string[]?
+--- @return string[]? splitid id
 function Event.split_id(id)
   local sa, sb = id:find("%.events%.")
   local sp_id = { id:sub(0, sa - 1), id:sub(sb + 1) }
@@ -202,6 +209,7 @@ function Event.broadcast_to(self, mods)
   end
 end
 
+--- Send an event
 --- @param recv down.Mod.Mod The name of a loaded init that will be the recipient of the event.
 --- @return nil
 --- @param self down.Event

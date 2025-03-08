@@ -5,7 +5,15 @@ local script = require("down.mod.ui.icon.builtin.icons.script")
 local tbl = require("down.util.table")
 local util = require("down.mod.ui.icon.util")
 
-local function get_ordered_index(bufid, prefix_node)
+
+---@class down.mod.ui.icon.Render
+local Render = {
+  buf = {},
+  enabled = true,
+  pretty = {},
+}
+
+Render.get_ordered_index = function(bufid, prefix_node)
   -- TODO: calculate levels in one pass, since treesitter API implementation seems to have ridiculously high complexity
   local _, _, level = util.get_node_position_and_text_length(bufid, prefix_node)
   local header_node = prefix_node:parent()
@@ -29,16 +37,10 @@ local function get_ordered_index(bufid, prefix_node)
 
   return count, (sibling or header_node:parent())
 end
----@class down.mod.ui.icon.render
-M = {
-  buf = {},
-  enabled = true,
-  pretty = {},
-}
 
-M.icon = icon
-M.mark = mark
-M.icon_removers = {
+Render.icon = icon
+Render.mark = mark
+Render.icon_removers = {
   quote = function(_, bufid, node)
     for _, content in ipairs(node:field("content")) do
       local end_row, end_col = content:end_()
@@ -51,7 +53,7 @@ M.icon_removers = {
 
       vim.api.nvim_buf_clear_namespace(
         bufid,
-        M.mark.ns.icon.ns,
+        Render.mark.ns.icon.ns,
         (content:start()),
         end_row + 1
       )
@@ -59,31 +61,31 @@ M.icon_removers = {
   end,
 }
 
-M.handle = function(event)
-  if not M.enabled and (event.id ~= "cmd.events.icon.toggle") then
+Render.handle = function(event)
+  if not Render.enabled and (event.id ~= "cmd.events.icon.toggle") then
     return
   end
-  return M.mark.handlers[event.id](event)
+  return Render.mark.handlers[event.id](event)
 end
 
-M.on_left = function(config, bufid, node)
+Render.on_left = function(config, bufid, node)
   if not config.icon then
     return
   end
   local row_0b, col_0b, len =
-    util.get_node_position_and_text_length(bufid, node)
+      util.get_node_position_and_text_length(bufid, node)
   local text = (" "):rep(len - 1) .. config.icon
   mark.set(bufid, row_0b, col_0b, text, config.highlight)
 end
 
-M.multilevel_on_right = function(is_ordered)
+Render.multilevel_on_right = function(is_ordered)
   return function(config, bufid, node)
     if not config.icons then
       return
     end
 
     local row_0b, col_0b, len =
-      util.get_node_position_and_text_length(bufid, node)
+        util.get_node_position_and_text_length(bufid, node)
     local icon_pattern = tbl.orlast(config.icons, len)
     if not icon_pattern then
       return
@@ -99,7 +101,7 @@ M.multilevel_on_right = function(is_ordered)
     local text = (" "):rep(len - 1) .. icon
 
     local _, first_unicode_end =
-      text:find("[%z\1-\127\194-\244][\128-\191]*", len)
+        text:find("[%z\1-\127\194-\244][\128-\191]*", len)
     local highlight = config.highlights and tbl.orlast(config.highlights, len)
     mark.set(bufid, row_0b, col_0b, text:sub(1, first_unicode_end), highlight)
     if vim.fn.strcharlen(text) > len then
@@ -117,7 +119,7 @@ M.multilevel_on_right = function(is_ordered)
   end
 end
 
-M.footnote_concealed = function(config, bufid, node)
+Render.footnote_concealed = function(config, bufid, node)
   local link_title_node = node:next_named_sibling()
   local link_title = vim.treesitter.get_node_text(link_title_node, bufid)
   if config.numeric_superscript and link_title:match("^[-0-9]+$") then
@@ -134,7 +136,7 @@ M.footnote_concealed = function(config, bufid, node)
 end
 
 ---@param node TSNode
-M.quote_concealed = function(config, bufid, node)
+Render.quote_concealed = function(config, bufid, node)
   if not config.icons then
     return
   end
@@ -142,7 +144,7 @@ M.quote_concealed = function(config, bufid, node)
   local prefix = node:named_child(0)
 
   local row_0b, col_0b, len =
-    util.get_node_position_and_text_length(bufid, prefix)
+      util.get_node_position_and_text_length(bufid, prefix)
 
   local last_icon, last_highlight
 
@@ -157,7 +159,7 @@ M.quote_concealed = function(config, bufid, node)
     end
 
     for line = row_0b, row_last_0b do
-      if M.mark.ln.len(bufid, line) > len then
+      if Render.mark.ln.len(bufid, line) > len then
         for col = 1, len do
           if config.icons[col] ~= nil then
             last_icon = config.icons[col]
@@ -174,17 +176,17 @@ M.quote_concealed = function(config, bufid, node)
   end
 end
 
-M.fill_text = function(config, bufid, node)
+Render.fill_text = function(config, bufid, node)
   if not config.icon then
     return
   end
   local row_0b, col_0b, len =
-    util.get_node_position_and_text_length(bufid, node)
+      util.get_node_position_and_text_length(bufid, node)
   local text = config.icon:rep(len)
   mark.set(bufid, row_0b, col_0b, text, config.highlight)
 end
 
-M.fill_multiline_chop2 = function(config, bufid, node)
+Render.fill_multiline_chop2 = function(config, bufid, node)
   if not config.icon then
     return
   end
@@ -192,12 +194,12 @@ M.fill_multiline_chop2 = function(config, bufid, node)
   for i = row_start_0b, row_end_0bin do
     local l = i == row_start_0b and col_start_0b + 1 or 0
     local r_ex = i == row_end_0bin and col_end_0bex - 1
-      or util.get_line_length(bufid, i)
+        or util.get_line_length(bufid, i)
     mark.set(bufid, i, l, config.icon:rep(r_ex - l), config.highlight)
   end
 end
 
--- M.render_horizontal_line = function(config, bufid, node)
+-- Render.render_horizontal_line = function(config, bufid, node)
 --   if not config.icon then
 --     return
 --   end
@@ -210,4 +212,4 @@ end
 --     or vim.api.nvim_win_get_width(assert(vim.fn.bufwinid(bufid)))
 --   local len = math.max(
 --     end
-return M
+return Render

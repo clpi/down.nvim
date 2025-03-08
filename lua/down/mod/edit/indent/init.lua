@@ -1,40 +1,40 @@
 local mod = require 'down.mod'
-local M = mod.new('edit.indent')
+local Indent = mod.new('edit.indent')
 local ts = vim.treesitter
 
-M.maps = {
+Indent.maps = {
   {
     'n',
     '>>',
-    M.head.inc,
+    Indent.head.inc,
     'Incr head',
   },
   {
     'n',
     '<<',
-    M.head.dec,
+    Indent.head.dec,
     'Decr head',
   },
 }
 
-M.load = function()
+Indent.load = function()
   -- NOTE: temporary
   vim.api.nvim_create_user_command('DownInc', function()
-    M.head.inc()
+    Indent.head.inc()
   end, {
     desc = 'incs heading level',
   })
 
   vim.api.nvim_create_user_command('DownDec', function()
-    M.head.dec()
+    Indent.head.dec()
   end, {
     desc = 'decs heading level',
   })
 end
 ---@class down.edit.indent.Config
-M.config = {}
+Indent.config = {}
 ---@class down.edit.indent.Data
-M.head = {
+Indent.head = {
   atx = {
     inc = function(node)
       local text = ts.get_node_text(node, vim.api.nvim_get_current_buf())
@@ -106,28 +106,28 @@ M.head = {
     end,
   },
   inc = function()
-    local isHeading, nodeType, node = M.head.get()
+    local isHeading, nodeType, node = Indent.head.get()
     if isHeading == false then
       return
     end
     if nodeType == 'atx_heading' then
-      M.head.atx.inc(node --[[ @as table ]])
+      Indent.head.atx.inc(node --[[ @as table ]])
     else
-      M.head.setext.inc(node --[[ @as table ]])
+      Indent.head.setext.inc(node --[[ @as table ]])
     end
   end,
   dec = function()
-    local isHeading, nodeType, node = M.head.get()
+    local isHeading, nodeType, node = Indent.head.get()
     if isHeading == false then
       return
     end
     if nodeType == 'atx_heading' then
-      M.head.atx.dec(node --[[ @as table ]])
+      Indent.head.atx.dec(node --[[ @as table ]])
     else
-      M.head.setext.dec(node --[[ @as table ]])
+      Indent.head.setext.dec(node --[[ @as table ]])
     end
   end,
-  -- gets M. under cursor
+  -- gets Indent. under cursor
   ---@return boolean
   ---@return string?
   ---@return table?
@@ -148,4 +148,4 @@ M.head = {
   end,
 }
 
-return M
+return Indent

@@ -1,9 +1,9 @@
 -- from copilot
 -- task_parser.lua
-local M = {}
+local Parse = {}
 
 -- Helper function to parse date, time, datetime, etc.
-local function parse_datetime(text)
+Parse.datetime = function(text)
   local patterns = {
     { pattern = "by (%d+/%d+/%d+ %d+:%d+)", type = "datetime" },
     { pattern = "by (%d+/%d+/%d+)",         type = "date" },
@@ -33,9 +33,9 @@ local function parse_datetime(text)
 end
 
 -- Main function to parse task items
-function M.parse_task(item)
+function Parse.task(item)
   local result = {}
-  local datetime_info = parse_datetime(item)
+  local datetime_info = Parse.datetime(item)
   if datetime_info then
     result.datetime = datetime_info
   end
@@ -77,9 +77,9 @@ local task_pattern = Ct(
 )
 
 -- Main function to parse task items
-function M.parse_task(item)
+function Parse.parsetask(item)
   local result = task_pattern:match(item)
   return result or {}
 end
 
-return M
+return Parse

@@ -9,7 +9,7 @@ MIT
 markdown, org-mode, note-taking, knowledge-management, developer-tools, productivity
 
 The Neovim plugin for the *down* _markdown_ developer-focused
-and knowledge management environment, offering the comfort familiarity, and compatibility of a traditional markdown note-taking environment with the power of org-mode.
+note-taking and knowledge management environment, offering the comfort familiarity, and compatibility of a traditional markdown note-taking environment with the power of org-mode.
 
 ------------------------------------------------------------------------------
                                                                           *Down*
@@ -29,7 +29,7 @@ defined modules specifieed and workspaces
 ------------------------------------------------------------------------------
                                                                   *Down:start()*
                                  `Down:start`()
-Start the plugin
+*Start* the ^down.nvim^ plugin
 Load the workspace and user modules
 
 ------------------------------------------------------------------------------
@@ -181,38 +181,23 @@ Return ~
 `(nil)`
 
 ------------------------------------------------------------------------------
-                                                     *Mod.load_mod_from_table()*
-                     `Mod.load_mod_from_table`({m}, {cfg})
+                                                              *Mod.from_table()*
+                          `Mod.from_table`({m}, {cfg})
 @param m down.Mod.Mod The actual mod to load.
-@return down.Mod|nil # Whether the mod successfully loaded.
+@return down.Mod.Mod|nil # Whether the mod successfully loaded.
 
 ------------------------------------------------------------------------------
                                                                *Mod.check_mod()*
                               `Mod.check_mod`({n})
 @param n string
-@return down.config.Mod?
+@return down.Mod.Mod
 
 ------------------------------------------------------------------------------
                                                                 *Mod.load_mod()*
                          `Mod.load_mod`({modn}, {cfg})
 @param modn string A path to a mod on disk. A path in down is '.', not '/'.
 @param cfg table? A config that reflects the structure of `down.config.user.setup["mod.id"].config`.
-@return down.Mod|nil # Whether the mod was successfully loaded.
-
-------------------------------------------------------------------------------
-                                       *Mod.load_mod_as_dependency_from_table()*
-          `Mod.load_mod_as_dependency_from_table`({md}, {parent_mod})
-Has the same principle of operation as load_mod_from_table(), except it then sets up the parent mod's "dep" table, allowing the parent to access the child as if it were a dependency.
-@param md down.Mod A valid table as returned by mod.new()
-@param parent_mod string|down.Mod If a string, then the parent is searched for in the loaded mod. If a table, then the mod is treated as a valid mod as returned by mod.new()
-
-------------------------------------------------------------------------------
-                                                  *Mod.load_mod_as_dependency()*
-           `Mod.load_mod_as_dependency`({modn}, {parent_mod}, {cfg})
-Normally loads a mod, but then sets up the parent mod's "dep" table, allowing the parent mod to access the child as if it were a dependency.
-@param modn string A path to a mod on disk. A path  in down is '.', not '/'
-@param parent_mod string The name of the parent mod. This is the mod which the dependency will be attached to.
-@param cfg? table A config that reflects the structure of down.config.user.setup["mod.id"].config
+@return down.Mod.Mod|nil # Whether the mod was successfully loaded.
 
 ------------------------------------------------------------------------------
                                                               *Mod.mod_config()*
@@ -251,32 +236,35 @@ Fields ~
 ------------------------------------------------------------------------------
                                                                *Mod.load_opts()*
                               `Mod.load_opts`({m})
+Load the opts for the mod
 Parameters ~
-{m} `(down.Mod)`
+{m} `(down.Mod.Mod)`
 
 ------------------------------------------------------------------------------
                                                                *Mod.load_maps()*
                               `Mod.load_maps`({m})
+Load the maps for the mod
 Parameters ~
-{m} `(down.Mod)`
+{m} `(down.Mod.Mod)`
 
 ------------------------------------------------------------------------------
                                                                 *Mod.mod_load()*
                               `Mod.mod_load`({m})
+Perform initialization for the mod
 Parameters ~
-{m} `(down.Mod)`
+{m} `(down.Mod.Mod)`
 
 ------------------------------------------------------------------------------
                                                                  *Mod.modules()*
                               `Mod.modules`({ms})
 @param ms? table<any, string> list of modules to load
-@return table<integer, down.Mod>
+@return down.Mod.Mod[]
 
 ------------------------------------------------------------------------------
                                                                     *Mod.test()*
                                 `Mod.test`({m})
 Parameters ~
-{m} `(down.Mod)`
+{m} `(down.Mod.Mod)`
 
 ------------------------------------------------------------------------------
                                                                   *Mod.unloaded*
@@ -299,8 +287,8 @@ Reload the module m
 @return nil
 
 ------------------------------------------------------------------------------
-                                                           *Mod.sync_unloaded()*
-                             `Mod.sync_unloaded`()
+                                                                    *Mod.sync()*
+                                  `Mod.sync`()
 Syncs the unloaded modules with the loaded modules
 
 ------------------------------------------------------------------------------
@@ -308,14 +296,18 @@ Syncs the unloaded modules with the loaded modules
               `Mod.handle_cmd`({self}, {e}, {cmd}, {cmds}, {...})
 Parameters ~
 {cmds} `(down.Command[])`
+{self} `(down.Mod.Mod)`
+{e} `(down.Event)`
+{cmd} `(string)`
 Return ~
 `(boolean)`
 
 ------------------------------------------------------------------------------
                                                             *Mod.handle_event()*
                      `Mod.handle_event`({self}, {e}, {...})
+Handles an event for a mod.
 @param e down.Event
-@param self down.Mod
+@param self down.Mod.Mod
 @param ... any
 @return boolean
 
@@ -346,7 +338,7 @@ Parameters ~
                                                                *Mod.get_event()*
                          `Mod.get_event`({self}, {id})
 Returns an event template defined in `mod.events`.
-@param m down.Mod.Mod A reference to the mod invoking the function
+@param self down.Mod.Mod A reference to the mod invoking the function
 @param id string A full path to a valid event type (e.g. `mod.events.some_event`)
 @return down.Event?
 
@@ -359,16 +351,17 @@ Class ~
 {down.Event}
 
 ------------------------------------------------------------------------------
-                                                                            *Cb*
-                                      `Cb`
+                                                                      *Callback*
+                                   `Callback`
+Callback
 @class down.Callback
-  @field callbacks table<string, { [1]: fun(event: down.Event, content: table|any), [2]?: fun(event: down.Event): boolean }>
+  @field cb table<string, { [1]: fun(event: down.Event, content: table|any), [2]?: fun(event: down.Event): boolean }>
 
 ------------------------------------------------------------------------------
                                                                 *Event:get_cb()*
                               `Event:get_cb`({ty})
 @param ty? string
-@return { [1]: fun(event: down.Event, content: table|any)> }
+@return { [1]: fun(event: down.Event, content: table|any) }
 
 ------------------------------------------------------------------------------
                                                               *Event.callback()*
@@ -390,18 +383,28 @@ Used internally by down to call all C with an event.
 @param self down.Event
 
 ------------------------------------------------------------------------------
+                                                         *Event.load_callback()*
+                           `Event.load_callback`({m})
+Load callback
+@param m down.Mod.Mod
+
+------------------------------------------------------------------------------
                                                                 *Event.define()*
                     `Event.define`({module}, {name}, {body})
-Type ~
-`(fun(module: down.Mod.Mod, name: string, body?: any): down.Event)`
+Define a new event
+Parameters ~
+{module} `(down.Mod.Mod)` The module
+{name} `(string)` The name of the event
+{body} `(any?)` The body payload
 Return ~
-`(down.Event)`
+`(down.Event)` event The result event
 
 ------------------------------------------------------------------------------
                                                               *Event.split_id()*
                              `Event.split_id`({id})
+Split id
 @param id string The full path of a init event
-@return string[]?
+@return string[]? splitid id
 
 ------------------------------------------------------------------------------
                                                              *Event.get_event()*
@@ -432,9 +435,17 @@ Sends an event to all subscribed mod. The event contains the filename, filehead,
 ------------------------------------------------------------------------------
                                                                   *Event.send()*
                           `Event.send`({self}, {recv})
+Send an event
 @param recv down.Mod.Mod The name of a loaded init that will be the recipient of the event.
 @return nil
 @param self down.Event
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                       *Autocmd*
+                                   `Autocmd`
+Autocmd module.
 
 
 ==============================================================================
@@ -567,20 +578,6 @@ Return ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                       *Snippet*
-                                   `Snippet`
-Class ~
-{down.mod.code.Snippet:} down.Mod
-
-------------------------------------------------------------------------------
-                                                                *Snippet.config*
-                                `Snippet.config`
-Class ~
-{down..code.snippet.Config}
-
-
-==============================================================================
-------------------------------------------------------------------------------
                                                                            *Run*
                                      `Run`
 Class ~
@@ -591,6 +588,20 @@ Class ~
                                   `Run.config`
 Class ~
 {down..code.run.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                       *Snippet*
+                                   `Snippet`
+Class ~
+{down.mod.code.Snippet:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                *Snippet.config*
+                                `Snippet.config`
+Class ~
+{down..code.snippet.Config}
 
 
 ==============================================================================
@@ -754,14 +765,14 @@ Return ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                          *Time*
+                                     `Time`
 Class ~
 {down.mod.data.time.Time:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                               *M.to_lua_date()*
-                           `M.to_lua_date`({parsedt})
+                                                            *Time.to_lua_date()*
+                         `Time.to_lua_date`({parsedt})
 Converts a parsed date with `parse_date` to a lua date.
 Parameters ~
 {parsedt} `({weekday: {name: string, number: number}?, day: number?, month: {name: string, number: number}?, year: number?, timezone: string?, time: {hr: number, min: number, sec: number?}?})` #The date to convert
@@ -769,8 +780,8 @@ Return ~
 `(osdate)` #A Lua date
 
 ------------------------------------------------------------------------------
-                                                                   *M.to_date()*
-                       `M.to_date`({osdate}, {incltime})
+                                                                *Time.to_date()*
+                      `Time.to_date`({osdate}, {incltime})
 Converts a lua `osdate` to a down date.
 Parameters ~
 {osdate} `(osdate)` #The date to convert
@@ -779,8 +790,8 @@ Return ~
 `({weekday: {name: string, number: number}?, day: number?, month: {name: string, number: number}?, year: number?, timezone: string?, time: {hr: number, min: number, sec: number?}?})` #The converted date
 
 ------------------------------------------------------------------------------
-                                                                *M.parse_date()*
-                            `M.parse_date`({input})
+                                                             *Time.parse_date()*
+                           `Time.parse_date`({input})
 Parses a date and returns a table representing the date
 Parameters ~
 {input} `(string)` #The input which should follow the date specification found in the down spec.
@@ -906,14 +917,14 @@ Return ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                 *Indent.config*
+                                `Indent.config`
 Class ~
 {down.edit.indent.Config}
 
 ------------------------------------------------------------------------------
-                                                                        *M.head*
-                                    `M.head`
+                                                                   *Indent.head*
+                                 `Indent.head`
 Class ~
 {down.edit.indent.Data}
 
@@ -1008,7 +1019,6 @@ Class ~
                                                                        *Builtin*
                                    `Builtin`
 Builtin find module
-
 @class down.mod.find.builtin.Builtin: down.Mod
 
 ------------------------------------------------------------------------------
@@ -1450,32 +1460,32 @@ Return ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                       *Capture*
+                                   `Capture`
 Type ~
 `(down.Mod)`
 
 ------------------------------------------------------------------------------
-                                                                     *M.setup()*
-                                  `M.setup`()
+                                                               *Capture.setup()*
+                               `Capture.setup`()
 Return ~
 `(down.mod.Setup)`
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                *Capture.config*
+                                `Capture.config`
 Class ~
 {down.mod.note.capture.Config}
 
 ------------------------------------------------------------------------------
-                                                                      *M.events*
-                                   `M.events`
+                                                                *Capture.events*
+                                `Capture.events`
 Class ~
 {down.mod.note.capture.Events}
 
 ------------------------------------------------------------------------------
-                                                                      *M.handle*
-                                   `M.handle`
+                                                                *Capture.handle*
+                                `Capture.handle`
 Class ~
 {down.mod.note.capture.Subscribed}
 
@@ -2235,6 +2245,13 @@ Parameters ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
+                                                                          *Icon*
+                                     `Icon`
+@class down.mod.ui.icon.Icon: down.Mod
+
+
+==============================================================================
+------------------------------------------------------------------------------
 @meta
 
 @alias down.mod.ui.icon.Provider.Type
@@ -2505,28 +2522,28 @@ Class ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                        *Render*
+                                    `Render`
 Class ~
-{down.mod.ui.icon.render}
+{down.mod.ui.icon.Render}
 
 ------------------------------------------------------------------------------
-                                                           *M.quote_concealed()*
-                 `M.quote_concealed`({config}, {bufid}, {node})
+                                                      *Render.quote_concealed()*
+              `Render.quote_concealed`({config}, {bufid}, {node})
 Parameters ~
 {node} `(TSNode)`
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                          *Mark*
+                                     `Mark`
 Class ~
 {down.mod.ui.icon.render.Mark}
 
 ------------------------------------------------------------------------------
-                                                           *M.query_get_nodes()*
-`M.query_get_nodes`({query}, {document_root}, {bufid}, {row_start_0b}, {row_end_0bex})
+                                                        *Mark.query_get_nodes()*
+`Mark.query_get_nodes`({query}, {document_root}, {bufid}, {row_start_0b}, {row_end_0bex})
 @param query TSQuery|any
 @param document_root Node|any
 @param bufid number
@@ -2534,8 +2551,8 @@ Class ~
 @param row_end_0bex number
 
 ------------------------------------------------------------------------------
-                                                                *M.render_buf()*
-                          `M.render_buf`({bufid}, {p})
+                                                             *Mark.render_buf()*
+                        `Mark.render_buf`({bufid}, {p})
 @param bufid? integer
 
 
@@ -2586,23 +2603,28 @@ Class ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                         *M.win*
-                                    `M.win`
+                                                                           *Win*
+                                     `Win`
+Win
 Class ~
-{ui.win.Win}
+{down.mod.ui.win.Win:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                       *Win.win*
+                                   `Win.win`
 Fields ~
 {win} `(integer)`
 {buf} `(integer)`
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                    *Win.config*
+                                  `Win.config`
 Class ~
 {down.ui.win.Config}
 
 ------------------------------------------------------------------------------
-                                                                       *M.cmd()*
-                               `M.cmd`({w}, {f})
+                                                                     *Win.cmd()*
+                              `Win.cmd`({w}, {f})
 Parameters ~
 {w} `(integer)`
 {f} `(function)`
@@ -2973,6 +2995,31 @@ variables that describe something specific about the user's hardware.
 
 
 --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+@meta down.ids.context
+
+The position of a character aaagin a file.
+@class (exact) down.Position: { line?: number, char?: number } position of a character in a file
+
+The position of a character aaagin a file.
+@class (exact) down.Range: { start: down.Position,start: down.Position } position of a character in a file
+
+------------------------------------------------------------------------------
+The context of an in-file object.
+@class (exact) down.Context context of in-file object
+  @field public position? down.Position location
+  @field public buf? number
+  @field public win? number
+  @field public file? down.Id  root node in file scope
+  @field public dir? down.Id  root node in file scope
+  @field public scope? down.Scope in file scope
+
+The scope of an entity.
+@class (exact) down.Info
+  @field public id down.Id
+  @field public uri down.Uri
+  @field public context? down.Context
+  @field public metadata? { [string]: any }
+  @field public tags? { [string]: down.Tag }
 
 
 ==============================================================================
@@ -3046,34 +3093,30 @@ The important store value object
 | "test"
 | "defaults
 
-
-==============================================================================
-------------------------------------------------------------------------------
-@meta down.ids.context
-
-The position of a character aaagin a file.
-@class (exact) down.Position: { line?: number, char?: number } position of a character in a file
-
-The position of a character aaagin a file.
-@class (exact) down.Range: { start: down.Position,start: down.Position } position of a character in a file
+@alias down.log.Level
+| "trace"
+| "debug"
+| "info"
+| "warn"
+| "error"
+| "fatal"
 
 ------------------------------------------------------------------------------
-The context of an in-file object.
-@class (exact) down.Context context of in-file object
-  @field public position? down.Position location
-  @field public buf? number
-  @field public win? number
-  @field public file? down.Id  root node in file scope
-  @field public dir? down.Id  root node in file scope
-  @field public scope? down.Scope in file scope
+@class (exact) down.log.Config
+@field plugin string                                           Name of the plugin. Prepended to log messages.
+@field outfile string
+@field use_console boolean                                     Whether to print the output to Neovim while running.
+@field highlights boolean                                      Whether highlighting should be used in console (using `:echohl`).
+@field use_file boolean                                        Whether to write output to a file.
+@field level down.log.Level                                          Any messages above this level will be logged.
+@field modes ({ name: down.log.Level, hl: string, level: number })[] Level config.
+@field float_precision number                                  Can limit the number of decimals displayed for floats.
 
-The scope of an entity.
-@class (exact) down.Info
-  @field public id down.Id
-  @field public uri down.Uri
-  @field public context? down.Context
-  @field public metadata? { [string]: any }
-  @field public tags? { [string]: down.Tag }
+------------------------------------------------------------------------------
+@class (exact) down.Log
+  @field levels table<string, number>
+  @field number_level table<number, string>
+  @field config down.log.Config
 
 
 ==============================================================================
@@ -3327,6 +3370,7 @@ The status of a task.
 ------------------------------------------------------------------------------
 down.ids.event
 
+------------------------------------------------------------------------------
 @class (exact) down.Event
   @field id string The type of the event. Exists in the format of `category.id`.
   @field split string[] The event type, just split on every `.` character, e.g. `{ "category", "name" }`.
@@ -3344,9 +3388,11 @@ down.ids.event
   @field new fun(m: down.Mod.Mod, type: string, body: table|string, ev?: table): down.Event?
   @field send fun(self: down.Event, recipient: down.Mod.Mod[])
   @field handle fun(self: down.Event)
+  @field load_callback fun(m: down.Mod.Mod)
   @field broadcast_to fun(self: down.Event, mods: down.Mod.Mod[])
   @field define fun(module: down.Mod.Mod|string, type: string): down.Event
   @field context? down.Context
+  ]] --
 
 
 @class (exact) down.mod.Events: {
@@ -3358,34 +3404,6 @@ down.ids.event
     [string]: boolean
   }
 }
-
-
-==============================================================================
-------------------------------------------------------------------------------
-@alias down.log.Level
-| "trace"
-| "debug"
-| "info"
-| "warn"
-| "error"
-| "fatal"
-
-------------------------------------------------------------------------------
-@class (exact) down.log.Config
-@field plugin string                                           Name of the plugin. Prepended to log messages.
-@field outfile string
-@field use_console boolean                                     Whether to print the output to Neovim while running.
-@field highlights boolean                                      Whether highlighting should be used in console (using `:echohl`).
-@field use_file boolean                                        Whether to write output to a file.
-@field level down.log.Level                                          Any messages above this level will be logged.
-@field modes ({ name: down.log.Level, hl: string, level: number })[] Level config.
-@field float_precision number                                  Can limit the number of decimals displayed for floats.
-
-------------------------------------------------------------------------------
-@class (exact) down.Log
-  @field levels table<string, number>
-  @field number_level table<number, string>
-  @field config down.log.Config
 
 
 ==============================================================================
@@ -3617,208 +3635,6 @@ The base configuration
 
 ------------------------------------------------------------------------------
 @alias down.Commands {[string]?: down.Command } | function
-
-
-==============================================================================
-------------------------------------------------------------------------------
-@meta    down.ids.store
-@brief   Provides core data types
-@version <5.2,JIT
-
-@brief down.Store --------------------------------
-
-The important store value object
-@class (exact) down.Store<I>: { [down.store.Item.Kind]?: down.store.map.Kind<I> }
-
-@brief down.store.Key | down.store.Item ----------
-
-@alias down.store.Item.Kind "log" log"
-| "workspace" log"
-| "note" log"
-| "project" log"
-| "group" group
-| "scope" scope
-| "task" task
-| "scope" scope
-| "tag" tag
-| "flag" flag
-| "store" store
-| "status" status
-| "priority" priority
-| "weekday" weekday
-| "category" category
-| "month" month
-| "year" year
-| "time" time
-| "date" date
-| "datetime" datetime
-| "location" location
-| "event" event
-| "person" person
-| "rank" rank
-| "file" file
-| "folder" folder
-| "definition" definition
-| "mod" mod ``
-
-@alias down.store.Key.Kind
-| "uri" uri
-
-Configuration for global settings.
-@alias down.store.Key down.Tag Tag
-| down.Flag Flag
-| down.Tag
-| down.Uri
-| down.Id
-| down.Dir
-| down.File File
-| down.Workspace
-| down.Scope
-| down.Project
-| down.task.Priority
-| "done"
-| "todo"
-| "cancelled"
-| "waiting"
-| "blocked"
-| "doing"
-
-The priority of a task.
-@alias down.task.Priority "misc"
-| "lowest"
-| "low"
-| "medium"
-| "high"
-| "highest"
-
-Ranking
-@alias down.Ranking integer 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-| down.Uri
-| down.Anchor
-| down.Ranking
-| number string
-| down.Category
-| down.Date
-| string
-
-Configuration for global settings.
-@alias down.store.Item down.Store
-| down.Workspace workspace
-| down.User User
-| down.Anchor Anchor
-| down.Dir dir
-| down.Id Id
-| down.File file
-| down.Position file
-| down.Task task
-| down.Position position
-| down.Uri task
-| down.Log log
-| down.Project PProject
-| down.Note note
-| down.Tag tag
-| down.Agenda agenda
-| down.Flag Flag
-| down.Store Store
-| down.store.Item Item
-| down.store.Key Key
-| down.Scope Scope
-| down.Group Group
-| down.Category Category
-| down.Mod mod Tag
-| down.Category Category
-| down.Ranking Ranking
-| down.task.Priority
-| "done"
-| "todo"
-| "cancelled"
-| "waiting"
-| "blocked"
-| "doing"
-
-The priority of a task.
-@alias down.task.Priority "misc"
-| "lowest"
-| "low"
-| "medium"
-| "high"
-| "highest"
-
-Ranking
-@alias down.Ranking integer 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-| { [down.store.Key]: down.store.Item }
-| { [string]: string }
-
-@brief down.store ----------------------
-
-@alias down.store.id string The name associated with the vault of a certain kind
-
-@alias down.store.Index integer The index in the list of vault
-
-The important store value object
-  Contains a map of K to item type V
-  And an identifier, name, and kind string
-  id is like (if local): default.kind.item.
-@class down.Store<K, V>: {
-  id?: down.Id,
-  uri?: down.Uri,
-  name?: string,
-  about?: string,
-  workspace?: down.Id,
-  default?: K,
-  store?: { [K]?: V },
-  config?: down.config.Local,
-  metadata?: { [string]?: any },
-  scope?: down.Scope,
-  index?: number | down.store.Item.Kind,
-  config?: down.config.Local,
-  type?: type,
-} Map from id to store of kind
-
-@alias down.store.Workspace<V> down.Store<string, V, down.config.Local>
-
-@alias down.store.List<V> down.Store<integer, V>
-
-@alias down.store.Id<V> down.Store<down.Id, V>
-
-@alias down.store.Kind<V> down.Store<down.store.Item.Kind, V>
-
-@alias down.store.Map<KK, VK, VV> down.Store<KK, down.Store<VK, VV>>
-
-@alias down.KindId down.Store<down.store.Item.Kind, down.Store<down.Id, down.Project>>
-
-@class (exact) down.store.KindIdDateMap<V> { default?: down.store.Item.Kind, [down.store.Item.Kind]?: down.store.map.Id<V> }
-
-
-@brief down.store.
-
-@alias down.store.KindId<V> down.Store<string, down.Store<down.Id, down.store.Item>>
-
-THe data object for workspaces.
-@class (exact) down.store.Stores The data object for stores.
-  @field public store? down.store.KindId<down.Store> stores
-  @field public agenda? down.store.KindId<down.Agenda> agenda
-  @field public tasks? down.store.KindId<down.Task> agenda
-  @field public logs? down.store.KindId<down.Log> agenda
-  @field public stores? down.store.KindId<down.Store> agenda
-  @field public notes? down.store.KindId<down.Note> agenda
-  @field public files? down.store.KindId<down.File> agenda
-  @field public dirs? down.store.KindId<down.Dir> agenda
-  @field public tags? down.store.KindId<down.Tag> agenda
-  @field public flags? down.store.KindId<down.Flag> agenda
-  @field public projects? down.store.KindId<down.Project> proj
-  @field public groups? down.store.KindId<down.Group> proj
-  @field public scopes? down.store.KindId<down.Scope> proj
 
 
 ==============================================================================
@@ -4165,15 +3981,6 @@ Get the last element of a table, or the element at a given index.
 @param self table
 @param index number
 @return any
-
-
-==============================================================================
-------------------------------------------------------------------------------
-                                                 *utils.get_current_workspace()*
-                        `utils.get_current_workspace`()
-the full path to the current workspace
-Return ~
-`(string)` `(optional)`
 
 
  vim:tw=78:ts=8:noet:ft=help:norl:

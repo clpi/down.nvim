@@ -1,19 +1,20 @@
 local down = require("down")
 local log, mod, utils = down.log, down.mod, down.utils
 
-local M = mod.new("ui.icon", {
+--- @class down.mod.ui.icon.Icon: down.Mod
+local Icon = mod.new("ui.icon", {
   "builtin",
   "basic",
   "complex",
   "diamond",
 })
-M.render = require("down.mod.ui.icon.render")
+Icon.render = require("down.mod.ui.icon.render")
 
-M.mark = require("down.mod.ui.icon.render.mark")
+Icon.mark = require("down.mod.ui.icon.render.mark")
 
-M.util = require("down.mod.ui.icon.util")
+Icon.util = require("down.mod.ui.icon.util")
 
-M.setup = function()
+Icon.setup = function()
   return {
     loaded = true,
     dependencies = {
@@ -22,31 +23,31 @@ M.setup = function()
   }
 end
 
-M.load = function()
+Icon.load = function()
   local icon =
-    M.import[M.id .. "." .. M.config.icon].config["icon_" .. M.config.icon]
+      Icon.import[Icon.id .. "." .. Icon.config.icon].config["icon_" .. Icon.config.icon]
   if not icon then
     log.error(
       ("Unable to load icon preset '%s' - such a preset does not exist"):format(
-        M.config.icon
+        Icon.config.icon
       )
     )
     return
   end
 
-  M.config = vim.tbl_deep_extend(
+  Icon.config = vim.tbl_deep_extend(
     "force",
-    M.config,
+    Icon.config,
     { icons = icon },
-    M.config.custom or {}
+    Icon.config.custom or {}
   )
 
-  M.commands = {
+  Icon.commands = {
     toggle = {
       enabled = false,
       callback = function()
-        M.config.enabled = not M.config.enabled
-        M.render()
+        Icon.config.enabled = not Icon.config.enabled
+        Icon.render()
       end,
       completion = function()
         return { "on", "off" }
@@ -64,9 +65,9 @@ M.load = function()
       if vim.bo[bufid].ft ~= "markdown" then
         return
       end
-      M.mark.all.mark.changed(bufid)
+      Icon.mark.all.mark.changed(bufid)
     end,
   })
 end
 
-return M
+return Icon

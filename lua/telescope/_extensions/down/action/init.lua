@@ -1,3 +1,0 @@
-local A = {}
-
-return A

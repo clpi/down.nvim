@@ -2,10 +2,10 @@ local mod = require 'down.mod'
 local log = require 'down.util.log'
 
 ---@type down.Mod
-local M = mod.new 'note.capture'
+local Capture = mod.new 'note.capture'
 
 ---@return down.mod.Setup
-M.setup = function()
+Capture.setup = function()
   ---@type down.mod.Setup
   return {
     loaded = true,
@@ -19,16 +19,16 @@ M.setup = function()
 end
 
 ---@class down.mod.note.capture.Config
-M.config = {}
+Capture.config = {}
 
 ---@class down.mod.note.capture.Events
-M.events = {}
+Capture.events = {}
 
 ---@class down.mod.note.capture.Subscribed
-M.handle = {
+Capture.handle = {
   cmd = {
     ['capture'] = true,
   },
 }
 
-return M
+return Capture

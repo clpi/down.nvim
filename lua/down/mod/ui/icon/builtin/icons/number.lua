@@ -1,7 +1,7 @@
 local str = require("down.util.string")
 
 local memoized_ordered_icon_generator = {}
-local mt = require("down.util.table.metatable")
+local mt = require("down.util.table.mt")
 local tbl = require("down.util.table.table")
 
 --- Roman numerals

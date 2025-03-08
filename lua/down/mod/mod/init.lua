@@ -155,16 +155,16 @@ Mod.print = {
   --- @param name string
   mod = function(m, tb, i, name)
     i = i or 1
-    name = name or m.name
+    name = name or m.id
     Mod.print.index(i)
     tb = tb or {}
     ins(tb, "### " .. "" .. " **" .. name .. "**")
     ins(tb, "")
     -- ins(tb, .. '`' .. (name or m.name or '') .. '`')
     -- Mod.print.commands(m, tb, m.name, '', i)
-    Mod.print.setup(m, tb, m.name)
-    Mod.print.commands(m, tb, m.name, "", i + 1)
-    Mod.print.methods(tb, m, name)
+    Mod.print.setup(m, tb, m.id)
+    Mod.print.commands(m, tb, m.id, "", i + 1)
+    Mod.print.methods(tb, m, m.id)
     return tb
   end,
   --- Print title

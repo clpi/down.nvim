@@ -1,22 +1,24 @@
 local a, c = vim.api, vim.cmd
-local M = require("down.mod").new("ui.win")
 local mod = require("down.mod")
 
----@class ui.win.Win
+--- Win
+---@class down.mod.ui.win.Win: down.Mod
+local Win = require("down.mod").new("ui.win")
+
 ---@field win integer
 ---@field buf integer
-M.win = {
+Win.win = {
   buf = 0,
   win = 0,
 }
 
-function M.win:close()
+function Win.win:close()
   a.nvim_win_close(self.win, true)
   a.nvim_buf_delete(self.buf, { force = true })
   c.redraw()
 end
 
-M.setup = function()
+Win.setup = function()
   return {
     loaded = true,
     dependencies = {
@@ -25,9 +27,9 @@ M.setup = function()
   }
 end
 ---@class down.ui.win.Config
-M.config = {}
+Win.config = {}
 
-M.sel = function()
+Win.sel = function()
   local b = vim.api.nvim_create_buf(true, false)
   vim.api.nvim_buf_set_option(b, "bufhidden", "wipe")
   local width = vim.api.nvim_get_option("columns")
@@ -55,18 +57,18 @@ M.sel = function()
   local win = vim.api.nvim_open_win(b, true, opts)
   return { b, win }
 end
-M.buf = {}
-M.buf.win = function()
+Win.buf = {}
+Win.buf.win = function()
   return vim.api.nvim_get_current_win()
 end
 
-M.win = function(title, foot, cmd)
+Win.win = function(title, foot, cmd)
   local b = vim.api.nvim_create_buf(false, true)
   local w = vim.api.nvim_open_win(b, false, {
     relative = "editor",
-    height = math.ceil(vim.api.nvim_win_get_height(M.buf.win()) / 2),
+    height = math.ceil(vim.api.nvim_win_get_height(Win.buf.win()) / 2),
     anchor = "SW",
-    width = math.ceil(vim.api.nvim_win_get_width(M.buf.win()) / 2),
+    width = math.ceil(vim.api.nvim_win_get_width(Win.buf.win()) / 2),
     fixed = true,
     row = 1,
     col = 1,
@@ -88,10 +90,10 @@ M.win = function(title, foot, cmd)
 end
 ---@param w integer
 ---@param f function
-M.cmd = function(w, f)
+Win.cmd = function(w, f)
   return vim.api.nvim_win_call(w, f)
 end
-M.create_new = function()
+Win.create_new = function()
   local content = [[
   # Hello World
 
@@ -125,4 +127,4 @@ M.create_new = function()
   return { b, win }
 end
 
-return M
+return Win

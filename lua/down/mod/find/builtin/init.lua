@@ -1,5 +1,4 @@
 --- Builtin find module
----
 --- @class down.mod.find.builtin.Builtin: down.Mod
 local Builtin = require("down.mod").new("find.builtin")
 
@@ -12,6 +11,10 @@ Builtin.setup = function()
     loaded = true,
   }
 end
+
+Builtin.pick = {
+
+}
 
 Builtin.load = function() end
 

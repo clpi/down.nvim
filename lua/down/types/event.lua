@@ -1,5 +1,6 @@
 ---@meta down.ids.event
 ---
+--[[
 --- @class (exact) down.Event
 ---   @field id string The type of the event. Exists in the format of `category.id`.
 ---   @field split string[] The event type, just split on every `.` character, e.g. `{ "category", "name" }`.
@@ -17,9 +18,11 @@
 ---   @field new fun(m: down.Mod.Mod, type: string, body: table|string, ev?: table): down.Event?
 ---   @field send fun(self: down.Event, recipient: down.Mod.Mod[])
 ---   @field handle fun(self: down.Event)
+---   @field load_callback fun(m: down.Mod.Mod)
 ---   @field broadcast_to fun(self: down.Event, mods: down.Mod.Mod[])
 ---   @field define fun(module: down.Mod.Mod|string, type: string): down.Event
 ---   @field context? down.Context
+---   ]] --
 ---
 ---
 --- @class (exact) down.mod.Events: {
