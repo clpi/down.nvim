@@ -1,31 +1,42 @@
----@author clpi
----@file down.nvim 0.1.0
----@license MIT
 ---@package down.nvim
----@brief neovim note-taking plugin with the
----@brief comfort of mmarkdown and the power of org
+---@brief v0.1.2-alpha
+---@author Chris Pecunies <clp@clp.is>
+---@repository https://github.com/clpi/down.nvim.git
+---@homepage https://down.cli.st
+---@license MIT
+---@tags markdown, org-mode, note-taking, knowledge-management, developer-tools, productivity
+---
+---@brief The Neovim plugin for the *down* _markdown_ developer-focused
+---@briefnote-taking and knowledge management environment, offering the comfort familiarity, and compatibility of a traditional markdown note-taking environment with the power of org-mode.
 
----@class down.down
-local down = {
-  ---@type down.config.Config
+--- The main entry point for the down plugin
+---@class down.Down
+local Down = {
+  --- The configuration for the plugin
   config = require("down.config"),
+  --- The module logic for the plugin
   mod = require("down.mod"),
+  --- The event logic for the plugin
   event = require("down.event"),
+  --- The utility logic for the plugin
   util = require("down.util"),
+  --- The log logic for the plugin
   log = require("down.util.log"),
 }
 
 --- Load the user configuration, and load into config
 --- defined modules specifieed and workspaces
---- @param user down.mod.Config user config to load
+--- @param user down.config.User user config to load
 --- @param ... string The arguments to pass into an optional user hook
-function down.setup(user, ...)
-  down.util.log.trace("Setting up down")
-  down.config:setup(user, ...)
-  down:start()
+Down.setup = function(user, ...)
+  Down.util.log.trace("Setting up down")
+  Down.config:setup(user, ...)
+  Down:start()
 end
 
-function down:start()
+--- Start the plugin
+--- Load the workspace and user modules
+function Down:start()
   self.util.log.trace("Setting up down")
   self.mod.load_mod(
     "workspace",
@@ -36,35 +47,40 @@ function down:start()
       self.mod.load_mod(name, usermod)
     end
   end
-  self:post_load()
+  self:after()
 end
 
-function down:post_load()
-  self.config:post_load()
+--- After the plugin has started
+function Down:after()
+  self.config:after()
   for _, l in pairs(self.mod.mods) do
     self.event.load_cb(l)
-    l.post_load()
+    l.after()
   end
   self:broadcast("started")
 end
 
+--- Broadcast the message `e` or the 'started' event to all modules
 ---@param e string
 ---@param ... any
-function down:broadcast(e, ...)
+function Down:broadcast(e, ...)
   local ev = self.event.define("down", e or "started") ---@type down.Event
-  self.event.broadcast_to(ev, down.mod.mods)
+  self.event.broadcast_to(ev, Down.mod.mods)
 end
 
 --- Test all modules loaded
-function down.test()
-  down.config:test()
-  for m, d in pairs(down.mod.mods) do
-    print("Testing mod: " .. m)
-    d.test()
+function Down.test()
+  Down.config:test()
+  for m, d in pairs(Down.mod.mods) do
+    Down.util.log.trace("Testing mod: " .. m)
+    Down.util.log.trace("Result: " .. d.test())
   end
 end
 
-return setmetatable(down, {
+return setmetatable(Down, {
+  __call = function(down, user, ...)
+    Down.setup(user, ...)
+  end,
   -- __call = function(down, user, ...)
   --   down.setup(user, ...)
   -- end,

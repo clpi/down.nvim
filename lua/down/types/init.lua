@@ -50,7 +50,7 @@
 --- TODO:     #field [string]? down.config.UserMod
 ---
 --- @class (exact) down.config.User
----   @field [string]? down.config.mod.Config
+---   @field [string]? down.Mod.Config
 ---   @field hook? fun(args?: string) Hook to optionally run on load
 ---   @field dev? boolean Whether to start in dev mode
 ---
@@ -73,6 +73,7 @@
 
 --- @alias down.Pathsep "\\" | "/"
 ---
+--[[
 --- @class  down.Config
 ---   @field log? down.log.Config
 ---   @field defaults? boolean|string[]
@@ -85,11 +86,12 @@
 ---   @field hook? fun()   A hook that is run when down is started
 ---   @field started boolean                                   Set to `true` when down is fully initialized.
 ---   @field version string                                    The version of down that is currently active. Automatically updated by CI on every release.
----   @field setup fun(user: down.config.User, default: string[], ...: any): boolean Loads user config
+---   @field setup fun(self: down.Config, user: down.config.User, default: string[], ...: any): boolean Loads user config
 ---   @field homedir fun(...: string): string
 ---   @field vimdir fun(...: string): string
 ---   @field file fun(file: string | nil): string
 ---   @field fromfile fun(f: string | nil): down.config.User
+--]]
 
 --- Stores the config for the entirety of down.
 --- This includes not only the user config (passed to `setup()`), but also internal

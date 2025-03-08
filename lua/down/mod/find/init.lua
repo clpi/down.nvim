@@ -169,7 +169,7 @@ Find.setup = function()
   }
 end
 
-Find.post_load = function()
+Find.after = function()
   -- TODO: should load and register telescope extension if it is available
 end
 

@@ -1,5 +1,5 @@
 local mod = require("down.mod")
 
-local S = mod.new("semantic")
+local Semantic = mod.new("data.semantic")
 
-return S
+return Semantic

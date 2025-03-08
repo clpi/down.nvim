@@ -1,15 +1,15 @@
-local log = require 'down.util.log'
+local log = require("down.util.log")
 
 ---@class down.Event
 local Event = {
   autocmd = require("down.event.autocmd"),
-  id = '',
-  ref = '',
+  id = "",
+  ref = "",
   split = {},
   body = nil,
   broadcast = true,
   position = vim.api.nvim_win_get_cursor(0),
-  file = vim.fn.expand('%:p'),
+  file = vim.fn.expand("%:p"),
   dir = vim.fn.getcwd(),
   buf = vim.api.nvim_get_current_buf(),
   win = vim.api.nvim_get_current_win(),
@@ -25,11 +25,11 @@ local Event = {
     },
     line = vim.api.nvim_get_current_line(),
     char = vim.api.nvim_win_get_cursor(0)[2],
-    file = vim.fn.expand('%:p'),
+    file = vim.fn.expand("%:p"),
     buf = vim.api.nvim_get_current_buf(),
     win = vim.api.nvim_get_current_win(),
     dir = vim.fn.getcwd(),
-    scope = 'global',
+    scope = "global",
   },
 }
 
@@ -82,7 +82,7 @@ end
 function Event.load_cb(m)
   for hk, ht in pairs(m.handle) do
     for ck, ct in pairs(ht) do
-      if type(ct) == 'function' then
+      if type(ct) == "function" then
         Event.callback(Event.define(m, ck), ct)
       end
     end
@@ -92,13 +92,13 @@ end
 ---@type fun(module: down.Mod.Mod, name: string, body?: any): down.Event
 ---@return down.Event
 Event.define = function(module, name, body)
-  local mn = ''
-  if type(module) == 'table' then
+  local mn = ""
+  if type(module) == "table" then
     mn = module.id
-  elseif type(module) == 'string' then
+  elseif type(module) == "string" then
     mn = module
   end
-  local id = mn .. '.events.' .. name
+  local id = mn .. ".events." .. name
   return { ---@type down.Event
     id = id,
     ref = mn,
@@ -106,7 +106,7 @@ Event.define = function(module, name, body)
     body = body or module,
     broadcast = true,
     position = vim.api.nvim_win_get_cursor(0),
-    file = vim.fn.expand('%:p'),
+    file = vim.fn.expand("%:p"),
     dir = vim.fn.getcwd(),
     line = vim.api.nvim_get_current_line(),
     buf = vim.api.nvim_get_current_buf(),
@@ -119,10 +119,10 @@ end
 --- @param id string The full path of a init event
 --- @return string[]?
 function Event.split_id(id)
-  local sa, sb = id:find('%.events%.')
+  local sa, sb = id:find("%.events%.")
   local sp_id = { id:sub(0, sa - 1), id:sub(sb + 1) }
   if #sp_id ~= 2 then
-    log.warn('Invalid type name:' .. id)
+    log.warn("Invalid type name:" .. id)
     return
   end
   return sp_id
@@ -135,10 +135,12 @@ end
 function Event.get_event(m, id)
   local split = Event.split_id(id)
   if not split then
-    log.warn('Unable to get event template for event' .. id .. 'and init' .. m.id)
+    log.warn(
+      "Unable to get event template for event" .. id .. "and init" .. m.id
+    )
     return
   end
-  log.trace('Returning' .. split[2] .. 'for init' .. split[1])
+  log.trace("Returning" .. split[2] .. "for init" .. split[1])
   return m.events[split[2]]
 end
 
@@ -151,7 +153,7 @@ end
 function Event.new(m, id, body, ev)
   local event_template = Event.get_event(m or { id = m.id }, id)
   if not event_template then
-    log.warn('Unable to create event of type' .. id .. '. Returning nil...')
+    log.warn("Unable to create event of type" .. id .. ". Returning nil...")
     return
   end
   local mn = vim.deepcopy(event_template)
@@ -159,13 +161,18 @@ function Event.new(m, id, body, ev)
   mn.body = body
   mn.ref = m.id
   mn.split = assert(Event.split_id(id))
-  mn.file = vim.fn.expand('%:t') --[[@as string]]
-  mn.dir = vim.fn.expand('%:p:h') --[[@as string]]
+  mn.file = vim.fn.expand("%:t") --[[@as string]]
+  mn.dir = vim.fn.expand("%:p:h") --[[@as string]]
   mn.buf = ev and ev.buf or vim.api.nvim_get_current_buf()
   mn.win = vim.api.nvim_get_current_win()
   mn.position = vim.api.nvim_win_get_cursor(mn.win)
   mn.mode = vim.api.nvim_get_mode()
-  mn.line = vim.api.nvim_buf_get_lines(mn.buf, mn.position[1] - 1, mn.position[1], true)[1]
+  mn.line = vim.api.nvim_buf_get_lines(
+    mn.buf,
+    mn.position[1] - 1,
+    mn.position[1],
+    true
+  )[1]
   mn.broadcast = true
   return mn
 end
@@ -173,18 +180,21 @@ end
 --- Sends an event to all subscribed mod. The event contains the filename, filehead, cursor position and line body as a bonus.
 --- @param mods down.Mod.Mod[]
 --- @param self down.Event
+--- @return nil
 function Event.broadcast_to(self, mods)
   if not self.split then
-    log.error('Unable to broadcast event of type' .. self.id .. '- invalid event name')
+    log.error(
+      "Unable to broadcast event of type" .. self.id .. "- invalid event name"
+    )
     return
   end
   Event.handle(self)
   for mid, cm in pairs(mods or {}) do
     if cm.handle and cm.handle[self.split[1]] then
       local evt = cm.handle[self.split[1]][self.split[2]]
-      if evt == nil or type(evt) == 'nil' then
+      if evt == nil or type(evt) == "nil" then
         goto broadcastcontinue
-      elseif type(evt) == 'function' then
+      elseif type(evt) == "function" then
         evt(self)
       end
     end
@@ -200,7 +210,7 @@ function Event.send(self, recv)
   Event.handle(self)
   if recv.handle and recv.handle[self.split[1]] then
     local evt = recv.handle[self.split[1]][self.split[2]]
-    if evt ~= nil and type(evt) == 'function' then
+    if evt ~= nil and type(evt) == "function" then
       evt(self)
     end
   end

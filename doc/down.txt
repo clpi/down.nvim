@@ -1,36 +1,53 @@
 ==============================================================================
 ------------------------------------------------------------------------------
-clpi
-down.nvim 0.1.0
-MIT
 down.nvim
-neovim note-taking plugin with the
-comfort of mmarkdown and the power of org
+v0.1.2-alpha
+Chris Pecunies <clp@clp.is>
+https://github.com/clpi/down.nvim.git
+https://down.cli.st
+MIT
+markdown, org-mode, note-taking, knowledge-management, developer-tools, productivity
+
+The Neovim plugin for the *down* _markdown_ developer-focused
+and knowledge management environment, offering the comfort familiarity, and compatibility of a traditional markdown note-taking environment with the power of org-mode.
 
 ------------------------------------------------------------------------------
-                                                                          *down*
-                                     `down`
+                                                                          *Down*
+                                     `Down`
+The main entry point for the down plugin
 Class ~
-{down.down}
+{down.Down}
 
 ------------------------------------------------------------------------------
-                                                                  *down.setup()*
-                          `down.setup`({user}, {...})
+                                                                  *Down.setup()*
+                          `Down.setup`({user}, {...})
 Load the user configuration, and load into config
 defined modules specifieed and workspaces
-@param user down.mod.Config user config to load
+@param user down.config.User user config to load
 @param ... string The arguments to pass into an optional user hook
 
 ------------------------------------------------------------------------------
-                                                              *down:broadcast()*
-                          `down:broadcast`({e}, {...})
+                                                                  *Down:start()*
+                                 `Down:start`()
+Start the plugin
+Load the workspace and user modules
+
+------------------------------------------------------------------------------
+                                                                  *Down:after()*
+                                 `Down:after`()
+After the plugin has started
+
+------------------------------------------------------------------------------
+                                                              *Down:broadcast()*
+                          `Down:broadcast`({e}, {...})
+Broadcast the message `e` or the 'started' event to all modules
 Parameters ~
 {e} `(string)`
 {...} `(any)`
 
 ------------------------------------------------------------------------------
-                                                                   *down.test()*
-                                 `down.test`()
+                                                                   *Down.test()*
+                                 `Down.test`()
 Test all modules loaded
 
 
@@ -39,7 +56,7 @@ Test all modules loaded
                                                                         *Config*
                                     `Config`
 The down.nvim configuration
-@class down.config.Config
+@class down.Config
 
 ------------------------------------------------------------------------------
                                                                 *Config.toggles*
@@ -57,11 +74,12 @@ Parameters ~
 ------------------------------------------------------------------------------
                                                                  *Config:load()*
                           `Config:load`({user}, {...})
+Load the user configuration, and load into config
 Parameters ~
 {user} `(down.mod.Config)` user config
 {...} `(any)`
 Return ~
-`(down.config.Config)`
+`(down.Config)`
 
 ------------------------------------------------------------------------------
                                                                *Config.vimdir()*
@@ -95,12 +113,11 @@ Return ~
 ------------------------------------------------------------------------------
                                                                 *Config:setup()*
                          `Config:setup`({user}, {...})
-@param self down.config.Config
-Parameters ~
-{user} `(down.mod.Config)`
-{...} `(any)`
-Return ~
-`(down.config.Config)`
+Setup the down config
+@param self down.Config The down config
+@param user down.mod.Config user config to load
+@param ... any The arguments to pass into an optional user hook
+@return down.Config
 
 ------------------------------------------------------------------------------
                                                           *Config:check_tests()*
@@ -137,29 +154,18 @@ Return ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                         *H.has_icon_provider()*
-                           `H.has_icon_provider`({i})
-Parameters ~
-{i} `(optional)` `(down.mod.ui.icon.Provider.Name)`
-
-
-==============================================================================
-------------------------------------------------------------------------------
-@!TODO : Change to body access where appropriate and now available to avoid complex config for end user
-  1. Firsr try with  Ms, then workspace
-
-@TODO: Merge Module. with Module, Module.config as subfield for all modules
-       which have class then of down.mod.[Mod] as M
-
-
-TODO: Make Mod.subscribed be [string]: function() instead of [string]: boolean
-      and eliminate Mod.handler(e)
-
-------------------------------------------------------------------------------
                                                                            *Mod*
                                      `Mod`
+The Mod class is the core of the down plugin system. It is responsible for loading, unloading, and managing the lifecycle of all modules.
 Class ~
 {down.mod.Root:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *Mod.mods*
+                                   `Mod.mods`
+The loaded mods table.
+Class ~
+{down.Mods:} { [down.Mod.Id]: down.Mod.Mod }
 
 ------------------------------------------------------------------------------
                                                                      *Mod.new()*
@@ -271,6 +277,31 @@ Parameters ~
                                 `Mod.test`({m})
 Parameters ~
 {m} `(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                                  *Mod.unloaded*
+                                 `Mod.unloaded`
+Unloaded modules
+@alias down.mod.Unloaded down.Mod.Id[]
+
+------------------------------------------------------------------------------
+                                                                  *Mod.unload()*
+                               `Mod.unload`({m})
+Unload the module m
+@param m down.Mod.Id
+@return nil
+
+------------------------------------------------------------------------------
+                                                                  *Mod.reload()*
+                               `Mod.reload`({m})
+Reload the module m
+@param m down.Mod.Id
+@return nil
+
+------------------------------------------------------------------------------
+                                                           *Mod.sync_unloaded()*
+                             `Mod.sync_unloaded`()
+Syncs the unloaded modules with the loaded modules
 
 ------------------------------------------------------------------------------
                                                               *Mod.handle_cmd()*
@@ -396,6 +427,7 @@ Returns a copy of the event template provided by a init.
 Sends an event to all subscribed mod. The event contains the filename, filehead, cursor position and line body as a bonus.
 @param mods down.Mod.Mod[]
 @param self down.Event
+@return nil
 
 ------------------------------------------------------------------------------
                                                                   *Event.send()*
@@ -445,55 +477,55 @@ Return ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                           *Cmd*
+                                     `Cmd`
 Class ~
 {down.mod.cmd.Cmd:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                      *M.generate_completions()*
-                    `M.generate_completions`({_}, {command})
+                                                    *Cmd.generate_completions()*
+                   `Cmd.generate_completions`({_}, {command})
 This function returns all available commands to be used for the :down command
 Parameters ~
 {_} `(nil)` #Placeholder variable
 {command} `(string)` #Supplied by nvim itself; the full typed out command
 
 ------------------------------------------------------------------------------
-                                                       *M.select_next_cmd_arg()*
-                  `M.select_next_cmd_arg`({qargs}, {choices})
+                                                     *Cmd.select_next_cmd_arg()*
+                 `Cmd.select_next_cmd_arg`({qargs}, {choices})
 Queries the user to select next argument
 Parameters ~
 {qargs} `(table)` #A string of arguments previously supplied to the down command
 {choices} `(table)` #all possible choices for the next argument
 
 ------------------------------------------------------------------------------
-                                                              *M.add_commands()*
-                          `M.add_commands`({mod_name})
+                                                            *Cmd.add_commands()*
+                         `Cmd.add_commands`({mod_name})
 Parameters ~
 {mod_name} `(string)` #An absolute path to a loaded init with a mod.config.commands table following a valid structure
 
 ------------------------------------------------------------------------------
-                                                   *M.add_commands_from_table()*
-                        `M.add_commands_from_table`({f})
+                                                 *Cmd.add_commands_from_table()*
+                       `Cmd.add_commands_from_table`({f})
 Recursively merges the provided table with the mod.config.commands table.
 Parameters ~
 {f} `(down.Command[])` #A table that follows the mod.config.commands structure
 
 ------------------------------------------------------------------------------
-                                                                      *M.sync()*
-                                   `M.sync`()
+                                                                    *Cmd.sync()*
+                                  `Cmd.sync`()
 Rereads data from all mod and rebuild the list of available autocompletiinitinitons and commands
 
 ------------------------------------------------------------------------------
-                                                            *M.set_completion()*
-                         `M.set_completion`({callback})
+                                                          *Cmd.set_completion()*
+                        `Cmd.set_completion`({callback})
 Defines a custom completion function to use for `base.cmd`.
 Parameters ~
 {callback} `(function)`
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                    *Cmd.config*
+                                  `Cmd.config`
 Class ~
 {down.mod.cmd.Config}
 
@@ -535,53 +567,59 @@ Return ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                       *Snippet*
+                                   `Snippet`
 Class ~
 {down.mod.code.Snippet:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                *Snippet.config*
+                                `Snippet.config`
 Class ~
 {down..code.snippet.Config}
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                           *Run*
+                                     `Run`
+Class ~
+{down.mod.code.run.Run:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                    *Run.config*
+                                  `Run.config`
 Class ~
 {down..code.run.Config}
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                          *Data*
+                                     `Data`
 Class ~
-{down.mod.data.Data:} down.Mod
+{down.mod.data.Data:} down.Dataod
 
 ------------------------------------------------------------------------------
-                                                                        *M.data*
-                                    `M.data`
+                                                                     *Data.data*
+                                  `Data.data`
 Class ~
 {down.mod.data.Data.Data}
 
 ------------------------------------------------------------------------------
-                                                                     *M.setup()*
-                                  `M.setup`()
+                                                                  *Data.setup()*
+                                 `Data.setup`()
 @return down.mod.Setup
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                   *Data.config*
+                                 `Data.config`
 Class ~
 {down.mod..Config}
 
 ------------------------------------------------------------------------------
-                                                                        *M.mt()*
-                                 `M.mt`({name})
+                                                                     *Data.mt()*
+                               `Data.mt`({name})
 Parameters ~
 {name} `(string)`
 Type ~
@@ -590,8 +628,8 @@ Return ~
 `(metatable)`
 
 ------------------------------------------------------------------------------
-                                                                       *M.tbl()*
-                              `M.tbl`({name}, {t})
+                                                                    *Data.tbl()*
+                            `Data.tbl`({name}, {t})
 T: table
 Parameters ~
 {name} `(string)`
@@ -600,16 +638,16 @@ Return ~
 `(T)`
 
 ------------------------------------------------------------------------------
-                                                                     *M.files()*
-                           `M.files`({path}, {cond})
+                                                                  *Data.files()*
+                          `Data.files`({path}, {cond})
 @param path string
 @param cond? fun(name: string, ends: string): boolean
 @return table<string>
 
 ------------------------------------------------------------------------------
-                                                            *M.copy_directory()*
-                   `M.copy_directory`({old_path}, {new_path})
-Recursively copies a directory froM.handlee path to another
+                                                         *Data.copy_directory()*
+                 `Data.copy_directory`({old_path}, {new_path})
+Recursively copies a directory froData.handlee path to another
 Parameters ~
 {old_path} `(string)` #The path to copy
 {new_path} `(string)` #The new location. This function will not
@@ -618,28 +656,28 @@ Return ~
 `(boolean)` #If true, the directory copying succeeded
 
 ------------------------------------------------------------------------------
-                                                                      *M.sync()*
-                                   `M.sync`()
+                                                                   *Data.sync()*
+                                 `Data.sync`()
 Grabs the data present on disk and overwrites it with the data present in memory
 
 ------------------------------------------------------------------------------
-                                                                       *M.put()*
-                             `M.put`({key}, {data})
+                                                                    *Data.put()*
+                           `Data.put`({key}, {data})
 Stores a key-value pair in the store
 Parameters ~
 {key} `(string)` #The key to index in the store
 {data} `(any)` #The data to store at the specific key
 
 ------------------------------------------------------------------------------
-                                                                       *M.del()*
-                                 `M.del`({key})
+                                                                    *Data.del()*
+                               `Data.del`({key})
 Removes a key from store
 Parameters ~
 {key} `(string)` #The name of the key to remove
 
 ------------------------------------------------------------------------------
-                                                                       *M.get()*
-                                 `M.get`({key})
+                                                                    *Data.get()*
+                               `Data.get`({key})
 Retrieves a key from the store
 Parameters ~
 {key} `(string)` #The name of the key to index
@@ -647,75 +685,69 @@ Return ~
 `(any|table)` #The data present at the key, or an empty table
 
 ------------------------------------------------------------------------------
-                                                                     *M.flush()*
-                               `M.flush`({path})
+                                                                  *Data.flush()*
+                              `Data.flush`({path})
 Flushes the contents in memory to the location specified
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *B*
-                                      `B`
+                                                                      *Bookmark*
+                                   `Bookmark`
 Class ~
-{down.mod..Bookmark:} down.Mod
+{down.mod.data.bookmark.Bookmark:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                      *B.config*
-                                   `B.config`
+                                                               *Bookmark.config*
+                               `Bookmark.config`
 Class ~
 {down.mod..bookmark.Config}
 
 ------------------------------------------------------------------------------
-                                                                   *B.bookmarks*
-                                 `B.bookmarks`
+                                                            *Bookmark.bookmarks*
+                              `Bookmark.bookmarks`
 Class ~
 {down.mod..bookmark.Data}
 
 ------------------------------------------------------------------------------
-                                                                     *B.setup()*
-                                  `B.setup`()
+                                                              *Bookmark.setup()*
+                               `Bookmark.setup`()
 Return ~
 `(down.mod.Setup)`
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                       *History*
+                                   `History`
 Class ~
-{down.mod.data.History:} down.Mod
+{down.mod.data.history.History:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                *History.config*
+                                `History.config`
 Class ~
 {down.mod.data.history.Config:} down.mod.Config
 
 ------------------------------------------------------------------------------
-                                                                    *M.commands*
-                                  `M.commands`
+                                                              *History.commands*
+                               `History.commands`
 Class ~
-{down.mod.data.history.Commands}
+{down.mod.data.history.Commands:} { [string]: down.Command }
 
 ------------------------------------------------------------------------------
-                                                                     *M.history*
-                                  `M.history`
+                                                               *History.history*
+                               `History.history`
 @type integer[]
 
 ------------------------------------------------------------------------------
-                                                                     *M.clear()*
-                                  `M.clear`()
+                                                               *History.clear()*
+                               `History.clear`()
 Clear the stacks
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
-Class ~
-{down..history.Config}
-
-------------------------------------------------------------------------------
-                                                                     *M.setup()*
-                                  `M.setup`()
+                                                               *History.setup()*
+                               `History.setup`()
 Return ~
 `(down.mod.Setup)`
 
@@ -725,7 +757,7 @@ Return ~
                                                                              *M*
                                       `M`
 Class ~
-{down.mod.data.Time:} down.Mod
+{down.mod.data.time.Time:} down.Mod
 
 ------------------------------------------------------------------------------
                                                                *M.to_lua_date()*
@@ -758,40 +790,40 @@ Return ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                          *Edit*
+                                     `Edit`
 Type ~
-`(down.Mod)`
+`(down.Editod)`
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                   *Edit.config*
+                                 `Edit.config`
 Class ~
 {down.mod.edit.Config}
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *L*
-                                      `L`
+                                                                        *Cursor*
+                                    `Cursor`
 Class ~
 {down.mod.edit.Cursor:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                     *L.setup()*
-                                  `L.setup`()
+                                                                *Cursor.setup()*
+                                `Cursor.setup`()
 Return ~
 `(down.mod.Setup)`
 
 ------------------------------------------------------------------------------
-                                                                      *L.config*
-                                   `L.config`
+                                                                 *Cursor.config*
+                                `Cursor.config`
 Class ~
 {down.mod.edit.cursor.Config}
 
 ------------------------------------------------------------------------------
-                                                                        *L.node*
-                                    `L.node`
+                                                                   *Cursor.node*
+                                 `Cursor.node`
 Class ~
 {down.edit.cursor.Data}
 Fields ~
@@ -809,14 +841,14 @@ Class ~
 {edit.cursor.Node}
 
 ------------------------------------------------------------------------------
-                                                             *L.node:lspRange()*
-                              `L.node:lspRange`()
+                                                        *Cursor.node:lspRange()*
+                            `Cursor.node:lspRange`()
 Return ~
 `(table)`
 
 ------------------------------------------------------------------------------
-                                                                 *L.node:next()*
-                     `L.node:next`({switch}, {nextParent})
+                                                            *Cursor.node:next()*
+                   `Cursor.node:next`({switch}, {nextParent})
 Parameters ~
 {switch} `(boolean)`: switch parent
 {nextParent} `(boolean)`: nextParent parent
@@ -824,8 +856,8 @@ Return ~
 `(TSNode|nil)`
 
 ------------------------------------------------------------------------------
-                                                                 *L.node:prev()*
-                     `L.node:prev`({switch}, {prevParent})
+                                                            *Cursor.node:prev()*
+                   `Cursor.node:prev`({switch}, {prevParent})
 Parameters ~
 {switch} `(boolean)`: switch parent
 {prevParent} `(boolean)`: nextParent parent
@@ -833,32 +865,32 @@ Return ~
 `(TSNode|nil)`
 
 ------------------------------------------------------------------------------
-                                                                 *L.node:text()*
-                                `L.node:text`()
+                                                            *Cursor.node:text()*
+                              `Cursor.node:text`()
 Return ~
 `(string[])`
 
 ------------------------------------------------------------------------------
-                                                                  *L.node.get()*
-                                 `L.node.get`()
+                                                             *Cursor.node.get()*
+                              `Cursor.node.get`()
 Return ~
 `(TSNode|nil)`
 
 ------------------------------------------------------------------------------
-                                                                 *L.node:root()*
-                                `L.node:root`()
+                                                            *Cursor.node:root()*
+                              `Cursor.node:root`()
 Return ~
 `(TSNode)`
 
 ------------------------------------------------------------------------------
-                                                                *L.node:range()*
-                                `L.node:range`()
+                                                           *Cursor.node:range()*
+                             `Cursor.node:range`()
 Return ~
 `(...)`
 
 ------------------------------------------------------------------------------
-                                                                   *L.node:hl()*
-                          `L.node:hl`({ns}, {hgroup})
+                                                              *Cursor.node:hl()*
+                        `Cursor.node:hl`({ns}, {hgroup})
 Parameters ~
 {ns} `(optional)` `(string)`: namespace
 {hgroup} `(optional)` `(string)`: hilite group
@@ -866,8 +898,8 @@ Return ~
 `(nil)`
 
 ------------------------------------------------------------------------------
-                                                              *L.in_codeblock()*
-                               `L.in_codeblock`()
+                                                         *Cursor.in_codeblock()*
+                            `Cursor.in_codeblock`()
 Return ~
 `(boolean)`
 
@@ -888,22 +920,22 @@ Class ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                        *Inline*
+                                    `Inline`
 Class ~
-{down.mod.edit.Inline:} down.Mod
+{down.mod.edit.Inline:} down.Inlineod
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                 *Inline.config*
+                                `Inline.config`
 Class ~
 {down.mod.edit.inline.Config}
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                      *P.config*
-                                   `P.config`
+                                                                  *Parse.config*
+                                 `Parse.config`
 Class ~
 {down.mod.parse.Config}
 
@@ -913,17 +945,22 @@ Class ~
 
   A module for users to export their data
 
+------------------------------------------------------------------------------
+                                                                        *Export*
+                                    `Export`
+@class down.mod.export.Export: down.Mod
+
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *F*
-                                      `F`
+                                                                          *Find*
+                                     `Find`
 Class ~
-{down.mod.find.Find:} down.Mod
+{down.mod.find.Findind:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                      *F.config*
-                                   `F.config`
+                                                                   *Find.config*
+                                 `Find.config`
 Class ~
 {down.mod.find.Config:} down.mod.Config
 Fields ~
@@ -942,22 +979,22 @@ Fields ~
 'project'
 
 ------------------------------------------------------------------------------
-                                                                    *F.picker()*
-                                `F.picker`({n})
+                                                                 *Find.picker()*
+                               `Find.picker`({n})
 Parameters ~
 {n} 
 Return ~
 `(fun()|table)`
 
 ------------------------------------------------------------------------------
-                                                                    *F.commands*
-                                  `F.commands`
+                                                                 *Find.commands*
+                                `Find.commands`
 Class ~
 {down.mod.find.telescope.Commands:} { [string]: down.Command }
 
 ------------------------------------------------------------------------------
-                                                                        *F.maps*
-                                    `F.maps`
+                                                                     *Find.maps*
+                                  `Find.maps`
 Class ~
 {down.mod.find.Maps:} { [string]: down.Map }
 
@@ -968,26 +1005,83 @@ Class ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *T*
-                                      `T`
-Class ~
-{down.mod.find.telescope.Telescope:} down.Mod
+                                                                       *Builtin*
+                                   `Builtin`
+Builtin find module
+
+@class down.mod.find.builtin.Builtin: down.Mod
 
 ------------------------------------------------------------------------------
-                                                                    *T.picker()*
-                                `T.picker`({n})
+                                                                *Builtin.config*
+                                `Builtin.config`
+@class down.mod.find.builtin.Config: down.mod.Config
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                        *Fzflua*
+                                    `Fzflua`
+Fzflua find module
+
+@class down.mod.find.fzflua.Fzflua: down.Mod
+
+------------------------------------------------------------------------------
+                                                                 *Fzflua.config*
+                                `Fzflua.config`
+@class down.mod.find.builtin.Config: down.mod.Config
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                          *Mini*
+                                     `Mini`
+Mini find module
+
+@class down.mod.find.fzflua.Mini: down.Mod
+
+------------------------------------------------------------------------------
+                                                                   *Mini.config*
+                                 `Mini.config`
+@class down.mod.find.builtin.Config: down.mod.Config
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                        *Snacks*
+                                    `Snacks`
+Snacks find module
+
+@class down.mod.find.fzflua.Snacks: down.Mod
+
+------------------------------------------------------------------------------
+                                                                 *Snacks.config*
+                                `Snacks.config`
+@class down.mod.find.builtin.Config: down.mod.Config
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                     *Telescope*
+                                  `Telescope`
+Telescope module
+Class ~
+{down.mod.find.telescope.Telescopeelescope:} down.Mod
+
+------------------------------------------------------------------------------
+                                                            *Telescope.picker()*
+                            `Telescope.picker`({n})
 Parameters ~
 {n} 
 
 ------------------------------------------------------------------------------
-                                                                     *T.setup()*
-                                  `T.setup`()
+                                                             *Telescope.setup()*
+                              `Telescope.setup`()
 Return ~
 `(down.mod.Setup)`
 
 ------------------------------------------------------------------------------
-                                                                      *T.config*
-                                   `T.config`
+                                                              *Telescope.config*
+                               `Telescope.config`
 Class ~
 {down.mod.find.telescope.Config:} down.mod.Config
 
@@ -1075,6 +1169,12 @@ If either are, then returns the link destination, otherwise nil
 @return string|nil
 
 ------------------------------------------------------------------------------
+                                                            *Link.destination()*
+                            `Link.destination`({nd})
+Returns the destination of a link node
+@param nd TSNode|nil
+
+------------------------------------------------------------------------------
                                                                    *Link.config*
                                  `Link.config`
 Class ~
@@ -1083,53 +1183,53 @@ Class ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                    *Log.config*
+                                  `Log.config`
 Class ~
 {data.log.Config}
 
 ------------------------------------------------------------------------------
-                                                                        *M.data*
-                                    `M.data`
+                                                                      *Log.data*
+                                   `Log.data`
 Class ~
 {log}
 
 ------------------------------------------------------------------------------
-                                                                  *M.open_log()*
-                      `M.open_log`({time}, {custom_date})
+                                                                *Log.open_log()*
+                     `Log.open_log`({time}, {custom_date})
 Opens a log entry at the given time
 Parameters ~
 {time} `(optional)` `(number)` #The time to open the log entry at as returned by `os.time()`
 {custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the log at instead
 
 ------------------------------------------------------------------------------
-                                                              *M.log_tomorrow()*
-                               `M.log_tomorrow`()
+                                                            *Log.log_tomorrow()*
+                              `Log.log_tomorrow`()
 Opens a log entry for tomorrow's date
 
 ------------------------------------------------------------------------------
-                                                             *M.log_yesterday()*
-                              `M.log_yesterday`()
+                                                           *Log.log_yesterday()*
+                             `Log.log_yesterday`()
 Opens a log entry for yesterday's date
 
 ------------------------------------------------------------------------------
-                                                                   *M.log_new()*
-                                 `M.log_new`()
+                                                                 *Log.log_new()*
+                                `Log.log_new`()
 Opens a log entry for new's date
 
 ------------------------------------------------------------------------------
-                                                           *M.create_template()*
-                             `M.create_template`()
+                                                         *Log.create_template()*
+                            `Log.create_template`()
 Creates a template file
 
 ------------------------------------------------------------------------------
-                                                                  *M.open_toc()*
-                                 `M.open_toc`()
+                                                                *Log.open_toc()*
+                                `Log.open_toc`()
 Opens the toc file
 
 ------------------------------------------------------------------------------
-                                                                *M.create_toc()*
-                                `M.create_toc`()
+                                                              *Log.create_toc()*
+                               `Log.create_toc`()
 Creates or updates the toc file
 
 
@@ -1139,6 +1239,21 @@ Creates or updates the toc file
                                      `Lsp`
 Class ~
 {down.mod.lsp.Lsp:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *Lsp.maps*
+                                   `Lsp.maps`
+@class down.mod.lsp.Maps: down.Map[]
+
+------------------------------------------------------------------------------
+                                                                      *Lsp.util*
+                                   `Lsp.util`
+Utility LSP functions
+
+------------------------------------------------------------------------------
+                                                               *Lsp.on_attach()*
+                               `Lsp.on_attach`()
+LSP on attach
 
 ------------------------------------------------------------------------------
                                                                     *Lsp.load()*
@@ -1208,92 +1323,127 @@ Return ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                           *Mod*
+                                     `Mod`
 Class ~
-{down.mod.Mod:} down.Mod
+{down.mod.mod.Mod:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                    *Mod.list()*
+                                `Mod.list`({e})
+Parameters ~
+{e} `(down.Event)`
+
+------------------------------------------------------------------------------
+                                                                *Mod.load_mod()*
+                              `Mod.load_mod`({e})
+Load a mod
+@param e down.Event
+
+------------------------------------------------------------------------------
+                                                                  *Mod.reload()*
+                               `Mod.reload`({e})
+Reload a mod
+@param e down.Event
+
+------------------------------------------------------------------------------
+                                                             *Mod.load_mod_cb()*
+                             `Mod.load_mod_cb`({e})
+Load a mod
+@param e down.Event
+
+------------------------------------------------------------------------------
+                                                                  *Mod.unload()*
+                               `Mod.unload`({e})
+Unload a mod
+@param e down.Event
+
+------------------------------------------------------------------------------
+                                                                  *Mod.commands*
+                                 `Mod.commands`
+@type table<string, down.Command>
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                          *Note*
+                                     `Note`
 Class ~
 {down.mod.note.Note:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                *M.week_index()*
-                                `M.week_index`()
+                                                             *Note.week_index()*
+                              `Note.week_index`()
 Class ~
 {down.mod.note.Data}
 
 ------------------------------------------------------------------------------
-                                                              *M.select_month()*
-                               `M.select_month`()
+                                                           *Note.select_month()*
+                             `Note.select_month`()
 select onth from vim.ui.select
 
 ------------------------------------------------------------------------------
-                                                                 *M.open_year()*
-                      `M.open_year`({time}, {custom_date})
+                                                              *Note.open_year()*
+                    `Note.open_year`({time}, {custom_date})
 Opens a note entry at the given time
 Parameters ~
 {time} `(optional)` `(number)` #The time to open the note entry at as returned by `os.time()`
 {custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the note at instead
 
 ------------------------------------------------------------------------------
-                                                                *M.open_month()*
-                     `M.open_month`({time}, {custom_date})
+                                                             *Note.open_month()*
+                    `Note.open_month`({time}, {custom_date})
 Parameters ~
 {time} `(optional)` `(number)` #The time to open the note entry at as returned by `os.time()`
 {custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the note at instead
 
 ------------------------------------------------------------------------------
-                                                                 *M.open_note()*
-                      `M.open_note`({time}, {custom_date})
+                                                              *Note.open_note()*
+                    `Note.open_note`({time}, {custom_date})
 Opens a note entry at the given time
 Parameters ~
 {time} `(optional)` `(number)` #The time to open the note entry at as returned by `os.time()`
 {custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the note at instead
 
 ------------------------------------------------------------------------------
-                                                             *M.note_tomorrow()*
-                              `M.note_tomorrow`()
+                                                          *Note.note_tomorrow()*
+                             `Note.note_tomorrow`()
 Opens a note entry for tomorrow's date
 
 ------------------------------------------------------------------------------
-                                                            *M.note_yesterday()*
-                              `M.note_yesterday`()
+                                                         *Note.note_yesterday()*
+                            `Note.note_yesterday`()
 Opens a note entry for yesterday's date
 
 ------------------------------------------------------------------------------
-                                                                *M.note_today()*
-                                `M.note_today`()
+                                                             *Note.note_today()*
+                              `Note.note_today`()
 Opens a note entry for today's date
 
 ------------------------------------------------------------------------------
-                                                      *M.create_year_template()*
-                           `M.create_year_template`()
+                                                   *Note.create_year_template()*
+                         `Note.create_year_template`()
 Creates a template file
 
 ------------------------------------------------------------------------------
-                                                                  *M.open_toc()*
-                                 `M.open_toc`()
+                                                               *Note.open_toc()*
+                               `Note.open_toc`()
 Opens the toc file
 
 ------------------------------------------------------------------------------
-                                                                *M.create_toc()*
-                                `M.create_toc`()
+                                                             *Note.create_toc()*
+                              `Note.create_toc`()
 Creates or updates the toc file
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                   *Note.config*
+                                 `Note.config`
 Class ~
 {(exact)} down.mod.note.Config
 
 ------------------------------------------------------------------------------
-                                                                     *M.setup()*
-                                  `M.setup`()
+                                                                  *Note.setup()*
+                                 `Note.setup`()
 Return ~
 `(down.mod.Setup)`
 
@@ -1332,20 +1482,20 @@ Class ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                           *Tag*
+                                     `Tag`
 Class ~
-{down.mod.Tag:} down.Mod
+{down.mod.tag.Tag:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                    *M.commands*
-                                  `M.commands`
+                                                                  *Tag.commands*
+                                 `Tag.commands`
 Class ~
 {down.mod.tag.Commands:} down.Commands
 
 ------------------------------------------------------------------------------
-                                                                     *M.setup()*
-                                  `M.setup`()
+                                                                   *Tag.setup()*
+                                 `Tag.setup`()
 Return ~
 `(down.mod.Setup)`
 
@@ -1364,14 +1514,14 @@ Class ~
  [string]: down.Tag.Instance[],
 
 ------------------------------------------------------------------------------
-                                                                        *M.tags*
-                                    `M.tags`
+                                                                      *Tag.tags*
+                                   `Tag.tags`
 Class ~
 {down.mod.tag.Data}
 
 ------------------------------------------------------------------------------
-                                                                  *M.parse_ln()*
-                               `M.parse_ln`({ln})
+                                                                *Tag.parse_ln()*
+                              `Tag.parse_ln`({ln})
 Parse a single line for tag instances
 @param ln string
 @param lnno number
@@ -1379,8 +1529,8 @@ Parse a single line for tag instances
 @return string[]
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                    *Tag.config*
+                                  `Tag.config`
 Class ~
 {down.mod.tag.Config}
 
@@ -1403,32 +1553,32 @@ Type ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                          *Task*
+                                     `Task`
 Class ~
-{down.mod.Task:} down.Mod
+{down.mod.Task:} down.Taskod
 
 ------------------------------------------------------------------------------
-                                                                        *M.Task*
-                                    `M.Task`
+                                                                     *Task.Task*
+                                  `Task.Task`
 Class ~
 {down.mod.task.Task}
 
 ------------------------------------------------------------------------------
-                                                                       *M.tasks*
-                                   `M.tasks`
+                                                                    *Task.tasks*
+                                  `Task.tasks`
 Class ~
 {table<integer,} down.mod.task.Task>
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                   *Task.config*
+                                 `Task.config`
 Class ~
 {down.mod.task.Config}
 
 ------------------------------------------------------------------------------
-                                                                     *M.setup()*
-                                  `M.setup`()
+                                                                  *Task.setup()*
+                                 `Task.setup`()
 Return ~
 `(down.mod.Setup)`
 
@@ -1442,46 +1592,46 @@ down.task.Status
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                        *Agenda*
+                                    `Agenda`
 Type ~
-`(down.Mod)`
+`(down.Agendaod)`
 
 ------------------------------------------------------------------------------
-                                                                      *M.Agenda*
-                                   `M.Agenda`
+                                                                 *Agenda.Agenda*
+                                `Agenda.Agenda`
 Class ~
 {down..task.agenda.Agenda}
 
 ------------------------------------------------------------------------------
-                                                                     *M.agendas*
-                                  `M.agendas`
+                                                                *Agenda.agendas*
+                                `Agenda.agendas`
 Class ~
 {table<down.mod..task.agenda.Agenda>}
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                 *Agenda.config*
+                                `Agenda.config`
 Class ~
 {down.mod..task.agenda.Config}
 
 ------------------------------------------------------------------------------
-                                                                     *M.setup()*
-                                  `M.setup`()
+                                                                *Agenda.setup()*
+                                `Agenda.setup`()
 Return ~
 `(down.mod.Setup)`
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                      *Template*
+                                   `Template`
 Class ~
-{down.mod.template:} down.Mod
+{down.mod.template.Template:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                               *Template.config*
+                               `Template.config`
 Class ~
 {(exact)} down.mod.template.Config
 
@@ -1490,40 +1640,48 @@ Class ~
 {down.mod.template.Data}
 
 ------------------------------------------------------------------------------
-                                                             *M.open_template()*
-                    `M.open_template`({time}, {custom_date})
+                                                      *Template.open_template()*
+                `Template.open_template`({time}, {custom_date})
 Opens a template entry at the given time
 Parameters ~
 {time} `(optional)` `(number)` #The time to open the template entry at as returned by `os.time()`
 {custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the template at instead
 
 ------------------------------------------------------------------------------
-                                                         *M.template_tomorrow()*
-                            `M.template_tomorrow`()
+                                                  *Template.template_tomorrow()*
+                         `Template.template_tomorrow`()
 Opens a template entry for tomorrow's date
 
 ------------------------------------------------------------------------------
-                                                        *M.template_yesterday()*
-                            `M.template_yesterday`()
+                                                 *Template.template_yesterday()*
+                        `Template.template_yesterday`()
 Opens a template entry for yesterday's date
 
 ------------------------------------------------------------------------------
-                                                            *M.template_today()*
-                              `M.template_today`()
+                                                     *Template.template_today()*
+                          `Template.template_today`()
 Opens a template entry for today's date
 
 ------------------------------------------------------------------------------
-                                                           *M.create_template()*
-                             `M.create_template`()
+                                                    *Template.create_template()*
+                          `Template.create_template`()
 Creates a template file
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                     *T.setup()*
-                                  `T.setup`()
+                                                                  *Time.setup()*
+                                 `Time.setup`()
 Return ~
 `(down.mod.Setup)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                          *Date*
+                                  `{weekday:`
+Class ~
+{down.mod.time.date.Date:} down.Mod
 
 
 ==============================================================================
@@ -1675,62 +1833,62 @@ Class ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                    *Treesitter*
+                                  `Treesitter`
 Class ~
 {down.mod.tool.Treesitter:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                    *M.ts_utils*
-                                  `M.ts_utils`
+                                                           *Treesitter.ts_utils*
+                             `Treesitter.ts_utils`
 Class ~
 {down.mod.tool.treesitter.Data}
 
 ------------------------------------------------------------------------------
-                                                                     *M.queries*
-                                  `M.queries`
+                                                            *Treesitter.queries*
+                              `Treesitter.queries`
 Class ~
 {treesitter}
 
 ------------------------------------------------------------------------------
-                                                                    *M.inject()*
-                      `M.inject`({language}, {injection})
+                                                           *Treesitter.inject()*
+                  `Treesitter.inject`({language}, {injection})
 Parameters ~
 {language} `(string)`
 {injection} `(render.md.Injection?)`
 
 ------------------------------------------------------------------------------
-                                                              *M.get_ts_utils()*
-                               `M.get_ts_utils`()
+                                                     *Treesitter.get_ts_utils()*
+                          `Treesitter.get_ts_utils`()
 Gives back an instance of `nvim-treesitter.ts_utils`
 Return ~
 `(table)` #`nvim-treesitter.ts_utils`
 
 ------------------------------------------------------------------------------
-                                                     *M.goto_next_query_match()*
-                   `M.goto_next_query_match`({query_string})
+                                            *Treesitter.goto_next_query_match()*
+               `Treesitter.goto_next_query_match`({query_string})
 Jumps to the next match of a query in the current buffer
 Parameters ~
 {query_string} `(string)` Query with `@next-segment` captures
 
 ------------------------------------------------------------------------------
-                                                 *M.goto_previous_query_match()*
-                 `M.goto_previous_query_match`({query_string})
+                                        *Treesitter.goto_previous_query_match()*
+             `Treesitter.goto_previous_query_match`({query_string})
 Jumps to the previous match of a query in the current buffer
 Parameters ~
 {query_string} `(string)` Query with `@next-segment` captures
 
 ------------------------------------------------------------------------------
-                                                             *M.get_all_nodes()*
-                     `M.get_all_nodes`({node_type}, {opts})
+                                                    *Treesitter.get_all_nodes()*
+                `Treesitter.get_all_nodes`({node_type}, {opts})
  Gets all nodes of a given type from the AST
 Parameters ~
 {node_type} `(string)` #The type of node to filter out
 {opts} `(optional)` `(table)` #A table of two options: `buf` and `ft`, for the buffer and format to use respectively.
 
 ------------------------------------------------------------------------------
-                                                     *M.get_all_nodes_in_file()*
-           `M.get_all_nodes_in_file`({node_type}, {path}, {filetype})
+                                            *Treesitter.get_all_nodes_in_file()*
+      `Treesitter.get_all_nodes_in_file`({node_type}, {path}, {filetype})
 all nodes of a given type from the AST
 Parameters ~
 {node_type} `(string)` #The type of node to filter out
@@ -1738,24 +1896,24 @@ Parameters ~
 {filetype} `(string?)` file type of the file or `down` if omitted
 
 ------------------------------------------------------------------------------
-                                                                  *M.tree_map()*
-                      `M.tree_map`({callback}, {ts_tree})
+                                                         *Treesitter.tree_map()*
+                  `Treesitter.tree_map`({callback}, {ts_tree})
 Executes function callback on each child node of the root
 Parameters ~
 {callback} `(function)`
 {ts_tree} `(any)` #Optional syntax tree ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
 
 ------------------------------------------------------------------------------
-                                                              *M.tree_map_rec()*
-                    `M.tree_map_rec`({callback}, {ts_tree})
+                                                     *Treesitter.tree_map_rec()*
+                `Treesitter.tree_map_rec`({callback}, {ts_tree})
 Executes callback on each child recursive
 Parameters ~
 {callback} `(function)` Executes with each node as parameter, can return false to stop recursion
 {ts_tree} `(any)` #Optional syntax tree ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
 
 ------------------------------------------------------------------------------
-                                                         *M.node_to_lsp_range()*
-                         `M.node_to_lsp_range`({node})
+                                                *Treesitter.node_to_lsp_range()*
+                     `Treesitter.node_to_lsp_range`({node})
 Get the range of a TSNode as an LspRange
 Parameters ~
 {node} `(TSNode)`
@@ -1763,8 +1921,8 @@ Return ~
 `(lsp.Range)`
 
 ------------------------------------------------------------------------------
-                                                                *M.swap_nodes()*
-         `M.swap_nodes`({node1}, {node2}, {bufnr}, {cursor_to_second})
+                                                       *Treesitter.swap_nodes()*
+     `Treesitter.swap_nodes`({node1}, {node2}, {bufnr}, {cursor_to_second})
 Swap two nodes in the buffer. Ignores newlines at the end of the node
 Parameters ~
 {node1} `(TSNode)`
@@ -1773,8 +1931,8 @@ Parameters ~
 {cursor_to_second} `(boolean)` move the cursor to the start of the second node (default false)
 
 ------------------------------------------------------------------------------
-                                                            *M.get_first_node()*
-                  `M.get_first_node`({type}, {buf}, {parent})
+                                                   *Treesitter.get_first_node()*
+              `Treesitter.get_first_node`({type}, {buf}, {parent})
 Returns the first node of given type if present
 Parameters ~
 {type} `(string)` #The type of node to search for
@@ -1792,15 +1950,15 @@ Return ~
 `(any)` ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
 
 ------------------------------------------------------------------------------
-                                                              *M.get_tag_info()*
-                     `M.get_tag_info`({tag_node}, {throw})
+                                                     *Treesitter.get_tag_info()*
+                 `Treesitter.get_tag_info`({tag_node}, {throw})
 Given a node this function will break down the AST elements and return the corresponding text for certain nodes
 @param tag_node TSNode - a node of type tag/carryover_tag
 @param throw boolean - when true, throw an error instead of logging and returning on failure
 
 ------------------------------------------------------------------------------
-                                                            *M.get_node_range()*
-                           `M.get_node_range`({node})
+                                                   *Treesitter.get_node_range()*
+                      `Treesitter.get_node_range`({node})
 Gets the range of a given node
 Parameters ~
 {node} `(userdata)` #The node to get the range of
@@ -1808,8 +1966,8 @@ Return ~
 `({ row_start: number, column_start: number, row_end: number, column_end: number })` range
 
 ------------------------------------------------------------------------------
-                                                         *M.get_document_root()*
-                    `M.get_document_root`({src}, {filetype})
+                                                *Treesitter.get_document_root()*
+               `Treesitter.get_document_root`({src}, {filetype})
 Extracts the document root from the current document or from the string
 Parameters ~
 {src} `(number|string)` The number of the buffer to extract or string with code (can be nil)
@@ -1830,16 +1988,16 @@ Parameters ~
 {line} `(number)` #The line number (0-indexed) to get the node from
 
 ------------------------------------------------------------------------------
-                                                    *M.get_first_node_on_line()*
-             `M.get_first_node_on_line`({buf}, {line}, {stop_type})
+                                           *Treesitter.get_first_node_on_line()*
+        `Treesitter.get_first_node_on_line`({buf}, {line}, {stop_type})
 Parameters ~
 {stop_type} `(string|table?)` #Don't recurse to the provided type(s)
 Return ~
 `(TSNode|nil)` #The first node on `line`
 
 ------------------------------------------------------------------------------
-                                                     *M.get_document_metadata()*
-                 `M.get_document_metadata`({source}, {no_trim})
+                                            *Treesitter.get_document_metadata()*
+            `Treesitter.get_document_metadata`({source}, {no_trim})
 document's metadata
 Parameters ~
 {source} `(number | string | PathutilPath)`
@@ -1848,8 +2006,8 @@ Return ~
 `(table)` `(optional)`
 
 ------------------------------------------------------------------------------
-                                                             *M.execute_query()*
-   `M.execute_query`({query_string}, {callback}, {source}, {start}, {finish})
+                                                    *Treesitter.execute_query()*
+`Treesitter.execute_query`({query_string}, {callback}, {source}, {start}, {finish})
 Parses a query and automatically executes it for down
 Parameters ~
 {query_string} `(string)` #The query string
@@ -1860,8 +2018,8 @@ When callback returns true, this function returns early
 {finish} `(number?)` #The end line for the query
 
 ------------------------------------------------------------------------------
-                                                             *M.get_ts_parser()*
-                          `M.get_ts_parser`({source})
+                                                    *Treesitter.get_ts_parser()*
+                      `Treesitter.get_ts_parser`({source})
 a down TS parser from the given source
 Parameters ~
 {source} `(string | number | PathutilPath)` file path or buf number or 0 for current buffer
@@ -1874,20 +2032,20 @@ either the full file text, or the buffer number
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
-Type ~
-`(down.Mod)`
+                                                                            *Ui*
+                                      `Ui`
+Class ~
+{down.mod.ui.Ui:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                     *Ui.config*
+                                  `Ui.config`
 Class ~
 {down.mod.ui.Config}
 
 ------------------------------------------------------------------------------
-                                                           *M.get_window_size()*
-                          `M.get_window_size`({half})
+                                                          *Ui.get_window_size()*
+                          `Ui.get_window_size`({half})
 Returns a table in the form of { width, height } containing the width and height of the current window
 Parameters ~
 {half} `(boolean)` #If true returns a position that could be considered the center of the window
@@ -1898,22 +2056,22 @@ Parameters ~
 {modifiers} `(table)` #This option set has two values - center_x and center_y.
 
 ------------------------------------------------------------------------------
-                                                      *M.apply_custom_options()*
-                `M.apply_custom_options`({modifiers}, {config})
+                                                     *Ui.apply_custom_options()*
+                `Ui.apply_custom_options`({modifiers}, {config})
 Parameters ~
 {config} `(table)` #A table containing regular Neovim options for a floating window
 
 ------------------------------------------------------------------------------
-                                                      *M.apply_buffer_options()*
-                 `M.apply_buffer_options`({buf}, {option_list})
+                                                     *Ui.apply_buffer_options()*
+                `Ui.apply_buffer_options`({buf}, {option_list})
 Applies a set of options to a buffer
 Parameters ~
 {buf} `(number)` the buffer number to apply the options to
 {option_list} `(table)` a table of option = value pairs
 
 ------------------------------------------------------------------------------
-                                                                 *M.new_split()*
-                   `M.new_split`({name}, {config}, {height})
+                                                                *Ui.new_split()*
+                   `Ui.new_split`({name}, {config}, {height})
 a new horizontal split at the bottom of the screen
 Parameters ~
  {name} `(string)` the name of the buffer contained within the split (will have down:// prepended to it)
@@ -1923,8 +2081,8 @@ Return ~
 `(number)` `(optional)`, number? #Both the buffer ID and window ID
 
 ------------------------------------------------------------------------------
-                                                                *M.new_vsplit()*
-          `M.new_vsplit`({name}, {enter}, {buf_config}, {win_config})
+                                                               *Ui.new_vsplit()*
+          `Ui.new_vsplit`({name}, {enter}, {buf_config}, {win_config})
 Creates a new vertical split
 Parameters ~
 {name} `(string)` the name of the buffer
@@ -1935,8 +2093,8 @@ Return ~
 `(number)` `(optional)`, number? #The buffer and window numbers of the vertical split
 
 ------------------------------------------------------------------------------
-                                                               *M.new_display()*
-                `M.new_display`({name}, {split_type}, {content})
+                                                              *Ui.new_display()*
+               `Ui.new_display`({name}, {split_type}, {content})
 Creates a new display in which you can place organized data
 Parameters ~
 {name} `(string)` #The name of the display
@@ -1944,8 +2102,8 @@ Parameters ~
 {content} `(table)` #A table of content for the display
 
 ------------------------------------------------------------------------------
-                                                       *M.new_markdown_buffer()*
-        `M.new_markdown_buffer`({name}, {split_type}, {config}, {opts})
+                                                      *Ui.new_markdown_buffer()*
+        `Ui.new_markdown_buffer`({name}, {split_type}, {config}, {opts})
 Creates a new down buffer in a split or in the main window
 Parameters ~
 {name} `(string)` the name of the buffer *without* the .down extension
@@ -1958,82 +2116,84 @@ Parameters ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *D*
-                                      `D`
+                                                                           *Day*
+                                     `Day`
 Class ~
 {down.mod.ui.calendar.Day:} down.Mod
 
 ------------------------------------------------------------------------------
-                                                                     *D.setup()*
-                                  `D.setup`()
+                                                                   *Day.setup()*
+                                 `Day.setup`()
 Return ~
 `(down.mod.Setup)`
 
 ------------------------------------------------------------------------------
-                                                                      *D.config*
-                                   `D.config`
+                                                                    *Day.config*
+                                  `Day.config`
 Class ~
 {down.mod.ui.calendar.day.Config}
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                          *M.get_month_length()*
-                     `M.get_month_length`({month}, {year})
+                                                      *Month.get_month_length()*
+                   `Month.get_month_length`({month}, {year})
 get the number of days in the month, months are wrapped (ie, month 13 <==> month 1)
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                                *Conceal.config*
+                                `Conceal.config`
 Class ~
 {down.edit.conceal.Config}
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                      *D.config*
-                                   `D.config`
-Class ~
-{down.ui.dashboard.Config}
+                                                                          *Fold*
+                                     `Fold`
+@class down.mod.ui.fold.Fold: down.Mod
 
-
-==============================================================================
 ------------------------------------------------------------------------------
-                                                                      *F.config*
-                                   `F.config`
+                                                                   *Fold.config*
+                                 `Fold.config`
 Class ~
 {down.edit.fold.Config}
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
+                                                                            *Hl*
+                                      `Hl`
+@class down.mod.ui.hl.Hl: down.Mod
+
+------------------------------------------------------------------------------
 Class ~
 {base.highlight}
 
 ------------------------------------------------------------------------------
-                                                         *M.trigger_highlight()*
-                            `M.trigger_highlight`()
+                                                        *Hl.trigger_highlight()*
+                            `Hl.trigger_highlight`()
 Reads the highlight configuration table and applies all defined highlight
 
 ------------------------------------------------------------------------------
-                                                             *M.add_highlight()*
-                         `M.add_highlight`({highlight})
+                                                            *Hl.add_highlight()*
+                        `Hl.add_highlight`({highlight})
 Takes in a table of highlight and applies them to the current buffer
 Parameters ~
 {highlight} `(table)` #A table of highlight
 
 ------------------------------------------------------------------------------
-                                                                   *M.add_dim()*
-                               `M.add_dim`({dim})
+                                                                  *Hl.add_dim()*
+                              `Hl.add_dim`({dim})
 Takes in a table of items to dim and applies the dimming to them
 Parameters ~
 {dim} `(table)` #A table of items to dim
 
 ------------------------------------------------------------------------------
-                                                           *M.clear_highlight()*
-                             `M.clear_highlight`()
+                                                          *Hl.clear_highlight()*
+                             `Hl.clear_highlight`()
 Assigns all down* highlight to `clear`
 
 
@@ -2316,6 +2476,14 @@ Roman numerals
 
 ==============================================================================
 ------------------------------------------------------------------------------
+                                                               *Progress.config*
+                               `Progress.config`
+Class ~
+{down.ui.progress.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
 @type down.mod.ui.icon.Builtin.Icons
 
 
@@ -2373,22 +2541,22 @@ Class ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                          *Mark*
+                                     `Mark`
 Class ~
-{down.mod.ui.Mark:} down.Mod
+{down.mod.ui.Markark:} down.Markod
 
 ------------------------------------------------------------------------------
-                                                                     *M.queries*
-                                  `M.queries`
+                                                                  *Mark.queries*
+                                 `Mark.queries`
 Class ~
 {down.mod.ui.mark.Data}
 
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                           *M.begin_selection()*
-                `M.begin_selection`({buffer}, {keybind_buffer})
+                                                       *Popup.begin_selection()*
+              `Popup.begin_selection`({buffer}, {keybind_buffer})
 Constructs a new selection
 Parameters ~
 {buffer} `(number)` #The number of the buffer the selection should attach to
@@ -2397,8 +2565,8 @@ Return ~
 `(table)` #A selection object
 
 ------------------------------------------------------------------------------
-                                                             *M.create_prompt()*
-   `M.create_prompt`({name}, {input_text}, {callback}, {modifiers}, {config})
+                                                         *Popup.create_prompt()*
+ `Popup.create_prompt`({name}, {input_text}, {callback}, {modifiers}, {config})
 Opens a floating window at the specified position and asks for user input
 Parameters ~
 {name} `(string)` #The name of the floating window
@@ -2410,24 +2578,8 @@ Parameters ~
 
 ==============================================================================
 ------------------------------------------------------------------------------
-                                                                *Spinner.config*
-                                `Spinner.config`
-Class ~
-{down.ui.progress.Config}
-
-
-==============================================================================
-------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
-Class ~
-{down.ui.prompt.Config}
-
-
-==============================================================================
-------------------------------------------------------------------------------
-                                                                      *S.config*
-                                   `S.config`
+                                                                *Sidebar.config*
+                                `Sidebar.config`
 Class ~
 {down.ui.sidebar.Config}
 
@@ -2464,102 +2616,102 @@ Class ~
 {down.Workspaces:} { [string]?: string }
 
 ------------------------------------------------------------------------------
-                                                                             *M*
-                                      `M`
+                                                                     *Workspace*
+                                  `Workspace`
 Class ~
-{down.mod.workspace.Workspace:} down.Mod
+{down.mod.workspace.Workspace:} down.Workspaceod
 
 ------------------------------------------------------------------------------
-                                                                      *M.path()*
-                                `M.path`({name})
+                                                              *Workspace.path()*
+                            `Workspace.path`({name})
 Return ~
 `(string)`
 
 ------------------------------------------------------------------------------
-                                                                        *M.data*
-                                    `M.data`
+                                                                *Workspace.data*
+                                `Workspace.data`
 Class ~
 {down.mod.workspace.Data}
 
 ------------------------------------------------------------------------------
-                                                                      *M.config*
-                                   `M.config`
+                                                              *Workspace.config*
+                               `Workspace.config`
 Class ~
 {down.mod.workspace.Config}
 
 ------------------------------------------------------------------------------
-                                                                     *M.setup()*
-                                  `M.setup`()
+                                                             *Workspace.setup()*
+                              `Workspace.setup`()
 Return ~
 `(down.mod.Setup)`
 
 ------------------------------------------------------------------------------
-                                                                      *M.iter()*
-                                   `M.iter`()
+                                                              *Workspace.iter()*
+                               `Workspace.iter`()
 Returns an iterator for the workspaces
 @return Iter
 
 ------------------------------------------------------------------------------
-                                                          *M.as_lsp_workspace()*
-                      `M.as_lsp_workspace`({name}, {path})
+                                                  *Workspace.as_lsp_workspace()*
+                  `Workspace.as_lsp_workspace`({name}, {path})
 Returns the workspace folder as lsp
 @return lsp.WorkspaceFolder
 @param name? string
 @param path? string
 
 ------------------------------------------------------------------------------
-                                                         *M.as_lsp_workspaces()*
-                            `M.as_lsp_workspaces`()
+                                                 *Workspace.as_lsp_workspaces()*
+                        `Workspace.as_lsp_workspaces`()
 Returns the workspace folders as lsp
 @return lsp.WorkspaceFolder[]
 
 ------------------------------------------------------------------------------
-                                                                      *M.load()*
-                                   `M.load`()
+                                                              *Workspace.load()*
+                               `Workspace.load`()
 Loads the workspace module
 
 ------------------------------------------------------------------------------
-                                                                     *M.index()*
-                                 `M.index`({p})
+                                                             *Workspace.index()*
+                             `Workspace.index`({p})
 Returns the index file for a workspace
 Class ~
 {down.mod.workspace.Data}
 
 ------------------------------------------------------------------------------
-                                                                   *M.current()*
-                                 `M.current`()
+                                                           *Workspace.current()*
+                             `Workspace.current`()
 Returns the current workspace name
 @return string
 
 ------------------------------------------------------------------------------
-                                                              *M.current_path()*
-                               `M.current_path`()
+                                                      *Workspace.current_path()*
+                           `Workspace.current_path`()
 Returns the current workspace path
 @return string
 
 ------------------------------------------------------------------------------
-                                                                     *M.files()*
-                            `M.files`({ws}, {patt})
+                                                             *Workspace.files()*
+                        `Workspace.files`({ws}, {patt})
 Returns all files in a workspace
 @return string[]
 
 ------------------------------------------------------------------------------
-                                                                      *M.edit()*
-                                `M.edit`({path})
+                                                              *Workspace.edit()*
+                            `Workspace.edit`({path})
 Opens a file in the current workspace or at path
 Parameters ~
 {path} `(string)`
 
 ------------------------------------------------------------------------------
-                                                                       *M.get()*
-                                `M.get`({name})
+                                                               *Workspace.get()*
+                            `Workspace.get`({name})
 If present retrieve a workspace's path by its name, else returns nil
 Parameters ~
 {name} `(string)` #The name of the workspace
 
 ------------------------------------------------------------------------------
-                                                             *M.set_workspace()*
-                        `M.set_workspace`({n}, {create})
+                                                     *Workspace.set_workspace()*
+                    `Workspace.set_workspace`({n}, {create})
 Sets the workspace to the one specified (if it exists) and broadcasts the wschanged event
 Parameters ~
 {n} `(string)` #The name of a valid namespace we want to switch to
@@ -2568,8 +2720,8 @@ Return ~
 `(boolean)` #True if the workspace is set correctly, false otherwise
 
 ------------------------------------------------------------------------------
-                                                             *M.add_workspace()*
-                     `M.add_workspace`({wsname}, {wspath})
+                                                     *Workspace.add_workspace()*
+                 `Workspace.add_workspace`({wsname}, {wspath})
 Dynamically defines a new workspace if the name isn't already occupied and broadcasts the wsadded event
 Return ~
 `(boolean)` True if the workspace is added successfully, false otherwise
@@ -2578,13 +2730,13 @@ Parameters ~
 {wspath} `(string)` #A full path to the workspace root
 
 ------------------------------------------------------------------------------
-                                                                      *M.sync()*
-                                   `M.sync`()
+                                                              *Workspace.sync()*
+                               `Workspace.sync`()
 Updates completions for the :down command
 
 ------------------------------------------------------------------------------
-                                                                    *M.select()*
-                       `M.select`({prompt}, {fmt}, {fn})
+                                                            *Workspace.select()*
+                   `Workspace.select`({prompt}, {fmt}, {fn})
 @param prompt? string | nil
 @param fmt? fun(item: string): string
 @param fn? fun(item: number|string, idx: number|string)|nil
@@ -2597,8 +2749,8 @@ Fields ~
 {force} `(optional)` `(boolean)` overwrite file if it already exists?
 
 ------------------------------------------------------------------------------
-                                                                  *M.new_file()*
-                   `M.new_file`({path}, {workspace}, {opts})
+                                                          *Workspace.new_file()*
+               `Workspace.new_file`({path}, {workspace}, {opts})
 Takes in a path (can include directories) and creates a .down file from that path
 Parameters ~
 {path} `(string)`
@@ -2606,30 +2758,30 @@ Parameters ~
 {opts} `(optional)` `(down.mod.workspace.CreateFileOpts)`
 
 ------------------------------------------------------------------------------
-                                                                 *M.open_file()*
-                        `M.open_file`({wsname}, {path})
+                                                         *Workspace.open_file()*
+                    `Workspace.open_file`({wsname}, {path})
 Takes in a workspace name and a path for a file and opens it
 Parameters ~
 {wsname} `(string)` #The name of the workspace to use
 {path} `(string)` #A path to open the file (e.g directory/filename.down)
 
 ------------------------------------------------------------------------------
-                                                                    *M.exists()*
-                             `M.exists`({filepath})
+                                                            *Workspace.exists()*
+                         `Workspace.exists`({filepath})
 Checks for file existence by supplying a full path in `filepath`
 Parameters ~
 {filepath} `(string)`
 
 ------------------------------------------------------------------------------
-                                                                     *M.bufnr()*
-                             `M.bufnr`({filepath})
+                                                             *Workspace.bufnr()*
+                         `Workspace.bufnr`({filepath})
 Get the bufnr for a `filepath` (full path)
 Parameters ~
 {filepath} `(string)`
 
 ------------------------------------------------------------------------------
-                                                                     *M.notes()*
-                      `M.notes`({wsname}, {year}, {month})
+                                                             *Workspace.notes()*
+                  `Workspace.notes`({wsname}, {year}, {month})
 Returns a list of all files relative path from a `wsname`
 Parameters ~
 {wsname} `(string)`
@@ -2637,8 +2789,8 @@ Return ~
 `(string)` `(optional)`
 
 ------------------------------------------------------------------------------
-                                                                  *M.markdown()*
-                              `M.markdown`({name})
+                                                          *Workspace.markdown()*
+                          `Workspace.markdown`({name})
 Returns a list of all files relative path from a `wsname`
 Parameters ~
 {name} `(string)`
@@ -2646,61 +2798,61 @@ Return ~
 `(string[])` `(optional)`
 
 ------------------------------------------------------------------------------
-                                                                      *M.open()*
-                             `M.open`({workspace})
+                                                              *Workspace.open()*
+                         `Workspace.open`({workspace})
 Sets the current workspace and opens that workspace's index file
 Parameters ~
 {workspace} `(string)` #The name of the workspace to open
 
 ------------------------------------------------------------------------------
-                                                                     *M.touch()*
-                          `M.touch`({p}, {workspace})
+                                                             *Workspace.touch()*
+                      `Workspace.touch`({p}, {workspace})
 Touches a file in workspace
 Parameters ~
 {p} `(string)`
 {workspace} `(string)`
 
 ------------------------------------------------------------------------------
-                                                                *M.edit_index()*
-                              `M.edit_index`({e})
+                                                        *Workspace.edit_index()*
+                          `Workspace.edit_index`({e})
 Edit index of current directory
 @param e down.Event
 
 ------------------------------------------------------------------------------
-                                                               *M.select_file()*
-                     `M.select_file`({prompt}, {fmt}, {fn})
+                                                       *Workspace.select_file()*
+                 `Workspace.select_file`({prompt}, {fmt}, {fn})
 @param prompt? string | nil
 @param fmt? fun(item: string): string
 @param fn? fun(item: number|string, idx: number|string)|nil
 
 ------------------------------------------------------------------------------
-                                                                  *M.filemenu()*
-                               `M.filemenu`({e})
+                                                          *Workspace.filemenu()*
+                           `Workspace.filemenu`({e})
 Select markdown file in current workspace
 Parameters ~
 {e} `(down.Event)`
 
 ------------------------------------------------------------------------------
-                                                                      *M.menu()*
-                                 `M.menu`({e})
+                                                              *Workspace.menu()*
+                             `Workspace.menu`({e})
 Select workspace
 @param e down.Event
 
 ------------------------------------------------------------------------------
-                                                                    *M.commands*
-                                  `M.commands`
+                                                            *Workspace.commands*
+                              `Workspace.commands`
 Class ~
 {down.mod.workspace.Commands:} { [string]: down.Command }
 
 ------------------------------------------------------------------------------
-                                                                      *M.events*
-                                   `M.events`
+                                                              *Workspace.events*
+                               `Workspace.events`
 Class ~
 {down.mod.workspace.Events}
 
 ------------------------------------------------------------------------------
-                                                                      *M.handle*
-                                   `M.handle`
+                                                              *Workspace.handle*
+                               `Workspace.handle`
 Class ~
 {down.mod.workspace.Subscribed}
 
@@ -2770,7 +2922,7 @@ TODO:   down.config.config.User.mod.config ->
 TODO:     #field [string]? down.config.UserMod
 
 @class (exact) down.config.User
-  @field [string]? down.config.mod.Config
+  @field [string]? down.Mod.Config
   @field hook? fun(args?: string) Hook to optionally run on load
   @field dev? boolean Whether to start in dev mode
 
@@ -2794,6 +2946,7 @@ TODO:     #field [string]? down.Mod
 ------------------------------------------------------------------------------
 @alias down.Pathsep "\\" | "/"
 
+------------------------------------------------------------------------------
 @class  down.Config
   @field log? down.log.Config
   @field defaults? boolean|string[]
@@ -2806,7 +2959,7 @@ TODO:     #field [string]? down.Mod
   @field hook? fun()   A hook that is run when down is started
   @field started boolean                                   Set to `true` when down is fully initialized.
   @field version string                                    The version of down that is currently active. Automatically updated by CI on every release.
-  @field setup fun(user: down.config.User, default: string[], ...: any): boolean Loads user config
+  @field setup fun(self: down.Config, user: down.config.User, default: string[], ...: any): boolean Loads user config
   @field homedir fun(...: string): string
   @field vimdir fun(...: string): string
   @field file fun(file: string | nil): string
@@ -3191,7 +3344,8 @@ down.ids.event
   @field new fun(m: down.Mod.Mod, type: string, body: table|string, ev?: table): down.Event?
   @field send fun(self: down.Event, recipient: down.Mod.Mod[])
   @field handle fun(self: down.Event)
-  @field define fun(module: down.Mod.Mod, type: string): down.Event
+  @field broadcast_to fun(self: down.Event, mods: down.Mod.Mod[])
+  @field define fun(module: down.Mod.Mod|string, type: string): down.Event
   @field context? down.Context
 
 
@@ -3255,6 +3409,7 @@ down.ids.mod
   [3]: string | fun(),
   [4]?: string,
   [5]?: down.MapOpts,
+  }
 
 @class down.MapOpts: {
   mode?: down.VimMode | down.VimMode[],
@@ -3282,7 +3437,7 @@ down.ids.mod
   @field public id string The name of the mod.
   @field public namespace string The name of the mod.
   @field public data down.Data.Data
-  @field public post_load? fun() Function that is invoked after all mod are loaded. Useful if you want the down environment to be fully set up before performing some task.
+  @field public after? fun() Function that is invoked after all mod are loaded. Useful if you want the down environment to be fully set up before performing some task.
   @field public dep? { [down.Mod.Id]: down.Mod.Mod } Contains the public tables of all mod that were dep via the `dependencies` array provided in the `setup()` function of this mod.
   @field public setup? fun(): down.mod.Setup Function that is invoked before any other loading occurs. Should perform preliminary startup tasks.
   @field public replaced? boolean If `true`, this means the mod is a replacement for a base mod. This flag is set automatically whenever `setup().replaces` is set to a value.
@@ -3451,6 +3606,7 @@ The base configuration
 
 @class (exact) down.Command
 @field name? string
+@field enabled? boolean
 @field args? number
 @field max_args? number
 @field condition? string
@@ -3460,7 +3616,7 @@ The base configuration
 @field commands? { [string]?:down.Command}
 
 ------------------------------------------------------------------------------
-@alias down.CommandsB {[string]?: down.Command } | function
+@alias down.Commands {[string]?: down.Command } | function
 
 
 ==============================================================================
@@ -3667,6 +3823,12 @@ THe data object for workspaces.
 
 ==============================================================================
 ------------------------------------------------------------------------------
+                                                                             *U*
+                                      `U`
+Class ~
+{down.Util}
+
+------------------------------------------------------------------------------
                                                                         *U.os()*
                                     `U.os`()
 Return ~
@@ -3751,6 +3913,22 @@ to be placed inside the variable. You may use:
 To mitigate this issue directly.
 @param ... string An unlimited number of strings.
 @return string # The result of all the strings concatenated.
+
+------------------------------------------------------------------------------
+                                                                 *U.construct()*
+                          `U.construct`({keys}, {cb})
+Constructs a new key-pair table by running a callback on all elements of an array.
+@param keys string[] A string array with the keys to iterate over.
+@param cb fun(key: string): any? A function that gets invoked with each key and returns a value to be placed in the output table.
+@return table # The newly constructed table.
+
+------------------------------------------------------------------------------
+                                                                      *U.eval()*
+                             `U.eval`({val}, {...})
+If `val` is a function, executes it with the desired arguments, else just returns `val`.
+@param val function|any Either a function or any other value.
+@param ... any Potential arguments to give `val` if it is a function.
+@return any # The returned evaluation of `val`.
 
 ------------------------------------------------------------------------------
                                                                *U.number_wrap()*

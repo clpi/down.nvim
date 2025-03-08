@@ -4,8 +4,8 @@ local mod = require("down.mod")
 local util = require("down.util")
 local api, bo, fn = vim.api, vim.bo, vim.fn
 
----@class down.mod.cmd.Cmd: down.Cmdod
-local Cmd = mod.new("cmd")
+---@class down.mod.cmd.Cmd: down.Mod
+local Cmd = mod.new "cmd"
 
 Cmd.setup = function()
   return { loaded = true, dependencies = {} }
@@ -119,8 +119,10 @@ Cmd.cb = function(data)
   end
 
   if #args == 0 or argument_count < ref.min_args then
-    local completions =
-        Cmd.generate_completions(_, table.concat({ "Down ", data.args, " " }))
+    local completions = Cmd.generate_completions(
+      _,
+      table.concat({ "Down ", data.args, " " })
+    ) or {}
     Cmd.select_next_cmd_arg(data.args, completions)
     return
   elseif argument_count > ref.max_args then
@@ -471,7 +473,7 @@ end
 Cmd.config = {}
 ---@class cmd
 
-Cmd.post_load = function()
+Cmd.after = function()
   Cmd.sync()
 end
 

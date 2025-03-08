@@ -13,8 +13,18 @@ local acmd = vim.api.nvim_create_autocmd
 local trc, inf, err, wrn = log.trace, log.info, log.error, log.warn
 
 ---@class down.mod.lsp.Lsp: down.Mod
-local Lsp = mod.new("lsp")
+local Lsp = mod.new "lsp"
 
+--- @class down.mod.lsp.Maps: down.Map[]
+Lsp.maps = {
+  { 'n', '-dli', function() Lsp.util.install() end,                  "Install LSP" },
+  { 'n', '-dlu', function() Lsp.util.install({ update = true }) end, "Update LSP" },
+}
+
+--- Utility LSP functions
+Lsp.util = lsputil
+
+--- LSP on attach
 Lsp.on_attach = function()
   -- vim.print("attached down.lsp")
 end

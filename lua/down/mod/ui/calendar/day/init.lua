@@ -2,10 +2,10 @@ local mod = require 'down.mod'
 local log = require 'down.util.log'
 
 ---@class down.mod.ui.calendar.Day: down.Mod
-local D = mod.new 'ui.calendar.day'
+local Day = mod.new 'ui.calendar.day'
 
 ---@return down.mod.Setup
-D.setup = function()
+Day.setup = function()
   return { ---@type down.mod.Setup
     loaded = true,
     dependencies = {},
@@ -13,6 +13,8 @@ D.setup = function()
 end
 
 ---@class down.mod.ui.calendar.day.Config
-D.config = {}
+Day.config = {
+  enabled = true
+}
 
-return D
+return Day

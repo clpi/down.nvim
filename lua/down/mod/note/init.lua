@@ -5,18 +5,18 @@ local noteutil = require("down.mod.note.util")
 local util = require("down.util")
 local sep, log = util.sep, util.log
 
----@class down.mod.note.Note: down.Noteod
+---@class down.mod.note.Note: down.Mod
 local Note = mod.new("note")
 
 Note.maps = {
-  { "n", ",dn", "<CNoteD>Down note today<CR>",       "Down today note" },
-  { "n", ",dN", "<CNoteD>Down note index<CR>",       "Down today note" },
-  { "n", ",dm", "<CNoteD>Down note month index<CR>", "Down today note" },
-  { "n", ",dy", "<CNoteD>Down note year index<CR>",  "Down today note" },
-  { "n", ",dt", "<CNoteD>Down note tempalte<CR>",    "Down today note" },
-  { "n", ",dy", "<CNoteD>Down note yesterday<CR>",   "Down yesterday note" },
-  { "n", ",dt", "<CNoteD>Down note tomorrow<CR>",    "Down tomorrow note" },
-  { "n", ",dc", "<CNoteD>Down note capture<CR>",     "Down capture note" },
+  { "n", ",dn", "<CMD>Down note today<CR>",       "Down today note" },
+  { "n", ",dN", "<CMD>Down note index<CR>",       "Down today note" },
+  { "n", ",dm", "<CMD>Down note month index<CR>", "Down today note" },
+  { "n", ",dy", "<CMD>Down note year index<CR>",  "Down today note" },
+  { "n", ",dt", "<CMD>Down note tempalte<CR>",    "Down today note" },
+  { "n", ",dy", "<CMD>Down note yesterday<CR>",   "Down yesterday note" },
+  { "n", ",dt", "<CMD>Down note tomorrow<CR>",    "Down tomorrow note" },
+  { "n", ",dc", "<CMD>Down note capture<CR>",     "Down capture note" },
 }
 
 ---@class down.mod.note.Data

@@ -1,11 +1,13 @@
 local picker = require("down.mod.find.telescope.picker")
----@class down.mod.find.telescope.Telescope: down.Mod
-local T = require("down.mod").new("find.telescope")
+
+--- Telescope module
+---@class down.mod.find.telescope.Telescopeelescope: down.Mod
+local Telescope = require("down.mod").new("find.telescope")
 
 local ok, tel = pcall(require, "telescope")
 
 ---@param n down.mod.find.Picker
-T.picker = function(n)
+Telescope.picker = function(n)
   local p = require("down.mod.find.telescope.picker")
   if n then
     return p.down[n]
@@ -14,7 +16,7 @@ T.picker = function(n)
 end
 
 ---@return down.mod.Setup
-T.setup = function()
+Telescope.setup = function()
   ---@type down.mod.Setup
   return {
     loaded = ok,
@@ -22,19 +24,19 @@ T.setup = function()
   }
 end
 
-T.load = function()
-  T.picker = picker
+Telescope.load = function()
+  Telescope.picker = picker
   tel.register_extension({
-    exports = T.picker.down,
+    exports = Telescope.picker.down,
   })
   tel.load_extension("down")
 end
 
 ---@class down.mod.find.telescope.Config: down.mod.Config
-T.config = {
+Telescope.config = {
   enabled = true,
 }
 
-T.data = {}
+Telescope.data = {}
 
-return T
+return Telescope

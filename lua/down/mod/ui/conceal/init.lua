@@ -1,27 +1,27 @@
 local down = require('down')
 local mod, config = down.mod, down.cfg
-local M = mod.new('ui.conceal')
+local Conceal = mod.new('ui.conceal')
 local fn, a, madd = vim.fn, vim.api, vim.fn.matchadd
--- M.chars = require("down.mod.ui.conceal.chars")
--- M.math = require("down.mod.ui.conceal.math")
--- M.border = require("down.mod.ui.conceal.border")
+-- Conceal.chars = require("down.mod.ui.conceal.chars")
+-- Conceal.math = require("down.mod.ui.conceal.math")
+-- Conceal.border = require("down.mod.ui.conceal.border")
 
-M.setup = function()
+Conceal.setup = function()
   return {
     loaded = true,
     dependencies = {},
   }
 end
 
-M.math = M.math
-M.border = M.border
-M.chars = M.chars
+Conceal.math = Conceal.math
+Conceal.border = Conceal.border
+Conceal.chars = Conceal.chars
 ---@class down.edit.conceal.Config
-M.config = {
+Conceal.config = {
   link_style = 'markdown',
 }
-M.start_link_concealing = function()
-  if M.config.link_style == 'markdown' then
+Conceal.start_link_concealing = function()
+  if Conceal.config.link_style == 'markdown' then
     madd('Conceal', '\\[[^[]\\{-}\\]\\zs([^(]\\{-})\\ze', 0, -1, { conceal = '' })
     madd('Conceal', '\\zs\\[\\ze[^[]\\{-}\\]([^(]\\{-})', 0, -1, { conceal = '' })
     madd('Conceal', '\\[[^[]\\{-}\\zs\\]\\ze([^(]\\{-})', 0, -1, { conceal = '' })
@@ -49,7 +49,7 @@ M.start_link_concealing = function()
     madd('Conceal', '\\[[^[]\\{-}\\]\\zs\\%[ ]\\[[^[]\\{-}\\]\\ze\\n', 0, -1, { conceal = '' })
     madd('Conceal', '\\zs\\[\\ze[^[]\\{-}\\]\\%[ ]\\[[^[]\\{-}\\]\\n', 0, -1, { conceal = '' })
     madd('Conceal', '\\[[^[]\\{-}\\zs\\]\\ze\\%[ ]\\[[^[]\\{-}\\]\\n', 0, -1, { conceal = '' })
-  elseif M.config.link_style == 'wiki' then
+  elseif Conceal.config.link_style == 'wiki' then
     madd('Conceal', '\\zs\\[\\[[^[]\\{-}[|]\\ze[^[]\\{-}\\]\\]', 0, -1, { conceal = '' })
     madd('Conceal', '\\[\\[[^[\\{-}[|][^[]\\{-}\\zs\\]\\]\\ze', 0, -1, { conceal = '' })
     madd('Conceal', '\\zs\\[\\[\\ze[^[]\\{-}\\]\\]', 0, -1, { conceal = '' })
@@ -63,9 +63,9 @@ M.start_link_concealing = function()
   a.nvim_exec([[highlight Conceal ctermbg=NONE ctermfg=NONE guibg=NONE guifg=NONE]], false)
 end
 
--- Set up autocommands to trigger the link concealing setup in Markdown files
+-- Set up autocommands to trigger the link concealing setup in Concealarkdown files
 
-M.ft_patterns = function()
+Conceal.ft_patterns = function()
   -- Create ft pattern
   local filetypes = config.ft
   local ft_pattern = ''
@@ -77,10 +77,10 @@ M.ft_patterns = function()
 end
 
 a.nvim_create_autocmd({ 'FileType', 'BufRead', 'BufEnter' }, {
-  pattern = M.ft_patterns(),
+  pattern = Conceal.ft_patterns(),
   callback = function()
-    M.start_link_concealing()
+    Conceal.start_link_concealing()
   end,
 })
 
-return M
+return Conceal

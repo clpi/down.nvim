@@ -3,14 +3,14 @@ local mod = require 'down.mod'
 local util = require 'down.util'
 local log = require 'down.util.log'
 
-local G = mod.new 'ui.calendar'
+local Calendar = mod.new 'ui.calendar'
 
-G.maps = {
+Calendar.maps = {
   { 'n', ',d.', '<CMD>Down calendar<CR>', 'Open calendar' },
   { 'n', ',do', '<CMD>Down calendar<CR>' },
   { 'n', ',dl', '<CMD>Down calendar<CR>' },
 }
-G.setup = function()
+Calendar.setup = function()
   return {
     loaded = true,
     dependencies = {
@@ -21,26 +21,26 @@ G.setup = function()
   }
 end
 
-G.modes = {}
-G.view = {}
+Calendar.modes = {}
+Calendar.view = {}
 
-G.get_mode = function(name, callback)
-  if G.modes[name] ~= nil then
-    local curr = G.modes[name](callback)
+Calendar.get_mode = function(name, callback)
+  if Calendar.modes[name] ~= nil then
+    local curr = Calendar.modes[name](callback)
     curr.id = name
     return curr
   end
   log.error 'Error: mode not set or not available'
 end
 
-G.get_view = function(name)
-  if G.view[name or 'month'] ~= nil then
-    return G.view[name or 'month']
+Calendar.get_view = function(name)
+  if Calendar.view[name or 'month'] ~= nil then
+    return Calendar.view[name or 'month']
   end
   log.error 'Error: view not set or not available'
 end
 
-G.extract_ui_info = function(buffer, window)
+Calendar.extract_ui_info = function(buffer, window)
   local width = vim.api.nvim_win_get_width(window)
   local height = vim.api.nvim_win_get_height(window)
 
@@ -57,13 +57,13 @@ G.extract_ui_info = function(buffer, window)
   }
 end
 
-G.open_window = function(options)
-  local MIN_HEIGHT = 14
+Calendar.open_window = function(options)
+  local MIN_HEICalendarHT = 14
 
-  local buffer, window = G.dep['ui'].new_split(
+  local buffer, window = Calendar.dep['ui'].new_split(
     'ui.calendar-' .. tostring(os.clock()):gsub('%.', '-'),
     {},
-    options.height or MIN_HEIGHT + (options.padding or 0)
+    options.height or MIN_HEICalendarHT + (options.padding or 0)
   )
 
   vim.bo.filetype = 'calendar'
@@ -77,16 +77,16 @@ G.open_window = function(options)
 
   return buffer, window
 end
-G.add_mode = function(name, factory)
-  G.modes[name] = factory
+Calendar.add_mode = function(name, factory)
+  Calendar.modes[name] = factory
 end
 
-G.add_view = function(name, details)
-  log.trace('G.add_view: ', name, details)
-  G.view[name] = details
+Calendar.add_view = function(name, details)
+  log.trace('Calendar.add_view: ', name, details)
+  Calendar.view[name] = details
 end
 
-G.new_calendar = function(buffer, window, options)
+Calendar.new_calendar = function(buffer, window, options)
   local callback_and_close = function(result)
     if options.callback ~= nil then
       options.callback(result)
@@ -96,44 +96,44 @@ G.new_calendar = function(buffer, window, options)
     pcall(vim.api.nvim_buf_delete, buffer, { force = true })
   end
 
-  local mode = G.get_mode(options.mode, callback_and_close)
+  local mode = Calendar.get_mode(options.mode, callback_and_close)
   if mode == nil then
     return
   end
 
-  local ui_info = G.extract_ui_info(buffer, window)
+  local ui_info = Calendar.extract_ui_info(buffer, window)
 
-  local v = G.get_view(options.view or 'month')
+  local v = Calendar.get_view(options.view or 'month')
 
   v.setup_view(ui_info, mode, options.date or os.date '*t', options)
 end
 
-G.open = function(options)
-  local buffer, window = G.open_window(options)
+Calendar.open = function(options)
+  local buffer, window = Calendar.open_window(options)
 
   options.mode = 'standalone'
 
-  return G.new_calendar(buffer, window, options)
+  return Calendar.new_calendar(buffer, window, options)
 end
 
-G.select_date = function(options)
-  local buffer, window = G.open_window(options)
+Calendar.select_date = function(options)
+  local buffer, window = Calendar.open_window(options)
   options.mode = 'select_date'
-  return G.new_calendar(buffer, window, options)
+  return Calendar.new_calendar(buffer, window, options)
 end
 
-G.select_date_range = function(options)
-  local buffer, window = G.open_window(options)
+Calendar.select_date_range = function(options)
+  local buffer, window = Calendar.open_window(options)
   options.mode = 'select_range'
-  return G.new_calendar(buffer, window, options)
+  return Calendar.new_calendar(buffer, window, options)
 end
 
-G.load = function()
-  G.add_mode('standalone', function(_)
+Calendar.load = function()
+  Calendar.add_mode('standalone', function(_)
     return {}
   end)
 
-  G.add_mode('select_date', function(callback)
+  Calendar.add_mode('select_date', function(callback)
     return {
       on_select = function(_, date)
         if callback then
@@ -144,7 +144,7 @@ G.load = function()
     }
   end)
 
-  G.add_mode('select_range', function(callback)
+  Calendar.add_mode('select_range', function(callback)
     return {
       range_start = nil,
       range_end = nil,
@@ -177,4 +177,4 @@ G.load = function()
   end)
 end
 
-return G
+return Calendar

@@ -1,14 +1,15 @@
 local mod = require 'down.mod'
 
-local F = mod.new 'ui.fold'
+--- @class down.mod.ui.fold.Fold: down.Mod
+local Fold = mod.new 'ui.fold'
 
-F.setup = function()
+Fold.setup = function()
   return {
     loaded = true,
   }
 end
 
 ---@class down.edit.fold.Config
-F.config = {}
+Fold.config = {}
 
-return F
+return Fold

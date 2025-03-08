@@ -202,7 +202,7 @@ end
 
 ---@param node TSNode
 Link.query = function(node, lang)
-  
+
   lang = lang or vim.bo.filetype
   local lt = ts.get_parser(0, lang):parse()[1]:root()
   local pq = tsq.parse(lang, node)
@@ -222,12 +222,17 @@ Link.iswikilink = function(node, parent)
   end
 end
 
+--- Returns the destination of a link node
+--- @param nd TSNode|nil
 Link.destination = function(nd)
   local node, nodety
   if not nd then
     node, nodety = Link.cursor()
   else
     node, nodety = node, node:type()
+  end
+  if not node then
+    return
   end
   local parent = node:parent()
   local wikilink = Link.iswikilink(node, parent)

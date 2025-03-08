@@ -1,48 +1,48 @@
----@class down.mod..Bookmark: down.Mod
-local B = {}
+---@class down.mod.data.bookmark.Bookmark: down.Mod
+local Bookmark = {}
 
 ---@class down.mod..bookmark.Config
-B.config = {
-  workspace = 'default',
+Bookmark.config = {
+  workspace = "default",
 
-  file = 'bookmark',
+  file = "bookmark",
 }
 
 ---@class down.mod..bookmark.Data
-B.bookmarks = {
+Bookmark.bookmarks = {
   default = {},
 }
 
 ---@return down.mod.Setup
-B.setup = function()
+Bookmark.setup = function()
   return {
     loaded = true,
     dependencies = {
-      'data',
-      'workspace',
-      'cmd',
+      "data",
+      "workspace",
+      "cmd",
     },
   }
 end
 
-B.commands = {
+Bookmark.commands = {
   bookmark = {
     args = 1,
-    name = 'bookmark',
+    name = "bookmark",
     callback = function(e) end,
     commands = {
       list = {
-        name = 'bookmark.list',
+        name = "bookmark.list",
         args = 1,
         callback = function(e) end,
       },
       add = {
-        name = 'bookmark.add',
+        name = "bookmark.add",
         args = 1,
         callback = function(e) end,
       },
       remove = {
-        name = 'bookmark.remove',
+        name = "bookmark.remove",
         args = 1,
         callback = function(e) end,
       },
@@ -50,17 +50,17 @@ B.commands = {
   },
 }
 
-B.load = function() end
+Bookmark.load = function() end
 
--- B.handle = {
+-- Bookmark.handle = {
 --   cmd = {
 --     bookmark = {
---       __call = B.commands.bookmark.callback,
---       list = B.commands.bookmark.commands.list.callback,
---       remove = B.commands.bookmark.commands.remove.callback,
---       add = B.commands.bookmark.commands.add.callback,
+--       __call = Bookmark.commands.bookmark.callback,
+--       list = Bookmark.commands.bookmark.commands.list.callback,
+--       remove = Bookmark.commands.bookmark.commands.remove.callback,
+--       add = Bookmark.commands.bookmark.commands.add.callback,
 --     },
 --   },
 -- }
 
-return B
+return Bookmark

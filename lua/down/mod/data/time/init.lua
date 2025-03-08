@@ -4,7 +4,7 @@ local mod = down.mod
 local u = require("down.mod.data.time.util")
 local re = vim.re
 
----@class down.mod.data.Time: down.Mod
+---@class down.mod.data.time.Time: down.Mod
 local M = mod.new("data.time")
 
 -- NOTE: Maybe encapsulate whole date parser in a single PEG grammar?

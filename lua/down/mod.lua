@@ -3,16 +3,7 @@ local modutil = require("down.mod.util")
 local util = require("down.util")
 local log = util.log
 
---- @!TODO : Change to body access where appropriate and now available to avoid complex config for end user
----   1. Firsr try with  Ms, then workspace
----
---- @TODO: Merge Module. with Module, Module.config as subfield for all modules
----        which have class then of down.mod.[Mod] as M
----
----
---- TODO: Make Mod.subscribed be [string]: function() instead of [string]: boolean
----       and eliminate Mod.handler(e)
-
+--- The Mod class is the core of the down plugin system. It is responsible for loading, unloading, and managing the lifecycle of all modules.
 ---@class down.mod.Root: down.Mod
 local Mod = setmetatable({
   setup = function()
@@ -26,10 +17,11 @@ local Mod = setmetatable({
   load = function()
     -- print 'default load n'
   end,
-  post_load = function()
+  after = function()
     -- print('postload' .. n)
   end,
   opts = {},
+  deps = {},
   maps = {},
   commands = {},
   handle = {},
@@ -101,6 +93,8 @@ Mod.metatable = {
   mod = getmetatable(Mod),
 }
 
+--- The loaded mods table.
+---@class down.Mods: { [down.Mod.Id]: down.Mod.Mod }
 Mod.mods = {}
 
 Mod.default = {
@@ -127,7 +121,7 @@ Mod.default = {
       load = function()
         -- print 'default load n'
       end,
-      post_load = function()
+      after = function()
         -- print('postload' .. n)
       end,
       opts = {},
@@ -155,12 +149,12 @@ Mod.new = function(nm, im)
       if not Mod.load_mod(fp) then
         log.error(
           "Unable to load import '"
-            .. fp
-            .. "'! An error  (see traceback below):"
+          .. fp
+          .. "'! An error  (see traceback below):"
         )
         assert(false)
       end
-      n.import[fp] = Mod.mods[fp]
+      -- n.import[fp] = Mod.mods[fp]
     end
   end
   return n
@@ -274,8 +268,8 @@ function Mod.mod_config(modn)
   if not Mod.is_loaded(modn) then
     log.trace(
       "Attempt to get mod config with name"
-        .. modn
-        .. "failed - mod is not loaded."
+      .. modn
+      .. "failed - mod is not loaded."
     )
     return
   end
@@ -397,6 +391,44 @@ Mod.test = function(m)
   end
 end
 
+Mod.util = require("down.mod.util")
+
+--- Unloaded modules
+--- @alias down.mod.Unloaded down.Mod.Id[]
+Mod.unloaded = modutil.ids
+
+--- Unload the module m
+--- @param m down.Mod.Id
+--- @return nil
+Mod.unload = function(m)
+  if Mod.mods[m] ~= nil then
+    Mod.mods[m] = nil
+  else
+    if Mod.check_id(m) then
+      log.warn("Mod.unload: Attempt to unload unloaded mod ", m)
+    else
+      log.error("Mod.unload: Attempt to unload invalid mod ", m)
+    end
+  end
+end
+
+--- Reload the module m
+--- @param m down.Mod.Id
+--- @return nil
+Mod.reload = function(m)
+  Mod.unload(m)
+  Mod.load_mod(m)
+end
+
+--- Syncs the unloaded modules with the loaded modules
+Mod.sync_unloaded = function()
+  for _, i in ipairs(Mod.util.ids) do
+    if not vim.list_contains(vim.tbl_keys(Mod.mods), i) then
+      Mod.unloaded[i] = Mod.get(i)
+    end
+  end
+end
+
 ---@param cmds down.Command[]
 ---@return boolean
 Mod.handle_cmd = function(self, e, cmd, cmds, ...)
@@ -436,9 +468,9 @@ end
 Mod.handle_event = function(self, e, ...)
   log.trace("Mod.handle_event: Handling event ", e.id, " for mod ", self.id)
   if
-    self.handle
-    and self.handle[e.split[1]]
-    and self.handle[e.split[1]][e.split[2]]
+      self.handle
+      and self.handle[e.split[1]]
+      and self.handle[e.split[1]][e.split[2]]
   then
     self.handle[e.split[1]][e.split[2]](e)
     return true

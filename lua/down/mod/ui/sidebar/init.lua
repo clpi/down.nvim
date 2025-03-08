@@ -1,14 +1,14 @@
 local down = require('down')
 
-local S = require('down.mod').new('ui.sidebar')
+local Sidebar = require('down.mod').new('ui.sidebar')
 
-S.setup = function()
+Sidebar.setup = function()
   return {
     loaded = true,
   }
 end
 
 ---@class down.ui.sidebar.Config
-S.config = {}
+Sidebar.config = {}
 
-return S
+return Sidebar

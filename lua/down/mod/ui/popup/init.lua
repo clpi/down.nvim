@@ -1,9 +1,9 @@
 local mod = require("down.mod")
 local util = require("down.util")
 
-local M = require("down.mod").new("ui.popup")
+local Popup = require("down.mod").new("ui.popup")
 
-M.setup = function()
+Popup.setup = function()
   return {
     loaded = true,
   }
@@ -13,7 +13,7 @@ end
 ---@param buffer number #The number of the buffer the selection should attach to
 ---@param keybind_buffer number? #An alternate buffer from which the keys for the selection popup are entered.
 ---@return table #A selection object
-M.begin_selection = function(buffer, keybind_buffer)
+Popup.begin_selection = function(buffer, keybind_buffer)
   -- Data that is gathered up over the lifetime of the selection popup
   local data = {}
 
@@ -387,7 +387,7 @@ M.begin_selection = function(buffer, keybind_buffer)
       -- Create a local copy of the previous (now current) page
       -- We do this because when we start rendering objects
       -- they'll start getting added onto the current page
-      -- and will start looping to infMy.
+      -- and will start looping to infPopupy.
       local page_copy = vim.deepcopy(self.pages[self.page])
       -- Clear the current page;
       self.pages[self.page] = {}
@@ -541,7 +541,7 @@ end
 ---@param callback fun(entered_text: string, data: table) #A function that gets invoked whenever the user provides some text.
 ---@param modifiers table #Special table to modify certain attributes of the floating window (like centering on the x or y axis)
 ---@param config table #A config like you would pass into nvim_open_win()
-M.create_prompt = function(name, input_text, callback, modifiers, config)
+Popup.create_prompt = function(name, input_text, callback, modifiers, config)
   local window_config = {
     relative = "win",
     style = "minimal",
@@ -550,10 +550,10 @@ M.create_prompt = function(name, input_text, callback, modifiers, config)
 
   -- Apply any custom modifiers that the user has specified
   window_config =
-    assert(mod.get_mod("ui"), "ui is not loaded!").apply_custom_options(
-      modifiers,
-      vim.tbl_extend("force", window_config, config or {})
-    )
+      assert(mod.get_mod("ui"), "ui is not loaded!").apply_custom_options(
+        modifiers,
+        vim.tbl_extend("force", window_config, config or {})
+      )
 
   local buf = vim.api.nvim_create_buf(false, true)
 
@@ -589,7 +589,7 @@ M.create_prompt = function(name, input_text, callback, modifiers, config)
   -- Create the floating popup window with the prompt buffer
   local winid = vim.api.nvim_open_win(buf, true, window_config)
 
-  -- Make sure to clean up the window if the user leaves the popup at any time
+  -- Popupake sure to clean up the window if the user leaves the popup at any time
   vim.api.nvim_create_autocmd({ "WinLeave", "BufLeave", "BufDelete" }, {
     buffer = buf,
     once = true,
@@ -604,4 +604,4 @@ M.create_prompt = function(name, input_text, callback, modifiers, config)
   vim.api.nvim_win_set_option(winid, "winbar", "")
 end
 
-return M
+return Popup

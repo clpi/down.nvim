@@ -4,7 +4,7 @@ local log = require 'down.util.log'
 local mod = require 'down.mod'
 local sep = util.sep
 
----@class down.mod.template: down.Templateod
+---@class down.mod.template.Template: down.Mod
 local Template = mod.new 'template'
 
 Template.commands = {

@@ -1,3 +1,4 @@
+---@class down.Util
 local U = {}
 
 local c, f, a, ts = vim.cmd, vim.fn, vim.api, vim.treesitter

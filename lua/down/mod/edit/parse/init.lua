@@ -1,9 +1,9 @@
 local log = require("down.util.log")
 local mod = require("down.mod")
 
-local P = mod.new("edit.parse")
+local Parse = mod.new("edit.parse")
 
-P.setup = function()
+Parse.setup = function()
   return {
     loaded = true,
     dependencies = {
@@ -13,9 +13,9 @@ P.setup = function()
   }
 end
 
-P.load = function() end
+Parse.load = function() end
 
 ---@class down.mod.parse.Config
-P.config = {}
+Parse.config = {}
 
-return P
+return Parse

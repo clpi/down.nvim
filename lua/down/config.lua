@@ -3,7 +3,7 @@ local mod = require("down.mod")
 local modconf = require("down.mod.util")
 
 --- The down.nvim configuration
---- @class down.config.Config
+--- @class down.Config
 local Config = {
   --- Start in dev mode
   dev = false,
@@ -37,19 +37,20 @@ end
 ---@param v? boolean
 function Config:check_toggle(k, v)
   if
-    k
-    and type(k) == "string"
-    and v
-    and type(v) == "boolean"
-    and vim.tbl_contains(self.toggles, k)
+      k
+      and type(k) == "string"
+      and v
+      and type(v) == "boolean"
+      and vim.tbl_contains(self.toggles, k)
   then
     self[k] = v
   end
 end
 
+--- Load the user configuration, and load into config
 ---@param user down.mod.Config user config
 ---@param ... any
----@return down.config.Config
+---@return down.Config
 function Config:load(user, ...)
   if self.started and self.started == false then
     return self
@@ -67,7 +68,7 @@ function Config:load(user, ...)
   self.started = true
 end
 
-function Config:post_load()
+function Config:after()
   return self:check_tests(require("down.mod").mods or self.user) ---@type boolean?
 end
 
@@ -109,10 +110,11 @@ function Config:save(f)
   return vim.fn.writefile(json, self:file(f), "S")
 end
 
---- @param self down.config.Config
----@param user down.mod.Config
----@param ... any
----@return down.config.Config
+--- Setup the down config
+--- @param self down.Config The down config
+--- @param user down.mod.Config user config to load
+--- @param ... any The arguments to pass into an optional user hook
+--- @return down.Config
 function Config:setup(user, ...)
   log.new(log.config, false)
   log.info("Config.setup: Log started")
@@ -137,12 +139,12 @@ end
 ---@return boolean
 function Config.check_mod_test(mod)
   return mod ~= nil
-    and mod.id ~= nil
-    and modconf.check_id(mod.id)
-    and type(mod) == "table"
-    and mod.tests ~= nil
-    and type(mod.tests) == "table"
-    and not vim.tbl_isempty(mod.tests)
+      and mod.id ~= nil
+      and modconf.check_id(mod.id)
+      and type(mod) == "table"
+      and mod.tests ~= nil
+      and type(mod.tests) == "table"
+      and not vim.tbl_isempty(mod.tests)
 end
 
 ---@param mods? down.Mod.Mod[]
@@ -159,20 +161,20 @@ end
 function Config.test(mod)
   vim.print("Testing " .. tostring(vim.inspect(mod.id)))
   return vim
-    .iter(pairs(mod.tests))
-    :filter(function(tn, t)
-      return tn and type(t) == "function"
-    end)
-    :all(function(tn, tt)
-      if not type(tt) == "function" then
-        return false
-      end
-      local res = tt(mod) or false ---@type boolean
-      vim.print(
-        "Testing mod " .. mod.id .. " test: " .. tn .. ": " .. tostring(res)
-      )
-      return res
-    end)
+      .iter(pairs(mod.tests))
+      :filter(function(tn, t)
+        return tn and type(t) == "function"
+      end)
+      :all(function(tn, tt)
+        if not type(tt) == "function" then
+          return false
+        end
+        local res = tt(mod) or false ---@type boolean
+        vim.print(
+          "Testing mod " .. mod.id .. " test: " .. tn .. ": " .. tostring(res)
+        )
+        return res
+      end)
 end
 
 return Config

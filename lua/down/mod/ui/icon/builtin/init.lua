@@ -2,9 +2,11 @@ local hl = require("down.mod.ui.icon.builtin.hl")
 local icons = require("down.mod.ui.icon.builtin.icons")
 local tbl = require("down.util.table")
 
+local Builtin = require 'down.mod'.new('ui.icon.builtin')
+
 --- The builtin icon provider
 --- @class (exact) down.mod.ui.icon.Builtin
-return {
+return vim.tbl_extend('force', Builtin, {
 
   --- The icons
   --- @type down.mod.ui.icon.Provider.Icons
@@ -43,12 +45,12 @@ return {
   --- @return string|down.mod.ui.icon.Builtin.Icon, down.mod.ui.icon.Provider.Highlight.Name, boolean
   get = function(category, name)
     return icons[category or "file"][name or "default"],
-      hl[name or "default"],
-      true
+        hl[name or "default"],
+        true
   end,
 
   --- Set the provider to use `down`
   set_provider = function() end,
 
   setup = function() end,
-}
+})

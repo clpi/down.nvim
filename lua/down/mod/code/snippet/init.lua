@@ -2,7 +2,7 @@ local log = require 'down.util.log'
 local mod = require 'down.mod'
 local vs = vim.snippet
 
----@class down.mod.code.Snippet: down.Snippetod
+---@class down.mod.code.Snippet: down.Mod
 local Snippet = mod.new 'code.snippet'
 
 Snippet.commands = {

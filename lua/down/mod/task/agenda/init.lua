@@ -1,8 +1,8 @@
----@type down.Mod
-local M = require 'down.mod'.new('task.agenda', {})
+---@type down.Agendaod
+local Agenda = require 'down.mod'.new('task.agenda', {})
 
 ---@class down..task.agenda.Agenda
-M.Agenda = {
+Agenda.Agenda = {
 
   ---@type lsp.URI
   uri = '',
@@ -15,10 +15,10 @@ M.Agenda = {
 }
 
 ---@class table<down.mod..task.agenda.Agenda>
-M.agendas = {}
+Agenda.agendas = {}
 
 ---@class down.mod..task.agenda.Config
-M.config = {
+Agenda.config = {
 
   ---@type lsp.URI
   uri = '',
@@ -28,7 +28,7 @@ M.config = {
 }
 
 ---@return down.mod.Setup
-M.setup = function()
+Agenda.setup = function()
   ---@type down.mod.Setup
   return {
     dependencies = {},
@@ -36,6 +36,6 @@ M.setup = function()
   }
 end
 
-M.load = function() end
+Agenda.load = function() end
 
-return M
+return Agenda

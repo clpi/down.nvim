@@ -1,18 +1,18 @@
+local Progress = {}
 -- TODO: code cleanup
-local Spinner = require('down.mod').new('ui.progress')
 --> from fidget.nvim
 local list = { '⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏' }
 
-Spinner.setup = function()
+Progress.setup = function()
   return {
     loaded = true,
   }
 end
 
 ---@class down.ui.progress.Config
-Spinner.config = {}
+Progress.config = {}
 
-function Spinner.start(s, ns)
+function Progress.start(s, ns)
   local block = s.code_block
   local r, c = block['start'].row, block['start'].column
   local t = vim.loop.new_timer()
@@ -48,10 +48,10 @@ function Spinner.start(s, ns)
   }
 end
 
-function Spinner.shut(s, ns)
-  -- local s = Spinner.state
+function Progress.shut(s, ns)
+  -- local s = Progress.state
   vim.api.nvim_buf_del_extmark(s.buf, ns, s.id)
   s.t:stop()
 end
 
-return Spinner
+return Progress

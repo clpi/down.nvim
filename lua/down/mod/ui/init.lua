@@ -1,7 +1,7 @@
 local mod = require 'down.mod'
 local log = require 'down.util.log'
 
----@type down.Uiod
+---@class down.mod.ui.Ui: down.Mod
 local Ui = mod.new 'ui'
 
 Ui.load = function()

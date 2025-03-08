@@ -1,51 +1,52 @@
-local tbl = require 'table'
-local clear = require 'table.clear'
-local new = require 'table.new'
-local mod = require 'down.mod'
+local clear = require("table.clear")
+local mod = require("down.mod")
+local new = require("table.new")
+local tbl = require("table")
 
----@class down.mod.data.History: down.Mod
-local M = mod.new 'data.history'
+---@class down.mod.data.history.History: down.Mod
+local History = mod.new("data.history")
 
 ---@class down.mod.data.history.Config: down.mod.Config
-M.config = {
+History.config = {
   silent = true,
-  path = '',
+  store = "data/stores",
+  path = "",
 }
 
----@class down.mod.data.history.Commands
-M.commands = {
+---@class down.mod.data.history.Commands: { [string]: down.Command }
+History.commands = {
   next = {
     args = 0,
     enabled = true,
-    condition = 'markdown',
-    name = 'data.history.forward',
+    condition = "markdown",
+    name = "data.history.forward",
     commands = {
       list = {
         enabled = true,
         args = 0,
-        condition = 'markdown',
-        name = 'data.history.forward.list',
+        condition = "markdown",
+        name = "data.history.forward.list",
       },
     },
   },
   back = {
     args = 0,
-    condition = 'markdown',
+    condition = "markdown",
     enabled = true,
-    name = 'data.history.back',
+    name = "data.history.back",
     commands = {
       list = {
         args = 0,
-        condition = 'markdown',
+        condition = "markdown",
         enabled = true,
-        name = 'data.history.back.list',
+        name = "data.history.back.list",
       },
     },
   },
 }
 
 --- @type integer[]
-M.history = {
+History.history = {
   ---@type integer[]
   hist = {},
   --- @type integer[]
@@ -54,109 +55,115 @@ M.history = {
   file = {},
 }
 
-M.history.buf = {}
+History.history.buf = {}
 
 --- Clear the stacks
-M.clear = function()
-  clear(M.history.hist)
-  clear(M.history.file)
-  clear(M.history.buf)
+History.clear = function()
+  clear(History.history.hist)
+  clear(History.history.file)
+  clear(History.history.buf)
 end
 
-M.add = {}
+History.add = {}
 
-M.add.file = function(buf)
-  table.insert(M.history.file, buf or vim.api.nvim_get_current_buf())
+History.add.file = function(buf)
+  table.insert(History.history.file, buf or vim.api.nvim_get_current_buf())
 end
-M.add.current = function(buf)
-  table.insert(M.history.buf, buf or vim.api.nvim_get_current_buf())
-end
-
-M.push = function(stack, buf)
-  table.insert(stack or M.history.buf, 1, buf or vim.api.nvim_get_current_buf())
+History.add.current = function(buf)
+  table.insert(History.history.buf, buf or vim.api.nvim_get_current_buf())
 end
 
-M.pop = function(stack, buf)
-  table.remove(stack or M.history.buf, 1)
+History.push = function(stack, buf)
+  table.insert(
+    stack or History.history.buf,
+    1,
+    buf or vim.api.nvim_get_current_buf()
+  )
 end
 
-M.print = function(self)
+History.pop = function(stack, buf)
+  table.remove(stack or History.history.buf, 1)
+end
+
+History.print = function(self)
   for i, v in ipairs(self) do
     print(i, v.path, v.buf)
   end
 end
 
-M.back = function()
+History.back = function()
   local bn = vim.api.nvim_get_current_buf()
-  if bn > 1 and #M.history.buf > 0 then
-    M.push(M.history.hist, bn)
-    local prev = M.history.buf[1] or 0
-    vim.api.nvim_command('buffer ' .. prev)
-    M.pop(M.history.buf)
+  if bn > 1 and #History.history.buf > 0 then
+    History.push(History.history.hist, bn)
+    local prev = History.history.buf[1] or 0
+    vim.api.nvim_command("buffer " .. prev)
+    History.pop(History.history.buf)
     return true
   else
-    if M.config.silent then
-      vim.api.nvim_echo({ { "Can't go back again", 'WarningMsg' } }, true, {})
+    if History.config.silent then
+      vim.api.nvim_echo(
+        { { "Can't go back again", "WarningHistorysg" } },
+        true,
+        {}
+      )
     end
     return false
   end
 end
 
-M.forward = function()
+History.forward = function()
   local cb = vim.api.nvim_get_current_buf()
-  local hb = M.history.hist[1]
+  local hb = History.history.hist[1]
   if hb then
-    M.push(M.history.buf, cb)
-    vim.api.nvim_command('buffer ' .. hb)
-    M.pop(M.history.hist)
+    History.push(History.history.buf, cb)
+    vim.api.nvim_command("buffer " .. hb)
+    History.pop(History.history.hist)
     return true
   else
-    if not M.config.silent then
-      vim.api.nvim_echo({ { "Can't go forward again", 'WarningMsg' } }, true, {})
+    if not History.config.silent then
+      vim.api.nvim_echo(
+        { { "Can't go forward again", "WarningHistorysg" } },
+        true,
+        {}
+      )
     end
     return false
   end
 end
-
----@class down..history.Config
-M.config = {
-
-  store = 'data/stores',
-}
 
 ---@return down.mod.Setup
-M.setup = function()
+History.setup = function()
   ---@type down.mod.Setup
   return {
     dependencies = {
-      'cmd',
+      "cmd",
     },
     loaded = true,
   }
 end
 
-M.commands = {
+History.commands = {
   prev = {
     args = 0,
-    condition = 'markdown',
-    name = 'data.history.back',
+    condition = "markdown",
+    name = "data.history.back",
   },
   next = {
     args = 0,
-    condition = 'markdown',
-    name = 'data.history.forward',
+    condition = "markdown",
+    name = "data.history.forward",
   },
 }
 
-M.handle = {
+History.handle = {
   cmd = {
-    ['data.history.back'] = function(e)
+    ["data.history.back"] = function(e)
       local buffers = vim.api.nvim_list_buf()
 
       local to_delete = {}
       for buffer in vim.iter(buffers):rev() do
         if vim.fn.buflisted(buffer) == 1 then
-          if not vim.endswith(vim.api.nvim_buf_get_name(buffer), '.md') then
+          if not vim.endswith(vim.api.nvim_buf_get_name(buffer), ".md") then
             vim.api.nvim_win_set_buf(0, buffer)
             break
           else
@@ -172,4 +179,4 @@ M.handle = {
   },
 }
 
-return M
+return History

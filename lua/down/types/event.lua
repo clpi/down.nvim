@@ -17,7 +17,8 @@
 ---   @field new fun(m: down.Mod.Mod, type: string, body: table|string, ev?: table): down.Event?
 ---   @field send fun(self: down.Event, recipient: down.Mod.Mod[])
 ---   @field handle fun(self: down.Event)
----   @field define fun(module: down.Mod.Mod, type: string): down.Event
+---   @field broadcast_to fun(self: down.Event, mods: down.Mod.Mod[])
+---   @field define fun(module: down.Mod.Mod|string, type: string): down.Event
 ---   @field context? down.Context
 ---
 ---

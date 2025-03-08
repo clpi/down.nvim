@@ -2,9 +2,10 @@ local down = require("down")
 local util = down.util
 local log, mod = down.log, down.mod
 
-local M = mod.new("ui.hl")
+--- @class down.mod.ui.hl.Hl: down.Mod
+local Hl = mod.new("ui.hl")
 
-M.config = {
+Hl.config = {
   highlight = {
     selection_window = {
       heading = "+@annotation",
@@ -104,7 +105,7 @@ M.config = {
     -- In case of errors in the syntax tree, use the following highighlightight.
     error = "+Error",
 
-    -- highlight for defM.handles (`$ DefM.handle`).
+    -- highlight for defHl.handles (`$ DefHl.handle`).
     handles = {
       prefix = "+@punctuation.delimiter",
       suffix = "+@punctuation.delimiter",
@@ -122,7 +123,7 @@ M.config = {
 
     -- highlight for TODO items.
     --
-    -- This strictly covers the `( )` coM.handleent of any detached modifier. In other downs, these
+    -- This strictly covers the `( )` coHl.handleent of any detached modifier. In other downs, these
     -- highlight only bother with highighlightighting the brackets and the content within, but not the
     -- object containing the TODO item itself.
     todo_items = {
@@ -214,8 +215,8 @@ M.config = {
         },
 
         handle = {
-          [""] = "+@down.defM.handles.title",
-          prefix = "+@down.defM.handles.prefix",
+          [""] = "+@down.defHl.handles.title",
+          prefix = "+@down.defHl.handles.prefix",
         },
 
         footnote = {
@@ -374,22 +375,22 @@ M.config = {
   },
 }
 
-M.setup = function()
+Hl.setup = function()
   return { loaded = true, dependencies = {} }
 end
 
-M.load = function()
-  M.trigger_highlight()
+Hl.load = function()
+  Hl.trigger_highlight()
 
   vim.api.nvim_create_autocmd({ "FileType", "ColorScheme" }, {
-    callback = M.trigger_highlight,
+    callback = Hl.trigger_highlight,
   })
 end
 
 ---@class base.highlight
 
 --- Reads the highlight configuration table and applies all defined highlight
-M.trigger_highlight = function()
+Hl.trigger_highlight = function()
   -- NOTE(vhyrro): This code was added here to work around oddities related to nvim-treesitter.
   -- This code, with modern nvim-treesitter versions, will probably not break as harshighlighty.
   -- This code should be removed as soon as possible.
@@ -426,7 +427,7 @@ M.trigger_highlight = function()
   end
 
   -- Begin the descent down the public highlight configuration table
-  descend(M.config.highlight, function(highlight_name, highighlightight, prefix)
+  descend(Hl.config.highlight, function(highlight_name, highighlightight, prefix)
     -- If the type of highighlightight we have encountered is a table
     -- then recursively descend down it as well
     if type(highighlightight) == "table" then
@@ -441,8 +442,8 @@ M.trigger_highlight = function()
     local is_link = highighlightight:sub(1, 1) == "+"
 
     local full_highighlightight_name = "@down"
-      .. prefix
-      .. (highlight_name:len() > 0 and ("." .. highlight_name) or "")
+        .. prefix
+        .. (highlight_name:len() > 0 and ("." .. highlight_name) or "")
     local does_highlight_exist = util.inline_pcall(
       vim.api.nvim_exec,
       "highighlightight " .. full_highighlightight_name,
@@ -454,9 +455,9 @@ M.trigger_highlight = function()
       -- If the highighlightight already exists then assume the user doesn't want it to be
       -- overwritten
       if
-        does_highlight_exist
-        and does_highlight_exist:len() > 0
-        and not does_highlight_exist:match("xxx%s+cleared")
+          does_highlight_exist
+          and does_highlight_exist:len() > 0
+          and not does_highlight_exist:match("xxx%s+cleared")
       then
         return
       end
@@ -481,15 +482,15 @@ M.trigger_highlight = function()
   end, "")
 
   -- Begin the descent down the dimming configuration table
-  descend(M.config.dim, function(highlight_name, highighlightight, prefix)
+  descend(Hl.config.dim, function(highlight_name, highighlightight, prefix)
     -- If we don't have a percentage value then keep traversing down the table tree
     if not highighlightight.percentage then
       return true
     end
 
     local full_highighlightight_name = "@down"
-      .. prefix
-      .. (highlight_name:len() > 0 and ("." .. highlight_name) or "")
+        .. prefix
+        .. (highlight_name:len() > 0 and ("." .. highlight_name) or "")
     local does_highlight_exist = util.inline_pcall(
       vim.api.nvim_exec,
       "highighlightight " .. full_highighlightight_name,
@@ -499,17 +500,17 @@ M.trigger_highlight = function()
     -- If the highighlightight already exists then assume the user doesn't want it to be
     -- overwritten
     if
-      does_highlight_exist
-      and does_highlight_exist:len() > 0
-      and not does_highlight_exist:match("xxx%s+cleared")
+        does_highlight_exist
+        and does_highlight_exist:len() > 0
+        and not does_highlight_exist:match("xxx%s+cleared")
     then
       return
     end
 
     -- Apply the dimmed highighlightight
     vim.api.nvim_set_hl(0, full_highighlightight_name, {
-      [highighlightight.affect == "background" and "bg" or "fg"] = M.dim_color(
-        M.get_attribute(
+      [highighlightight.affect == "background" and "bg" or "fg"] = Hl.dim_color(
+        Hl.get_attribute(
           highighlightight.reference or full_highighlightight_name,
           highighlightight.affect or "foreground"
         ),
@@ -521,21 +522,21 @@ end
 
 --- Takes in a table of highlight and applies them to the current buffer
 ---@param highlight table #A table of highlight
-M.add_highlight = function(highlight)
-  M.config.highlight =
-    vim.tbl_deep_extend("force", M.config.highlight, highlight or {})
-  M.trigger_highlight()
+Hl.add_highlight = function(highlight)
+  Hl.config.highlight =
+      vim.tbl_deep_extend("force", Hl.config.highlight, highlight or {})
+  Hl.trigger_highlight()
 end
 
 --- Takes in a table of items to dim and applies the dimming to them
 ---@param dim table #A table of items to dim
-M.add_dim = function(dim)
-  M.config.dim = vim.tbl_deep_extend("force", M.config.dim, dim or {})
-  M.trigger_highlight()
+Hl.add_dim = function(dim)
+  Hl.config.dim = vim.tbl_deep_extend("force", Hl.config.dim, dim or {})
+  Hl.trigger_highlight()
 end
 
 --- Assigns all down* highlight to `clear`
-M.clear_highlight = function()
+Hl.clear_highlight = function()
   --- Recursively descends down the highighlightight configuration and clears every highighlightight accordingly
   ---@param highlight table #The table of highlight to descend down
   ---@param prefix string #Should be only used by the function itself, acts as a "savestate" so the function can keep track of what path it has descended down
@@ -552,13 +553,13 @@ M.clear_highlight = function()
   end
 
   -- Begin the descent
-  descend(M.config.highlight, "")
+  descend(Hl.config.highlight, "")
 end
 
-M.get_attribute = function(name, attribute)
+Hl.get_attribute = function(name, attribute)
   -- Attempt to get the highighlightight
   local success, highlight =
-    pcall(vim.api.nvim_get_highlight_by_name, name, true) ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
+      pcall(vim.api.nvim_get_highlight_by_name, name, true) ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
 
   -- If we were successful and if the attribute exists then return it
   if success and highlight[attribute] then
@@ -566,22 +567,22 @@ M.get_attribute = function(name, attribute)
   else -- Else log the message in a regular info() call, it's not an insanely important error
     log.info(
       "Unable to grab highighlightight for attribute"
-        .. attribute
-        .. " - full error:"
-        .. highlight
+      .. attribute
+      .. " - full error:"
+      .. highlight
     )
   end
 
   return "NONE"
 end
 
-M.hex_to_rgb = function(hex_colour)
+Hl.hex_to_rgb = function(hex_colour)
   return tonumber(hex_colour:sub(1, 2), 16),
-    tonumber(hex_colour:sub(3, 4), 16),
-    tonumber(hex_colour:sub(5), 16)
+      tonumber(hex_colour:sub(3, 4), 16),
+      tonumber(hex_colour:sub(5), 16)
 end
 
-M.dim_color = function(colour, percent)
+Hl.dim_color = function(colour, percent)
   if colour == "NONE" then
     return colour
   end
@@ -590,7 +591,7 @@ M.dim_color = function(colour, percent)
     return math.floor(attr * (100 - percent) / 100)
   end
 
-  local r, g, b = M.hex_to_rgb(colour)
+  local r, g, b = Hl.hex_to_rgb(colour)
 
   if not r or not g or not b then
     return "NONE"
@@ -606,6 +607,6 @@ end
 
 -- END of shamelessly ripped off akinsho code
 
-M.subscribed = {}
+Hl.subscribed = {}
 
-return M
+return Hl

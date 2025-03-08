@@ -4,16 +4,29 @@ local h = vim.health
 local start = vim.health.start
 local ok, err, warn = h.ok, h.error, h.warn
 
+local config = require("down.config")
+local down = require("down")
+
+H.cmds = function() end
+
+H.lsp = {
+  installed = function()
+    if vim.fn.executable("down.lsp") == 0 then
+      return h.error("down.lsp is not installed")
+    end
+    return h.ok("down.lsp is installed")
+  end,
+}
+
 H.user = function()
-  if require("down.config").user == nil then
-    h.error("config.mod is nil")
-  else
-    h.ok("config.mod is not nil")
+  if config.user == nil then
+    return h.error("config.mod is nil")
   end
+  return h.ok("config.mod is not nil")
 end
 
 H.workspace = function()
-  if require("down.config").user.workspace.config.workspaces == nil then
+  if config.user.workspace and config.user.workspace.workspaces == nil then
     h.error("config.mod.workspace.workspaces is nil")
   else
     h.ok("config.mod.workspace.workspaces is not nil")
@@ -21,23 +34,38 @@ H.workspace = function()
 end
 
 H.deps = {
-  ["nvim-treesitter"] = "nvim-treesitter/nvim-treesitter",
-  ["plenary.nvim"] = "nvim-lua/plenary.nvim",
-  ["nui.nvim"] = "MunifTanjim/nui.nvim",
+  required = {
+    ["nvim-treesitter"] = "nvim-treesitter/nvim-treesitter",
+    ["plenary.nvim"] = "nvim-lua/plenary.nvim",
+    ["nui.nvim"] = "MunifTanjim/nui.nvim",
+  },
+  optional = {
+    ["fzf.lua"] = "",
+    ["telescope.nvim"] = "nvim-telescope/telescope.nvim",
+    ["snacks.nvim"] = "folke/snacks.nvim",
+    ["mini.pick"] = "wuelnerdotexe/mini.pick",
+    ["nvim-web-devicons"] = "kyazdani42/nvim-web-devicons",
+    ["mini.icons"] = "wuelnerdotexe/mini.icons",
+  },
+  has_required = function()
+    for dep, repo in pairs(H.deps.required) do
+      if not H.check_dep(dep) then
+        return h.error(dep .. " is not installed" .. repo)
+      end
+    end
+    return h.ok("All required dependencies are installed")
+  end,
 }
 
-H.optional = {
-  ["telescope.nvim"] = "nvim-telescope/telescope.nvim",
-  ["nvim-web-devicons"] = "kyazdani42/nvim-web-devicons",
-  ["mini.icons"] = "wuelnerdotexe/mini.icons",
+H.icon = {
+  ---@param provider? down.mod.ui.icon.Provider.Name
+  has_provider = function(provider)
+    if require("down.mod.ui.icon.util").has_provider(i) then
+      return h.ok("Icon provider is available " .. i)
+    end
+    return h.ok("Icon provider is not available, defaulting to builtin")
+  end,
 }
-
----@param i? down.mod.ui.icon.Provider.Name
-H.has_icon_provider = function(i)
-  if require("down.mod.ui.icon.util").has_provider(i) then
-    return h.ok("Icon provider is available")
-  end
-end
 
 H.check_dep = function(dep)
   local lazyok, lazy = pcall(require, "lazy.core.config")
@@ -76,6 +104,8 @@ end
 
 H.check = function()
   h.start("down.nvim")
+  H.lsp.installed()
+  H.icon.has_provider("down")
   H.check_optional()
   H.check_req()
   H.user()
