@@ -1,21 +1,29 @@
-local mod = require 'down.mod'
-local util = require 'down.util'
+local mod = require("down.mod")
+local tbl = require("down.util.table")
+local util = require("down.util")
 local log = util.log
 local ts = vim.treesitter
-local tuok, tu = pcall(require, 'nvim-treesitter.ts_utils')
+local tuok, tu = pcall(require, "nvim-treesitter.ts_utils")
 
 ---@class down.mod.edit.Cursor: down.Mod
-local L = mod.new 'edit.cursor'
+local L = mod.new("edit.cursor")
 
 ---@return down.mod.Setup
 function L.setup()
   return {
     dependencies = {
-      'tool.treesitter',
-      'workspace',
+      "tool.treesitter",
+      "workspace",
     },
     loaded = tuok,
   }
+end
+
+L.update = function(event)
+  local cursor_record = tbl.orempty(M.cursor_record, event.buffer)
+  cursor_record.row_0b = event.cursor_position[1] - 1
+  cursor_record.col_0b = event.cursor_position[2]
+  cursor_record.line_content = event.line_content
 end
 
 ---@class down.mod.edit.cursor.Config
@@ -34,6 +42,17 @@ L.config = {}
 ---@field public hl nil
 ---@class edit.cursor.Node
 L.node = {}
+
+L.line = require("down.mod.edit.line")
+
+L.cword = function()
+  return vim.fn.expand("<cword>")
+end
+
+L.cWORD = function()
+  return vim.fn.expand("<cWORD>")
+end
+
 function L.node:captures()
   return ts.get_captures_at_cursor(0)
 end

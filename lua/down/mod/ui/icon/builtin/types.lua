@@ -1,0 +1,15 @@
+
+--- @meta
+---
+--- @alias down.mod.ui.icon.Builtin.Icons table<down.mod.ui.icon.Provider.Category, table<string, down.mod.ui.icon.Builtin.Icon>>
+---
+--- @class (exact) down.mod.ui.icon.Builtin.Icon.Details
+--- @field public icon string The icon
+--- @field public hl string The highlight group
+--- @field public type? down.mod.ui.icon.Provider.Type The type
+---
+--- @alias down.mod.ui.icon.Builtin.Icon
+--- |down.mod.ui.icon.Builtin.Icon.Details
+--- |string
+---
+--- @alias down.mod.ui.icon.Builtin.Icon.Set table<string, down.mod.ui.icon.Builtin.Icon>

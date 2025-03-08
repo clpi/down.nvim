@@ -1,7 +1,7 @@
-local lib = require 'down.util.lib'
-local mod = require 'down.mod'
+local mod = require("down.mod")
+local util = require("down.util")
 
-local M = require('down.mod').new('ui.popup')
+local M = require("down.mod").new("ui.popup")
 
 M.setup = function()
   return {
@@ -30,18 +30,18 @@ M.begin_selection = function(buffer, keybind_buffer)
     --- Renders something in the buffer
     --- @vararg table #A vararg of { text, highlight } tables
     render = function(self, ...)
-      vim.api.nvim_buf_set_option(buffer, 'modifiable', true)
+      vim.api.nvim_buf_set_option(buffer, "modifiable", true)
 
       -- Don't render if we're on the first line
       -- because buffers always open with one line available
       -- anyway
       if self.position > 0 then
-        vim.api.nvim_buf_set_lines(buffer, -1, -1, false, { '' })
+        vim.api.nvim_buf_set_lines(buffer, -1, -1, false, { "" })
       end
 
       if not vim.tbl_isempty({ ... }) then
         vim.api.nvim_buf_set_extmark(buffer, namespace, self.position, 0, {
-          virt_text_pos = 'overlay',
+          virt_text_pos = "overlay",
           virt_text = { ... },
         })
       end
@@ -49,7 +49,7 @@ M.begin_selection = function(buffer, keybind_buffer)
       -- Track which line we're on
       self.position = self.position + 1
 
-      vim.api.nvim_buf_set_option(buffer, 'modifiable', false)
+      vim.api.nvim_buf_set_option(buffer, "modifiable", false)
     end,
 
     --- Resets the renderer by clearing the buffer and resetting
@@ -57,12 +57,12 @@ M.begin_selection = function(buffer, keybind_buffer)
     reset = function(self)
       self.position = 0
 
-      vim.api.nvim_buf_set_option(buffer, 'modifiable', true)
+      vim.api.nvim_buf_set_option(buffer, "modifiable", true)
 
       vim.api.nvim_buf_clear_namespace(buffer, namespace, 0, -1)
       vim.api.nvim_buf_set_lines(buffer, 0, -1, true, {})
 
-      vim.api.nvim_buf_set_option(buffer, 'modifiable', false)
+      vim.api.nvim_buf_set_option(buffer, "modifiable", false)
     end,
   }
 
@@ -85,7 +85,7 @@ M.begin_selection = function(buffer, keybind_buffer)
     ---@param tbl_of_functions table #A table of custom elements
     ---@return base.ui.selection
     apply = function(self, tbl_of_functions)
-      self = vim.tbl_deep_extend('force', self, tbl_of_functions)
+      self = vim.tbl_deep_extend("force", self, tbl_of_functions)
       return self
     end,
 
@@ -104,7 +104,7 @@ M.begin_selection = function(buffer, keybind_buffer)
     listener = function(self, keys, func, mode)
       -- Go through all keys that the user has bound a listener to and bind them!
       for _, key in ipairs(keys) do
-        vim.keymap.set(mode or 'n', key, lib.wrap(func, self), {
+        vim.keymap.set(mode or "n", key, util.wrap(func, self), {
           buffer = keybind_buffer or buffer,
           silent = true,
           nowait = true,
@@ -125,7 +125,7 @@ M.begin_selection = function(buffer, keybind_buffer)
 
       -- Go through all keys that the user has bound a listener to and bind them!
       for _, key in pairs(keys) do
-        vim.keymap.set(mode or 'n', key, lib.wrap(func, self), {
+        vim.keymap.set(mode or "n", key, util.wrap(func, self), {
           buffer = keybind_buffer or buffer,
           silent = true,
           nowait = true,
@@ -139,7 +139,7 @@ M.begin_selection = function(buffer, keybind_buffer)
     ---@param opts table #A table of options
     ---@return base.ui.selection
     options = function(self, opts)
-      self.opts = vim.tbl_deep_extend('force', self.opts, opts)
+      self.opts = vim.tbl_deep_extend("force", self.opts, opts)
       return self
     end,
 
@@ -190,13 +190,13 @@ M.begin_selection = function(buffer, keybind_buffer)
     ---@param highlight string #An optional highlight group to use (base to "Normal")
     ---@return base.ui.selection
     text = function(self, text, highlight)
-      local custom_highlight = self:options_for('text').highlight
+      local custom_highlight = self:options_for("text").highlight
 
-      self:add('text', text, highlight)
+      self:add("text", text, highlight)
 
       renderer:render({
         text,
-        highlight or custom_highlight or 'Normal',
+        highlight or custom_highlight or "Normal",
       })
 
       return self
@@ -206,7 +206,7 @@ M.begin_selection = function(buffer, keybind_buffer)
     ---@param text string #The text to display
     ---@return base.ui.selection
     title = function(self, text)
-      return self:text(text, '@text.title')
+      return self:text(text, "@text.title")
     end,
 
     --- Simply enters a blank line
@@ -216,7 +216,7 @@ M.begin_selection = function(buffer, keybind_buffer)
       count = count or 1
       renderer:render()
 
-      self:add('blank', count)
+      self:add("blank", count)
 
       if count <= 1 then
         return self
@@ -233,28 +233,28 @@ M.begin_selection = function(buffer, keybind_buffer)
     flag = function(self, flag, description, callback)
       -- Set up the configuration by properly merging everything
       local configuration = vim.tbl_deep_extend(
-        'force',
+        "force",
         {
           keys = {
             flag,
           },
           hl = {
             -- TODO: Change highlight group names
-            key = '@down.selection_window.key',
-            description = '@down.selection_window.keyname',
-            delimiter = '@down.selection_window.arrow',
+            key = "@down.selection_window.key",
+            description = "@down.selection_window.keyname",
+            delimiter = "@down.selection_window.arrow",
           },
-          delimiter = ' -> ',
+          delimiter = " -> ",
           -- Whether to destroy the selection popup when this flag is pressed
           destroy = true,
         },
         self:options_for( -- First merge the global options
-          'flag'
+          "flag"
         ),
-        type(callback) == 'table' and callback or {} -- Then optionally merge the flag-specific options
+        type(callback) == "table" and callback or {} -- Then optionally merge the flag-specific options
       )
 
-      self:add('flag', flag, description, callback)
+      self:add("flag", flag, description, callback)
 
       -- Attach a locallistener to this flag
       self = self:locallistener(configuration.keys, function()
@@ -266,7 +266,7 @@ M.begin_selection = function(buffer, keybind_buffer)
 
         -- Invoke the user-defined callback
         (function()
-          if type(callback) == 'function' then
+          if type(callback) == "function" then
             return callback
           else
             return callback and callback.callback or function() end
@@ -282,7 +282,7 @@ M.begin_selection = function(buffer, keybind_buffer)
         configuration.delimiter,
         configuration.hl.delimiter,
       }, {
-        description or 'no description',
+        description or "no description",
         configuration.hl.description,
       })
 
@@ -297,26 +297,26 @@ M.begin_selection = function(buffer, keybind_buffer)
     rflag = function(self, flag, description, callback)
       -- Set up the configuration by properly merging everything
       local configuration = vim.tbl_deep_extend(
-        'force',
+        "force",
         {
           keys = {
             flag,
           },
           hl = {
             -- TODO: Change highlight group names
-            key = '@down.selection_window.key',
-            description = '@down.selection_window.keyname',
-            delimiter = '@down.selection_window.arrow',
+            key = "@down.selection_window.key",
+            description = "@down.selection_window.keyname",
+            delimiter = "@down.selection_window.arrow",
           },
-          delimiter = ' -> ',
+          delimiter = " -> ",
         },
         self:options_for( -- First merge the global options
-          'rflag'
+          "rflag"
         ),
-        type(callback) == 'table' and callback or {} -- Then optionally merge the rflag-specific options
+        type(callback) == "table" and callback or {} -- Then optionally merge the rflag-specific options
       )
 
-      self:add('rflag', flag, description, callback)
+      self:add("rflag", flag, description, callback)
 
       -- Attach a locallistener to this flag
       self = self:locallistener(configuration.keys, function()
@@ -325,7 +325,7 @@ M.begin_selection = function(buffer, keybind_buffer)
 
         -- Invoke the user-defined callback
         (function()
-          if type(callback) == 'function' then
+          if type(callback) == "function" then
             return callback()
           elseif callback.callback then
             return callback.callback()
@@ -341,7 +341,7 @@ M.begin_selection = function(buffer, keybind_buffer)
         configuration.delimiter,
         configuration.hl.delimiter,
       }, {
-        '+' .. (description or 'no description'),
+        "+" .. (description or "no description"),
         configuration.hl.description,
       })
 
@@ -354,7 +354,7 @@ M.begin_selection = function(buffer, keybind_buffer)
       -- Go through every locally bound key and unbind it
       -- We don't want page-local keys to continue being bound
       for _, key in ipairs(self.localkeys) do
-        vim.api.nvim_buf_del_keymap(buffer, '', key)
+        vim.api.nvim_buf_del_keymap(buffer, "", key)
       end
 
       self.localkeys = {}
@@ -374,7 +374,7 @@ M.begin_selection = function(buffer, keybind_buffer)
       end
 
       for _, key in ipairs(self.localkeys) do
-        vim.api.nvim_buf_del_keymap(buffer, '', key)
+        vim.api.nvim_buf_del_keymap(buffer, "", key)
       end
 
       self.localkeys = {}
@@ -409,36 +409,39 @@ M.begin_selection = function(buffer, keybind_buffer)
     prompt = function(self, text, callback)
       -- Set up the configuration by properly merging everything
       local configuration = vim.tbl_deep_extend(
-        'force',
+        "force",
         {
-          text = text or 'Input',
-          delimiter = ' -> ',
+          text = text or "Input",
+          delimiter = " -> ",
           -- Automatically destroys the popup when prompt is confirmed
           destroy = true,
           prompt_text = nil,
         },
 
         self:options_for( -- First merge the global options
-          'prompt'
+          "prompt"
         ),
-        type(callback) == 'table' and callback or {} -- Then optionally merge the flag-specific options
+        type(callback) == "table" and callback or {} -- Then optionally merge the flag-specific options
       )
-      self:add('prompt', text, callback)
+      self:add("prompt", text, callback)
       self = self:blank()
 
       -- Create prompt text
-      vim.fn.prompt_setprompt(buffer, configuration.text .. configuration.delimiter)
+      vim.fn.prompt_setprompt(
+        buffer,
+        configuration.text .. configuration.delimiter
+      )
 
       -- Create prompt
-      vim.api.nvim_buf_set_option(buffer, 'modifiable', true)
-      local options = vim.api.nvim_buf_get_option(buffer, 'buftype')
-      vim.api.nvim_buf_set_option(buffer, 'buftype', 'prompt')
+      vim.api.nvim_buf_set_option(buffer, "modifiable", true)
+      local options = vim.api.nvim_buf_get_option(buffer, "buftype")
+      vim.api.nvim_buf_set_option(buffer, "buftype", "prompt")
 
       -- Create a callback to be invoked on prompt confirmation
       vim.fn.prompt_setcallback(buffer, function(content)
         if content:len() > 0 then
           -- Remakes the buftype option the same before prompt
-          vim.api.nvim_buf_set_option(buffer, 'buftype', options)
+          vim.api.nvim_buf_set_option(buffer, "buftype", options)
 
           -- Delete the selection before any action
           -- We assume pressing a flag does quit the popup
@@ -450,7 +453,7 @@ M.begin_selection = function(buffer, keybind_buffer)
           end
 
           -- Invoke the user-defined callback
-          if type(callback) == 'function' then
+          if type(callback) == "function" then
             callback(content)
           else
             callback.callback(content)
@@ -459,11 +462,11 @@ M.begin_selection = function(buffer, keybind_buffer)
       end)
 
       -- Jump to insert mode
-      vim.api.nvim_feedkeys('A', 't', false)
+      vim.api.nvim_feedkeys("A", "t", false)
 
       -- Add prompt text in the prompt
       if configuration.prompt_text then
-        vim.api.nvim_feedkeys(configuration.prompt_text, 'n', false)
+        vim.api.nvim_feedkeys(configuration.prompt_text, "n", false)
       end
 
       return self
@@ -509,19 +512,19 @@ M.begin_selection = function(buffer, keybind_buffer)
     ---@param force_render? boolean forcefully render the message even if the state isn't present
     ---@return base.ui.selection
     stateof = function(self, key, format, force_render)
-      format = format or '%s'
+      format = format or "%s"
       force_render = force_render or false
 
       -- Set up the configuration by properly merging everything
-      local configuration = vim.tbl_deep_extend('force', {
-        highlight = 'Normal',
-      }, self:options_for('stateof'))
+      local configuration = vim.tbl_deep_extend("force", {
+        highlight = "Normal",
+      }, self:options_for("stateof"))
 
-      self:add('stateof', key, format)
+      self:add("stateof", key, format)
 
       if force_render or (self.states[key] and self.states[key].value) then
         renderer:render({
-          format:format(self.states[key] and self.states[key].value or ' '),
+          format:format(self.states[key] and self.states[key].value or " "),
           configuration.highlight,
         })
       end
@@ -540,21 +543,22 @@ end
 ---@param config table #A config like you would pass into nvim_open_win()
 M.create_prompt = function(name, input_text, callback, modifiers, config)
   local window_config = {
-    relative = 'win',
-    style = 'minimal',
-    border = 'rounded',
+    relative = "win",
+    style = "minimal",
+    border = "rounded",
   }
 
   -- Apply any custom modifiers that the user has specified
-  window_config = assert(mod.get_mod('ui'), 'ui is not loaded!').apply_custom_options(
-    modifiers,
-    vim.tbl_extend('force', window_config, config or {})
-  )
+  window_config =
+    assert(mod.get_mod("ui"), "ui is not loaded!").apply_custom_options(
+      modifiers,
+      vim.tbl_extend("force", window_config, config or {})
+    )
 
   local buf = vim.api.nvim_create_buf(false, true)
 
   -- Set the buffer type to "prompt" to give it special behaviour (:h prompt-buffer)
-  vim.api.nvim_buf_set_option(buf, 'buftype', 'prompt')
+  vim.api.nvim_buf_set_option(buf, "buftype", "prompt")
   vim.api.nvim_buf_set_name(buf, name)
 
   -- Create a callback to be invoked on prompt confirmation
@@ -569,10 +573,10 @@ M.create_prompt = function(name, input_text, callback, modifiers, config)
   end)
 
   -- Construct some custom mappings for the popup
-  vim.keymap.set('n', '<Esc>', vim.cmd.quit, { silent = true, buffer = buf })
-  vim.keymap.set('n', '<Tab>', '<CR>', { silent = true, buffer = buf })
-  vim.keymap.set('i', '<Tab>', '<CR>', { silent = true, buffer = buf })
-  vim.keymap.set('i', '<C-c>', '<Esc>:q<CR>', { silent = true, buffer = buf })
+  vim.keymap.set("n", "<Esc>", vim.cmd.quit, { silent = true, buffer = buf })
+  vim.keymap.set("n", "<Tab>", "<CR>", { silent = true, buffer = buf })
+  vim.keymap.set("i", "<Tab>", "<CR>", { silent = true, buffer = buf })
+  vim.keymap.set("i", "<C-c>", "<Esc>:q<CR>", { silent = true, buffer = buf })
 
   -- If the use has specified some input text then show that input text in the buffer
   if input_text then
@@ -580,13 +584,13 @@ M.create_prompt = function(name, input_text, callback, modifiers, config)
   end
 
   -- Automatically enter insert mode
-  vim.api.nvim_feedkeys('i', 't', false)
+  vim.api.nvim_feedkeys("i", "t", false)
 
   -- Create the floating popup window with the prompt buffer
   local winid = vim.api.nvim_open_win(buf, true, window_config)
 
   -- Make sure to clean up the window if the user leaves the popup at any time
-  vim.api.nvim_create_autocmd({ 'WinLeave', 'BufLeave', 'BufDelete' }, {
+  vim.api.nvim_create_autocmd({ "WinLeave", "BufLeave", "BufDelete" }, {
     buffer = buf,
     once = true,
     callback = function()
@@ -597,7 +601,7 @@ M.create_prompt = function(name, input_text, callback, modifiers, config)
 
   -- HACK(vhyrro): Prevent the "not enough room" error when leaving the window.
   -- See: https://github.com/neovim/neovim/issues/19464
-  vim.api.nvim_win_set_option(winid, 'winbar', '')
+  vim.api.nvim_win_set_option(winid, "winbar", "")
 end
 
 return M

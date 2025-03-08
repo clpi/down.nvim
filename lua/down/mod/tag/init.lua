@@ -2,11 +2,11 @@ local mod = require('down.mod')
 local log = require('down.util.log')
 local Tag = require('down.mod..tag.tag')
 
----@class down.mod.Tag: down.Mod
-local M = mod.new 'tag'
+---@class down.mod.Tag: down.Tagod
+local Tag = mod.new 'tag'
 
 ---@class down.mod.tag.Commands: down.Commands
-M.commands = {
+Tag.commands = {
   tag = {
     name = 'tag',
     condition = 'markdown',
@@ -47,7 +47,7 @@ M.commands = {
   },
 }
 ---@return down.mod.Setup
-M.setup = function()
+Tag.setup = function()
   return {
     loaded = true,
     dependencies = { 'workspace', 'cmd', 'data' },
@@ -67,7 +67,7 @@ end
 ---}
 
 ---@class down.mod.tag.Data
-M.tags = {
+Tag.tags = {
   ---@type down.Tag.Instances
   global = {},
   ---@type down.Tag.Instances
@@ -81,7 +81,7 @@ M.tags = {
 --- @param lnno number
 --- @param path string
 --- @return string[]
-M.parse_ln = function(ln)
+Tag.parse_ln = function(ln)
   local tags = {}
   for tag in ln:gmatch '#%S+' do
     tags:insert(tag)
@@ -89,10 +89,10 @@ M.parse_ln = function(ln)
   return tags
 end
 
-M.parse_current_ln = function()
+Tag.parse_current_ln = function()
   local ln = vim.api.nvim_buf_get_lines(0, pos[1] - 1, pos[1], false)
   local path = vim.fn.expand('%:p')
-  local ws = M.dep['workspace'].get_current_workspace()
+  local ws = Tag.dep['workspace'].get_current_workspace()
   local tags = {}
   for tag in ln:gmatch '#%S+' do
     table.insert(tags, { ---@type down.Tag.Instance
@@ -109,13 +109,13 @@ M.parse_current_ln = function()
   return tags
 end
 
-M.parse_current_doc = function()
+Tag.parse_current_doc = function()
   local tags = {}
   for i, ln in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
     for tag in ln:gmatch '#%S+' do
       table.insert(tags, { ---@type down.Tag.Instance
         tag = tag,
-        workspace = M.dep['workspace'].get_current_workspace(),
+        workspace = Tag.dep['workspace'].get_current_workspace(),
         path = vim.fn.expand('%:p'),
         line = ln,
         position = {
@@ -128,13 +128,13 @@ M.parse_current_doc = function()
   return tags
 end
 
-M.parse_current_workspace = function()
+Tag.parse_current_workspace = function()
   local tags = {}
   for i, ln in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
     for tag in ln:gmatch '#%S+' do
       table.insert(tags, { ---@type down.Tag.Instance
         tag = tag,
-        workspace = M.dep['workspace'].get_current_workspace(),
+        workspace = Tag.dep['workspace'].get_current_workspace(),
         path = vim.fn.expand('%:p'),
         line = ln,
         position = {
@@ -147,30 +147,30 @@ M.parse_current_workspace = function()
   return tags
 end
 
-M.parse = function(text)
+Tag.parse = function(text)
   local tags = {}
   for ln in text:gmatch '[^\n]+' do
-    vim.tbl_deep_extend('force', M.tags.document, M.parse_ln(ln))
+    vim.tbl_deep_extend('force', Tag.tags.document, Tag.parse_ln(ln))
   end
   return tags
 end
 
-M.parse_doc = function(path)
+Tag.parse_doc = function(path)
   local tags = {}
   local buf = assert(io.open(path, 'r'))
   for i, ln in ipairs(buf:lines()) do
   end
 end
 
-M.document_source = function(path) end
+Tag.document_source = function(path) end
 
-M.workspace_source = function(path) end
+Tag.workspace_source = function(path) end
 
 ---@class down.mod.tag.Config
-M.config = {}
+Tag.config = {}
 
 -- ---@class down.mod..tag.Subscribed
--- M.handle = {
+-- Tag.handle = {
 --   cmd = {
 --     ['data.tag.delete'] = function(e) end,
 --     ['data.tag.new'] = function(e) end,
@@ -178,4 +178,4 @@ M.config = {}
 --   },
 -- }
 
-return M
+return Tag

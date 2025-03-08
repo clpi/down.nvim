@@ -1,20 +1,20 @@
 local cfg = require("down.config")
 local mod = require("down.mod")
 
----@alias down.mod.find.Finder "telescope" | "mini" | "snacks" | "fzflua" | "builtin"
+---@alias down.mod.find.Findinder "telescope" | "mini" | "snacks" | "fzflua" | "builtin"
 
 local has_telescope, _ = pcall(require, "telescope")
 local has_mini, _ = pcall(require, "mini.pick")
 local has_snacks, _ = pcall(require, "mini.snacks")
 local has_fzflua, _ = pcall(require, "fzflua")
 
----@class down.mod.find.Find: down.Mod
-local F = mod.new("find")
+---@class down.mod.find.Findind: down.Mod
+local Find = mod.new("find")
 
 ---@class down.mod.find.Config: down.mod.Config
----@field public default? down.mod.find.Finder The default finder
----@field public finders? down.mod.find.Finder[] The default finder
-F.config = {
+---@field public default? down.mod.find.Findinder The default finder
+---@field public finders? down.mod.find.Findinder[] The default finder
+Find.config = {
   default = nil,
   finders = nil,
   enabled = true,
@@ -33,10 +33,10 @@ F.config = {
 
 ---@param n down.mod.find.Picker
 ---@return fun()|table
-F.picker = function(n)
-  local p = require("down.mod.find." .. F.config.default)
+Find.picker = function(n)
+  local p = require("down.mod.find." .. Find.config.default)
   if p and p.picker then
-    F.picker = p.picker
+    Find.picker = p.picker
   end
   if n and p.down and p.down[n] then
     if type(p.down[n]) == "function" then
@@ -47,18 +47,18 @@ F.picker = function(n)
 end
 
 ---@class down.mod.find.telescope.Commands: { [string]: down.Command }
-F.commands = {
+Find.commands = {
   find = {
     args = 0,
     name = "find",
     enabled = true,
     callback = function(e)
-      F.picker("file")()
+      Find.picker("file")()
     end,
     commands = {
       tags = {
         callback = function(e)
-          F.picker("tag")()
+          Find.picker("tag")()
         end,
         enabled = false,
         name = "find.links",
@@ -66,7 +66,7 @@ F.commands = {
       },
       project = {
         callback = function(e)
-          F.picker("project")()
+          Find.picker("project")()
         end,
         enabled = false,
         name = "find.links",
@@ -74,7 +74,7 @@ F.commands = {
       },
       notes = {
         callback = function(e)
-          F.picker("note")()
+          Find.picker("note")()
         end,
         enabled = false,
         name = "find.links",
@@ -82,7 +82,7 @@ F.commands = {
       },
       links = {
         callback = function(e)
-          F.picker("link")()
+          Find.picker("link")()
         end,
         enabled = true,
         name = "find.links",
@@ -90,7 +90,7 @@ F.commands = {
       },
       tasks = {
         callback = function(e)
-          F.picker("task")()
+          Find.picker("task")()
         end,
         enabled = true,
         name = "find.tags",
@@ -98,7 +98,7 @@ F.commands = {
       },
       files = {
         callback = function(e)
-          F.picker("file")()
+          Find.picker("file")()
         end,
         enabled = true,
         name = "find.files",
@@ -106,7 +106,7 @@ F.commands = {
       },
       workspace = {
         callback = function(e)
-          F.picker("workspace")()
+          Find.picker("workspace")()
         end,
         enabled = true,
         name = "find.workspace",
@@ -117,10 +117,10 @@ F.commands = {
 }
 
 ---@class down.mod.find.Maps: { [string]: down.Map }
-F.maps = {
-  { "n", ",dF", "<cmd>Down find file<CR>", "Down find files" },
-  { "n", ",dm", "<cmd>Down find markdown<CR>", "Down find md files" },
-  { "n", ",dL", "<cmd>Down find link<CR>", "Down find links" },
+Find.maps = {
+  { "n", ",dFind", "<cmd>Down find file<CR>",     "Down find files" },
+  { "n", ",dm",    "<cmd>Down find markdown<CR>", "Down find md files" },
+  { "n", ",dL",    "<cmd>Down find link<CR>",     "Down find links" },
   {
     "n",
     ",dW",
@@ -129,48 +129,48 @@ F.maps = {
   },
 }
 
-F.data = {}
+Find.data = {}
 
-F.load = function()
-  if not F.config.finders then
-    F.config.finders = { "builtin" }
+Find.load = function()
+  if not Find.config.finders then
+    Find.config.finders = { "builtin" }
     if has_telescope then
-      table.insert(F.config.finders, "telescope")
+      table.insert(Find.config.finders, "telescope")
     end
     if has_mini then
-      table.insert(F.config.finders, "mini")
+      table.insert(Find.config.finders, "mini")
     end
     if has_snacks then
-      table.insert(F.config.finders, "snacks")
+      table.insert(Find.config.finders, "snacks")
     end
     if has_fzflua then
-      table.insert(F.config.finders, "fzflua")
+      table.insert(Find.config.finders, "fzflua")
     end
   end
-  if not F.config.default then
-    if #F.config.finders > 0 then
-      if vim.list_contains(F.config.finders, "telescope") then
-        F.config.default = "telescope"
+  if not Find.config.default then
+    if #Find.config.finders > 0 then
+      if vim.list_contains(Find.config.finders, "telescope") then
+        Find.config.default = "telescope"
       else
-        F.config.default = F.config.finders[1]
+        Find.config.default = Find.config.finders[1]
       end
     else
-      table.insert(F.config.finders, "builtin")
-      F.config.default = "builtin"
+      table.insert(Find.config.finders, "builtin")
+      Find.config.default = "builtin"
     end
   end
-  F.picker = require("down.mod.find." .. F.config.default).picker
+  Find.picker = require("down.mod.find." .. Find.config.default).picker
 end
 
-F.setup = function()
+Find.setup = function()
   return {
     loaded = true,
-    dependencies = F.config.finders,
+    dependencies = Find.config.finders,
   }
 end
 
-F.post_load = function()
+Find.post_load = function()
   -- TODO: should load and register telescope extension if it is available
 end
 
-return F
+return Find

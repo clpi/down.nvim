@@ -1,5 +1,12 @@
 # Todo
 
+## High priority
+
+### New features
+
+- [ ] Implement `bookmark` mod
+- [ ] Implement `date` and `time` completion insert
+
 ## Project Maintenance
 
 - [ ] Implement CI/CD for the project

@@ -2,10 +2,10 @@ local log = require 'down.util.log'
 local mod = require 'down.mod'
 local vs = vim.snippet
 
----@class down.mod.code.Snippet: down.Mod
-local M = mod.new 'code.snippet'
+---@class down.mod.code.Snippet: down.Snippetod
+local Snippet = mod.new 'code.snippet'
 
-M.commands = {
+Snippet.commands = {
   name = 'code.snippet',
   args = 0,
   max_args = 1,
@@ -50,7 +50,7 @@ M.commands = {
   },
 }
 
-M.setup = function()
+Snippet.setup = function()
   return {
     loaded = true,
     dependencies = { 'workspace', 'cmd', 'data' },
@@ -58,6 +58,6 @@ M.setup = function()
 end
 
 ---@class down..code.snippet.Config
-M.config = {}
+Snippet.config = {}
 
-return M
+return Snippet

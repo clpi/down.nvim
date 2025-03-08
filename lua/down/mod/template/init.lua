@@ -4,20 +4,20 @@ local log = require 'down.util.log'
 local mod = require 'down.mod'
 local sep = util.sep
 
----@class down.mod.template: down.Mod
-local M = mod.new 'template'
+---@class down.mod.template: down.Templateod
+local Template = mod.new 'template'
 
-M.commands = {
+Template.commands = {
   template = {
     min_args = 1,
     enabled = false,
     max_args = 2,
     name = 'template',
-    callback = M.create_template,
+    callback = Template.create_template,
     commands = {
       index = {
         enabled = false,
-        callback = M.open_index,
+        callback = Template.open_index,
         args = 0,
         name = 'template.index',
       },
@@ -25,10 +25,10 @@ M.commands = {
         max_args = 1,
         enabled = false,
         name = 'template.month',
-        callback = M.open_month,
+        callback = Template.open_month,
       },
       tomorrow = {
-        callback = M.template_tomorrow,
+        callback = Template.template_tomorrow,
         enabled = false,
         args = 0,
         name = 'template.tomorrow',
@@ -37,22 +37,22 @@ M.commands = {
         args = 0,
         enabled = false,
         name = 'template.yesterday',
-        M.template_yesterday,
+        Template.template_yesterday,
       },
       today = {
         args = 0,
         name = 'template.today',
-        callback = M.template_today,
+        callback = Template.template_today,
         enabled = false,
       },
       custom = {
-        callback = M.create_template,
+        callback = Template.create_template,
         max_args = 1,
         enabled = false,
         name = 'template.custom',
       }, -- format :yyyy-mm-dd
       template = {
-        callback = M.create_template,
+        callback = Template.create_template,
         enabled = false,
         args = 0,
         name = 'template.template',
@@ -61,12 +61,12 @@ M.commands = {
   },
 }
 
-M.load = function()
-  if M.config.strategies[M.config.strategy] then
-    M.config.strategy = M.config.strategies[M.config.strategy]
+Template.load = function()
+  if Template.config.strategies[Template.config.strategy] then
+    Template.config.strategy = Template.config.strategies[Template.config.strategy]
   end
 end
-M.setup = function()
+Template.setup = function()
   return {
     loaded = true,
     dependencies = {
@@ -78,7 +78,7 @@ M.setup = function()
 end
 
 ---@class (exact) down.mod.template.Config
-M.config = {
+Template.config = {
   strategies = {
     flat = '%Y-%m-%d.md',
     nested = '%Y' .. sep .. '%m' .. sep .. '%d.md',
@@ -94,7 +94,7 @@ M.config = {
   template_folder = 'template',
 
   -- The strategy to use to create directories.
-  -- May be "flat" (`2022-03-02.down`), "nested" (`2022/03/02.down`),
+  -- Templateay be "flat" (`2022-03-02.down`), "nested" (`2022/03/02.down`),
   -- a lua string with the format given to `os.date()` or a lua function
   -- that returns a lua string with the same format.
   strategy = 'nested',
@@ -108,16 +108,16 @@ M.config = {
 
 ---@class down.mod.template.Data
 
-M.open_month = function() end
-M.open_index = function() end
+Template.open_month = function() end
+Template.open_index = function() end
 --- Opens a template entry at the given time
 ---@param time? number #The time to open the template entry at as returned by `os.time()`
 ---@param custom_date? string #A YYYY-mm-dd string that specifies a date to open the template at instead
-M.open_template = function(time, custom_date)
-  local workspace = M.config.workspace or M.dep['workspace'].get_current_workspace()[1]
-  local workspace_path = M.dep['workspace'].get_workspace(workspace)
-  local folder_name = M.config.template_folder
-  local template_name = M.config.template_name
+Template.open_template = function(time, custom_date)
+  local workspace = Template.config.workspace or Template.dep['workspace'].get_current_workspace()[1]
+  local workspace_path = Template.dep['workspace'].get_workspace(workspace)
+  local folder_name = Template.config.template_folder
+  local template_name = Template.config.template_name
 
   if custom_date then
     local year, month, day = custom_date:match('^(%d%d%d%d)-(%d%d)-(%d%d)$')
@@ -135,23 +135,23 @@ M.open_template = function(time, custom_date)
   end
 
   local path = os.date(
-    type(M.config.strategy) == 'function' and M.config.strategy(os.date('*t', time))
-    or M.config.strategy,
+    type(Template.config.strategy) == 'function' and Template.config.strategy(os.date('*t', time))
+    or Template.config.strategy,
     time
   )
 
-  local template_file_exists = M.dep['workspace'].file_exists(
+  local template_file_exists = Template.dep['workspace'].file_exists(
     workspace_path .. sep .. folder_name .. sep .. path
   )
 
-  M.dep['workspace'].new_file(folder_name .. sep .. path, workspace)
+  Template.dep['workspace'].new_file(folder_name .. sep .. path, workspace)
 
-  M.dep['workspace'].new_file(folder_name .. sep .. path, workspace)
+  Template.dep['workspace'].new_file(folder_name .. sep .. path, workspace)
 
   if
       not template_file_exists
-      and M.config.use_template
-      and M.dep['workspace'].file_exists(
+      and Template.config.use_template
+      and Template.dep['workspace'].file_exists(
         workspace_path .. sep .. folder_name .. sep .. template_name
       )
   then
@@ -168,42 +168,42 @@ M.open_template = function(time, custom_date)
 end
 
 --- Opens a template entry for tomorrow's date
-M.template_tomorrow = function()
-  M.open_template(os.time() + 24 * 60 * 60)
+Template.template_tomorrow = function()
+  Template.open_template(os.time() + 24 * 60 * 60)
 end
 
 --- Opens a template entry for yesterday's date
-M.template_yesterday = function()
-  M.open_template(os.time() - 24 * 60 * 60)
+Template.template_yesterday = function()
+  Template.open_template(os.time() - 24 * 60 * 60)
 end
 
 --- Opens a template entry for today's date
-M.template_today = function()
-  M.open_template()
+Template.template_today = function()
+  Template.open_template()
 end
 
 --- Creates a template file
-M.create_template = function()
-  local workspace = M.config.workspace
-  local folder_name = M.config.template_folder
-  local template_name = M.config.template_name
+Template.create_template = function()
+  local workspace = Template.config.workspace
+  local folder_name = Template.config.template_folder
+  local template_name = Template.config.template_name
 
-  M.dep.workspace.new_file(
+  Template.dep.workspace.new_file(
     folder_name .. sep .. template_name,
-    workspace or M.dep.workspace.get_current_workspace()[1]
+    workspace or Template.dep.workspace.get_current_workspace()[1]
   )
 end
 
--- M.handle = {
+-- Template.handle = {
 --   cmd = {
---     ['template.index'] = M.open_index,
---     ['template.month'] = M.open_month,
---     ['template.tomorrow'] = M.template_tomorrow,
---     ['template.yesterday'] = M.template_yesterday,
---     ['template.custom'] = M.open_template,
---     ['template.today'] = M.template_today,
---     ['template.template'] = M.create_template,
+--     ['template.index'] = Template.open_index,
+--     ['template.month'] = Template.open_month,
+--     ['template.tomorrow'] = Template.template_tomorrow,
+--     ['template.yesterday'] = Template.template_yesterday,
+--     ['template.custom'] = Template.open_template,
+--     ['template.today'] = Template.template_today,
+--     ['template.template'] = Template.create_template,
 --   },
 -- }
 
-return M
+return Template

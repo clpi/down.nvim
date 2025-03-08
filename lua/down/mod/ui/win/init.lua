@@ -1,7 +1,6 @@
 local a, c = vim.api, vim.cmd
-local mod = require 'down.mod'
-local buf = require('down.util.buf')
-local M = require('down.mod').new('ui.win')
+local M = require("down.mod").new("ui.win")
+local mod = require("down.mod")
 
 ---@class ui.win.Win
 ---@field win integer
@@ -30,9 +29,9 @@ M.config = {}
 
 M.sel = function()
   local b = vim.api.nvim_create_buf(true, false)
-  vim.api.nvim_buf_set_option(b, 'bufhidden', 'wipe')
-  local width = vim.api.nvim_get_option('columns')
-  local height = vim.api.nvim_get_option('lines')
+  vim.api.nvim_buf_set_option(b, "bufhidden", "wipe")
+  local width = vim.api.nvim_get_option("columns")
+  local height = vim.api.nvim_get_option("lines")
 
   local win_height = math.ceil(height * 0.8 - 4)
   local win_width = math.ceil(width * 0.8)
@@ -41,38 +40,43 @@ M.sel = function()
   local col = math.ceil((width - win_width) / 2)
 
   local opts = {
-    relative = 'editor',
-    anchor = 'SW',
+    relative = "editor",
+    anchor = "SW",
     width = win_width,
     height = win_height,
     row = row,
     col = col,
-    border = 'none',
-    title = 'Hi',
+    border = "none",
+    title = "Hi",
     -- title = "Capture" k...keymaps.capture_cancel..", Save capture: "..keymaps.capture_save,
-    title_pos = 'center',
+    title_pos = "center",
   }
 
   local win = vim.api.nvim_open_win(b, true, opts)
   return { b, win }
 end
+M.buf = {}
+M.buf.win = function()
+  return vim.api.nvim_get_current_win()
+end
+
 M.win = function(title, foot, cmd)
   local b = vim.api.nvim_create_buf(false, true)
   local w = vim.api.nvim_open_win(b, false, {
-    relative = 'editor',
-    height = math.ceil(vim.api.nvim_win_get_height(buf.win()) / 2),
-    anchor = 'SW',
-    width = math.ceil(vim.api.nvim_win_get_width(buf.win()) / 2),
+    relative = "editor",
+    height = math.ceil(vim.api.nvim_win_get_height(M.buf.win()) / 2),
+    anchor = "SW",
+    width = math.ceil(vim.api.nvim_win_get_width(M.buf.win()) / 2),
     fixed = true,
     row = 1,
     col = 1,
     focusable = true,
     footer = foot,
     title = title,
-    title_pos = 'center',
-    border = 'single',
-    style = 'minimal',
-    footer_pos = 'center',
+    title_pos = "center",
+    border = "single",
+    style = "minimal",
+    footer_pos = "center",
     noautocmd = true,
   })
   if cmd then
@@ -94,10 +98,10 @@ M.create_new = function()
   ![This is a remote image](https://gist.ro/s/remote.png)
   ]]
   local b = vim.api.nvim_create_buf(true, false)
-  vim.api.nvim_buf_set_lines(b, 0, -1, true, vim.split(content, '\n'))
+  vim.api.nvim_buf_set_lines(b, 0, -1, true, vim.split(content, "\n"))
   vim.api.nvim_set_current_buf(b)
-  local width = vim.api.nvim_get_option('columns')
-  local height = vim.api.nvim_get_option('lines')
+  local width = vim.api.nvim_get_option("columns")
+  local height = vim.api.nvim_get_option("lines")
 
   local win_height = math.ceil(height * 0.8 - 4)
   local win_width = math.ceil(width * 0.8)
@@ -106,15 +110,15 @@ M.create_new = function()
   local col = math.ceil((width - win_width) / 2)
 
   local opts = {
-    relative = 'editor',
+    relative = "editor",
     width = win_width,
     height = win_height,
     row = row,
     col = col,
-    border = 'rounded',
-    title = 'Hi',
+    border = "rounded",
+    title = "Hi",
     -- title = "Cancel capture: " k...keymaps.capture_cancel..", Save capture: "..keymaps.capture_save,
-    title_pos = 'center',
+    title_pos = "center",
   }
 
   local win = vim.api.nvim_open_win(b, true, opts)

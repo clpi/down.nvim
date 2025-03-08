@@ -3,10 +3,10 @@ local mod = require 'down.mod'
 local log = require 'down.util.log'
 local utils = require 'down.util'
 
----@type down.Mod
-local M = mod.new('edit', { 'cursor', 'indent' })
+---@type down.Editod
+local Edit = mod.new('edit', { 'cursor', 'indent' })
 
-M.setup = function()
+Edit.setup = function()
   return {
     loaded = true,
     dependencies = {
@@ -17,7 +17,7 @@ M.setup = function()
 end
 
 ---@class down.mod.edit.Config
-M.config = {
+Edit.config = {
   silent = false,
   wrap = false,
   continue = true, ---@type boolean | nil
@@ -25,7 +25,7 @@ M.config = {
   jump_patterns = { '%[.*%]%(.-%)' },
 }
 
-M.find_patterns = function(str, patterns, reverse, init)
+Edit.find_patterns = function(str, patterns, reverse, init)
   reverse = reverse or false
   patterns = type(patterns) == 'table' and patterns or { patterns }
   str = (reverse and init and str:sub(1, init)) or str
@@ -48,20 +48,20 @@ M.find_patterns = function(str, patterns, reverse, init)
   return left, right
 end
 
-M.jump = function(pattern, reverse)
+Edit.jump = function(pattern, reverse)
   local position = vim.api.nvim_win_get_cursor(0)
   local row, col = position[1], position[2]
   local line, line_len, left, right
   local already_wrapped = false
   line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
   line_len = #line
-  if M.config.context > 0 and line_len > 0 then
-    for i = 1, M.config.context, 1 do
+  if Edit.config.context > 0 and line_len > 0 then
+    for i = 1, Edit.config.context, 1 do
       local following_line = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
       line = (following_line and line .. following_line) or line
     end
   end
-  left, right = M.find_patterns(line, pattern, reverse, col)
+  left, right = Edit.find_patterns(line, pattern, reverse, col)
   local continue = true
   while continue do
     if left and right then
@@ -72,41 +72,41 @@ M.jump = function(pattern, reverse)
         vim.api.nvim_win_set_cursor(0, { row, left - 1 })
         continue = false
       else
-        left, right = M.find_patterns(line, pattern, reverse, reverse and left or right)
+        left, right = Edit.find_patterns(line, pattern, reverse, reverse and left or right)
       end
     else
       row = (reverse and row - 1) or row + 1
       line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
       line_len = line and #line
       col = reverse and line_len or -1
-      if line and M.config.context > 0 and line_len > 0 then
-        for i = 1, M.config.context, 1 do
+      if line and Edit.config.context > 0 and line_len > 0 then
+        for i = 1, Edit.config.context, 1 do
           local following_line = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
           line = (following_line and line .. following_line) or line
         end
       end
       if line then
-        left, right = M.find_patterns(line, pattern, reverse)
+        left, right = Edit.find_patterns(line, pattern, reverse)
       else
-        if M.config.wrap == true then
+        if Edit.config.wrap == true then
           if not already_wrapped then
             row = (reverse and vim.api.nvim_buf_line_count(0) + 1) or 0
             already_wrapped = true
           else
-            M.config.continue = nil
+            Edit.config.continue = nil
           end
         else
-          M.config.continue = nil
+          Edit.config.continue = nil
         end
       end
     end
   end
 end
 
-M.go_to_heading = function(anchor_text, reverse)
+Edit.go_to_heading = function(anchor_text, reverse)
   local position = vim.api.nvim_win_get_cursor(0)
   local starting_row, continue = position[1], true
-  local in_fenced_code_block = M.dep['edit.cursor'].in_codeblock(starting_row, reverse)
+  local in_fenced_code_block = Edit.dep['edit.cursor'].in_codeblock(starting_row, reverse)
   local row = (reverse and starting_row - 1) or starting_row + 1
   while continue do
     local line = (reverse and vim.api.nvim_buf_get_lines(0, row - 1, row, false))
@@ -121,7 +121,7 @@ M.go_to_heading = function(anchor_text, reverse)
           vim.api.nvim_win_set_cursor(0, { row, 0 })
           continue = false
         else
-          local heading_as_anchor = M.dep['link'].format_link(line[1], nil, 2)
+          local heading_as_anchor = Edit.dep['link'].format_link(line[1], nil, 2)
           if anchor_text == heading_as_anchor then
             vim.api.nvim_buf_set_mark(0, '`', position[1], position[2], {})
             vim.api.nvim_win_set_cursor(0, { row, 0 })
@@ -131,16 +131,16 @@ M.go_to_heading = function(anchor_text, reverse)
       end
       row = (reverse and row - 1) or row + 1
       if row == starting_row + 1 then
-        M.config.continue = nil
+        Edit.config.continue = nil
         if anchor_text == nil then
           local message = "⬇️  Couldn't find a heading to go to!"
-          if not M.config.silent then
-            vim.api.nvim_echo({ { message, 'WarningMsg' } }, true, {})
+          if not Edit.config.silent then
+            vim.api.nvim_echo({ { message, 'WarningEditsg' } }, true, {})
           end
         else
           local message = "⬇️  Couldn't find a heading matching " .. anchor_text .. '!'
-          if not M.config.silent then
-            vim.api.nvim_echo({ { message, 'WarningMsg' } }, true, {})
+          if not Edit.config.silent then
+            vim.api.nvim_echo({ { message, 'WarningEditsg' } }, true, {})
           end
         end
       end
@@ -149,7 +149,7 @@ M.go_to_heading = function(anchor_text, reverse)
         row = (reverse and vim.api.nvim_buf_line_count(0)) or 1
         in_fenced_code_block = false
       else
-        M.config.continue = nil
+        Edit.config.continue = nil
         local place = (reverse and 'beginning') or 'end'
         local preposition = (reverse and 'after') or 'before'
         local message = '⬇️  There are no more headings '
@@ -158,14 +158,14 @@ M.go_to_heading = function(anchor_text, reverse)
             .. place
             .. ' of the document!'
         if not silent then
-          vim.api.nvim_echo({ { message, 'WarningMsg' } }, true, {})
+          vim.api.nvim_echo({ { message, 'WarningEditsg' } }, true, {})
         end
       end
     end
   end
 end
 
-M.go_to_id = function(id, starting_row)
+Edit.go_to_id = function(id, starting_row)
   starting_row = starting_row or vim.api.nvim_win_get_cursor(0)[1]
   local continue = true
   local row, line_count = starting_row, vim.api.nvim_buf_line_count(0)
@@ -208,7 +208,7 @@ M.go_to_id = function(id, starting_row)
   end
 end
 
-M.changeHeadingLevel = function(change)
+Edit.changeHeadingLevel = function(change)
   local row = vim.api.nvim_win_get_cursor(0)[1]
   local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)
   local is_heading = line[1]:find '^#'
@@ -218,8 +218,8 @@ M.changeHeadingLevel = function(change)
     else
       if not line[1]:find '^##' then
         local message = "⬇️  Can't increase this heading any more!"
-        if not M.config.silent then
-          vim.api.nvim_echo({ { message, 'WarningMsg' } }, true, {})
+        if not Edit.config.silent then
+          vim.api.nvim_echo({ { message, 'WarningEditsg' } }, true, {})
         end
       else
         vim.api.nvim_buf_set_text(0, row - 1, 0, row - 1, 1, { '' })
@@ -228,30 +228,30 @@ M.changeHeadingLevel = function(change)
   end
 end
 
-M.toNextLink = function(pattern)
-  M.jump(M.jump_patterns[pattern])
+Edit.toNextLink = function(pattern)
+  Edit.jump(Edit.jump_patterns[pattern])
 end
 
-M.toPrevLink = function(pattern)
-  M.jump(M.jump_patterns[pattern], true)
+Edit.toPrevLink = function(pattern)
+  Edit.jump(Edit.jump_patterns[pattern], true)
 end
 
-M.toHeading = function(anchor_text, reverse)
-  M.go_to_heading(anchor_text, reverse)
+Edit.toHeading = function(anchor_text, reverse)
+  Edit.go_to_heading(anchor_text, reverse)
 end
 
-M.toId = function(id, starting_row)
-  return M.go_to_id(id, starting_row)
+Edit.toId = function(id, starting_row)
+  return Edit.go_to_id(id, starting_row)
 end
 
-M.yankAsAnchorLink = function(full_path)
+Edit.yankAsAnchorLink = function(full_path)
   full_path = full_path or false
   local row = vim.api.nvim_win_get_cursor(0)[1]
   local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)
   local is_heading = line[1]:find '^#'
-  local is_bracketed_span = M.dep.link.destination()
+  local is_bracketed_span = Edit.dep.link.destination()
   if is_heading then
-    local anchor_link = M.dep.link.format_link(line[1])
+    local anchor_link = Edit.dep.link.format_link(line[1])
     anchor_link = anchor_link[1]:gsub('"', '\\"')
     if full_path then
       local buffer = vim.api.nvim_buf_get_name(0)
@@ -263,7 +263,7 @@ M.yankAsAnchorLink = function(full_path)
       vim.cmd('let @"="' .. anchor_link .. '"')
     end
   elseif is_bracketed_span then
-    local name = M.dep['link'].destination 'text'
+    local name = Edit.dep['link'].destination 'text'
     local attr = is_bracketed_span
     local anchor_link
     if name and attr then
@@ -277,10 +277,10 @@ M.yankAsAnchorLink = function(full_path)
     end
   else
     local message = '⬇️  The current line is not a heading or bracketed span!'
-    if not M.config.silent then
-      vim.api.nvim_echo({ { message, 'WarningMsg' } }, true, {})
+    if not Edit.config.silent then
+      vim.api.nvim_echo({ { message, 'WarningEditsg' } }, true, {})
     end
   end
 end
 
-return M
+return Edit

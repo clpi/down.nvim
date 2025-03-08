@@ -1,14 +1,14 @@
-local mod = require 'down.mod'
-local log = require 'down.util.log'
+local log = require("down.util.log")
+local mod = require("down.mod")
 
-local P = mod.new 'parse'
+local P = mod.new("edit.parse")
 
 P.setup = function()
   return {
     loaded = true,
     dependencies = {
-      'data',
-      'tool.treesitter',
+      "data",
+      "tool.treesitter",
     },
   }
 end

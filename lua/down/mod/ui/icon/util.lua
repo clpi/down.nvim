@@ -1,4 +1,81 @@
+local builtin = require("down.mod.ui.icon.builtin")
+
+---@class down.mod.ui.icon.Util
 local U = {}
+
+---Get the icons provider
+---@param choice? down.mod.ui.icon.Provider.Name The choice of provider (default: "mini.icons")
+---@return down.mod.ui.icon.Provider.Result provider and provider name
+U.provider = function(choice)
+  local hasm, m = pcall(require, "mini.icons")
+  local hasw, w = pcall(require, "nvim-web-devicons")
+  if hasm and choice == "mini.icons" then
+    m.mock_nvim_web_devicons()
+  end
+  return {
+    icons = hasm and m or hasw and w or require("down.mod.ui.icon.builtin"),
+    provider = choice
+      or (hasm and "mini.icons" or hasw and "nvim-web-devicons")
+      or "down",
+  }
+end
+
+---Get the icons provider
+---@param c down.mod.ui.icon.Provider.Name? The choice of provider (default: "mini.icons")
+---@return table? The provider
+U.icons = function(c)
+  return U.provider(c).icons
+end
+
+---List the icon categories
+---@param category? down.mod.ui.icon.Provider.Category The category of the icons
+---@param provider? down.mod.ui.icon.Provider.Name The choice of provider (default: "mini.icons")
+---@return down.mod.ui.icon.Provider.Category[] categories The categories of the icons
+U.list = function(category, provider)
+  return U.get_provider(provider or "down").list(category or "file") ---@diagnostic disable-line
+end
+
+---List the file icons
+---@param dir? string The directory of the file
+---@param provider? down.mod.ui.icon.Provider.Name The choice of provider (default: "mini.icons")
+---@return down.mod.ui.icon.Provider.Icon?
+U.directory = function(dir, provider)
+  return U.get("directory", dir or vim.fn.expand("%:t"), provider)
+end
+
+---Get the icon for a category and name (and optional provider)
+---@param name? string The name of the icon
+---@param category? string The category of the icon
+---@param provider? down.mod.ui.icon.Provider.Name The choice of provider (default: "mini.icons")
+---@return down.mod.ui.icon.Provider.Icon? icon The icon
+U.get = function(category, name, provider)
+  local icons = U.icons(provider)
+  if not icons then
+    return
+  end
+  local r = {
+    category = category or "extension",
+    provider = provider or "mini.icons",
+    name = name or "file",
+  }
+  if r.provider == "nvim-web-devicons" then
+    r["icon"], r["hl"], r["default"] = icons.get_icon(cat, iname) ---@diagnostic disable-line
+  elseif r.provider == "mini.icons" then
+    icons.mock_nvim_web_devicons() ---@diagnostic disable-line
+    r["icon"], r["hl"], r["default"] = icons.get(cat, iname) ---@diagnostic disable-line
+  else
+    r["icon"], r["hl"], r["default"] = icons.get(cat, iname) ---@diagnostic disable-line
+  end
+  return r
+end
+
+---Check if the icons provider is available
+---@param choice? down.mod.ui.icon.Provider.Name The choice of provider (default: "mini.icons")
+U.has_provider = function(choice)
+  return U.provider(choice) ~= nil
+end
+
+U.icon = U.get
 
 function U.in_range(k, l, r_ex)
   return l <= k and k < r_ex
@@ -18,12 +95,6 @@ function U.is_concealing_on_row_range(
     return true
   else
     return (concealcursor:find(mode) ~= nil)
-  end
-end
-
-function U.table_extend_in_place(tbl, tbl_ext)
-  for k, v in pairs(tbl_ext) do
-    tbl[k] = v
   end
 end
 

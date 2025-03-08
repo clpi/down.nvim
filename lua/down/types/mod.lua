@@ -17,6 +17,7 @@
 ---   [3]: string | fun(),
 ---   [4]?: string,
 ---   [5]?: down.MapOpts,
+---   }
 ---
 --- @class down.MapOpts: {
 ---   mode?: down.VimMode | down.VimMode[],
@@ -145,6 +146,7 @@
 ---   | down.mod.ui.calendar.week.Config
 ---
 ---  @alias down.Mod.Id
+---  | "find.telescope",
 ---  | "log"
 ---  | "mod"
 ---  | "data.store"
@@ -159,6 +161,7 @@
 ---  | "cmd"
 ---  | "tool"
 ---  | "workspace"
+---  | 'edit.inline'
 ---  | "note"
 ---  | "ui"
 ---  | "keymap"
@@ -173,15 +176,21 @@
 ---  | "ui.calendar"
 ---  | "ui.calendar.day"
 ---  | "ui.calendar.month"
+---  | "ui.popup"
+---  | "ui.calendar.year"
+---  | "edit.indent"
+---  | "edit.cursor"
+---  | "edit.parse"
+---  | "data.history"
 ---  | "tool.treesitter"
 ---  | "task.agenda"
 ---  | "ui.calendar.week"
 ---  | "data.bookmark"
----  | "data.history"
 ---  | "task.agenda"
 ---  | "parse"
 ---  | "ui.win"
 ---  | "ui.icon"
+---  | "ui.hl"
 ---  | "edit.indent"
 ---
 ---
@@ -213,4 +222,4 @@
 --- @field min_args? number
 --- @field commands? { [string]?:down.Command}
 
---- @alias down.CommandsB {[string]?: down.Command } | function
+--- @alias down.Commands {[string]?: down.Command } | function

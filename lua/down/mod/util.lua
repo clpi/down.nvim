@@ -1,7 +1,7 @@
-local M = {}
+local U = {}
 
 ---@class down.mod.Mods: { [down.Mod.Id]?: down.Mod.Config }}
-M.defaults = {
+U.defaults = {
   mod = {},
   cmd = {},
   link = {},
@@ -9,7 +9,7 @@ M.defaults = {
 }
 
 ---@type down.Mod.Id[]
-M.ids = {
+U.ids = {
   "log",
   "data",
   "find",
@@ -44,27 +44,27 @@ M.ids = {
 }
 
 ---@return boolean
-M.check_id = function(mod_id)
-  return vim.tbl_contains(M.ids, mod_id)
+U.check_id = function(mod_id)
+  return vim.tbl_contains(U.ids, mod_id)
     and not (mod_id == "workspace" or mod_id == "workspaces")
 end
 
 ---@return boolean
-M.check_default_id = function(mod_id)
-  return vim.tbl_contains(vim.tbl_keys(M.defaults), mod_id)
+U.check_default_id = function(mod_id)
+  return vim.tbl_contains(vim.tbl_keys(U.defaults), mod_id)
 end
 
 ---@return { [down.Mod.Id]?: down.Mod.Config }
-M.merge_default = function(def)
-  return vim.tbl_extend("force", M.defaults, def)
+U.merge_default = function(def)
+  return vim.tbl_extend("force", U.defaults, def)
 end
 
 ---@return boolean
-M.check_not_default = function(def, defv)
-  return M.check_id(def)
-    and not M.check_default_id(def)
+U.check_not_default = function(def, defv)
+  return U.check_id(def)
+    and not U.check_default_id(def)
     and defv
     and type(defv) == "table"
 end
 
-return M
+return U

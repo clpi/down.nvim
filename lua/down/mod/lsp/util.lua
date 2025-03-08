@@ -37,12 +37,16 @@ U.install = function(opts)
     end
   end
   local target = U.tmpdir("down.lsp")
-  -- if opts ~= nil and opts.target ~= nil then
-  --   target = opts.target
-  -- end
+  if opts ~= nil and opts.target ~= nil then
+    target = opts.target
+  end
   vim.schedule(function()
     if vim.fn.exists(target) then
-      os.execute("rm -rf " .. target)
+      if opts ~= nil and opts.update == true then
+        os.execute("rm -rf " .. target)
+      else
+        return
+      end
     end
     os.execute(table.concat({
       "git",
@@ -51,7 +55,8 @@ U.install = function(opts)
       target,
     }, " "))
     vim.notify("Cloned to " .. target)
-    vim.fn.chdir(target)
+    vim.fn.chdir(target or vim.fn.dirname(vim.fn.exepath("down.lsp")))
+    os.execute(table.concat({ "go", "build", "." }, " "))
     os.execute(table.concat({ "go", "install", "." }, " "))
     vim.notify("Installed at " .. vim.fn.exepath("down.lsp"))
   end)

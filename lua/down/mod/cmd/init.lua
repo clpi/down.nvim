@@ -4,14 +4,14 @@ local mod = require("down.mod")
 local util = require("down.util")
 local api, bo, fn = vim.api, vim.bo, vim.fn
 
----@class down.mod.cmd.Cmd: down.Mod
-local M = mod.new("cmd")
+---@class down.mod.cmd.Cmd: down.Cmdod
+local Cmd = mod.new("cmd")
 
-M.setup = function()
+Cmd.setup = function()
   return { loaded = true, dependencies = {} }
 end
 
-M.get_commands = function(m)
+Cmd.get_commands = function(m)
   local c = {}
   if m.commands then
     if type(c) == "table" then
@@ -27,7 +27,7 @@ M.get_commands = function(m)
   return c
 end
 
-M.commands = {
+Cmd.commands = {
   cmd = {
     enabled = false,
     name = "cmd",
@@ -73,12 +73,12 @@ M.commands = {
     },
   },
 }
-M.cb = function(data)
+Cmd.cb = function(data)
   local args = data.fargs
   local buf = api.nvim_get_current_buf()
   local is_down = bo[buf].filetype == "markdown"
 
-  local ref = { commands = M.commands }
+  local ref = { commands = Cmd.commands }
   local argument_index = 0
 
   for i, cmd in ipairs(args) do
@@ -93,9 +93,10 @@ M.cb = function(data)
         )
       )
       return
-    elseif not M.cond(ref.condition) then
+    elseif not Cmd.cond(ref.condition) then
       log.error(
-        ("Error when executing `:Down %s` - the command is currently disabled. Some commands will only become available under certain conditions, e.g. being within a `.down` file!"):format(
+        ("Error when executing `:Down %s` - the command is currently disabled. Some commands will only become available under certain conditions, e.g. being within a `.down` file!")
+        :format(
           table.concat(vim.list_slice(args, 1, i), " ")
         )
       )
@@ -119,8 +120,8 @@ M.cb = function(data)
 
   if #args == 0 or argument_count < ref.min_args then
     local completions =
-      M.generate_completions(_, table.concat({ "Down ", data.args, " " }))
-    M.select_next_cmd_arg(data.args, completions)
+        Cmd.generate_completions(_, table.concat({ "Down ", data.args, " " }))
+    Cmd.select_next_cmd_arg(data.args, completions)
     return
   elseif argument_count > ref.max_args then
     log.error(
@@ -135,27 +136,28 @@ M.cb = function(data)
 
   if not ref.name then
     log.error(
-      ("Error when executing `:down %s` - the ending command didn't have a `name` variable associated with it! This is an implementation error on the developer's side, so file a report to the author of the mod."):format(
+      ("Error when executing `:down %s` - the ending command didn't have a `name` variable associated with it! This is an implementation error on the developer's side, so file a report to the author of the mod.")
+      :format(
         data.args
       )
     )
     return
   end
-  if not M.events[ref.name] then
-    M.events[ref.name] = mod.define_event(M, ref.name)
+  if not Cmd.events[ref.name] then
+    Cmd.events[ref.name] = mod.define_event(Cmd, ref.name)
     if ref.callback then
-      if not M.handle then
-        M.handle = {}
+      if not Cmd.handle then
+        Cmd.handle = {}
       end
-      if not M.handle["cmd"] then
-        M.handle["cmd"] = {}
+      if not Cmd.handle["cmd"] then
+        Cmd.handle["cmd"] = {}
       end
-      M.handle["cmd"][ref.name] = ref.callback
+      Cmd.handle["cmd"][ref.name] = ref.callback
     end
   end
 
   local e = mod.new_event(
-    M,
+    Cmd,
     table.concat({ "cmd.events.", ref.name }),
     vim.list_slice(args, argument_index + 1)
   )
@@ -164,18 +166,18 @@ M.cb = function(data)
     ref.callback(e)
   else
     log.trace("Cmd.cb: Running ", ref.name, " broadcast")
-    -- M.handle['cmd'][ref.name]
+    -- Cmd.handle['cmd'][ref.name]
     mod.broadcast(e)
   end
 end
 --
 -- --- Handles the calling of the appropriate function based on the command the user entered
--- M.cb = function(data)
+-- Cmd.cb = function(data)
 --   local args = data.fargs
 --   local buf = vim.api.nvim_get_current_buf()
 --   local is_down = vim.bo[buf].filetype == "markdown"
 --
---   local ref = { commands = M.commands }
+--   local ref = { commands = Cmd.commands }
 --   local argument_index = 0
 --
 --   for i, cmd in ipairs(args) do
@@ -197,7 +199,7 @@ end
 --         )
 --       )
 --       return
---     elseif not M.cond(ref.condition, buf, is_down) then
+--     elseif not Cmd.cond(ref.condition, buf, is_down) then
 --       log.error(
 --         ("Error when executing `:Down %s` - the command is currently disabled. Some commands will only become available under certain conditions, e.g. being within a `.down` file!"):format(
 --           table.concat(vim.list_slice(args, 1, i), " ")
@@ -223,8 +225,8 @@ end
 --
 --   if #args == 0 or argument_count < ref.min_args then
 --     local completions =
---       M.generate_completions(_, table.concat({ "Down ", data.args, " " }))
---     M.select_next_cmd_arg(data.args, completions)
+--       Cmd.generate_completions(_, table.concat({ "Down ", data.args, " " }))
+--     Cmd.select_next_cmd_arg(data.args, completions)
 --     return
 --   elseif argument_count > ref.max_args then
 --     log.error(
@@ -245,21 +247,21 @@ end
 --     )
 --     return
 --   end
---   if not M.events[ref.name] then
---     M.events[ref.name] = mod.define_event(M, ref.name)
+--   if not Cmd.events[ref.name] then
+--     Cmd.events[ref.name] = mod.define_event(Cmd, ref.name)
 --     if ref.callback then
---       if not M.handle then
---         M.handle = {}
+--       if not Cmd.handle then
+--         Cmd.handle = {}
 --       end
---       if not M.handle["cmd"] then
---         M.handle["cmd"] = {}
+--       if not Cmd.handle["cmd"] then
+--         Cmd.handle["cmd"] = {}
 --       end
---       M.handle["cmd"][ref.name] = ref.callback
+--       Cmd.handle["cmd"][ref.name] = ref.callback
 --     end
 --   end
 --
 --   local e = mod.new_event(
---     M,
+--     Cmd,
 --     table.concat({ "cmd.events.", ref.name }),
 --     vim.list_slice(args, argument_index + 1)
 --   )
@@ -272,7 +274,7 @@ end
 --   end
 -- end
 --
-M.cond = function(condition, buf, is_down)
+Cmd.cond = function(condition, buf, is_down)
   buf = buf or vim.api.nvim_get_current_buf()
   is_down = is_down or vim.bo[buf].filetype == "markdown"
   if condition == nil then
@@ -290,7 +292,7 @@ end
 --- This function returns all available commands to be used for the :down command
 ---@param _ nil #Placeholder variable
 ---@param command string #Supplied by nvim itself; the full typed out command
-M.generate_completions = function(_, command)
+Cmd.generate_completions = function(_, command)
   local current_buf = vim.api.nvim_get_current_buf()
   local is_down = vim.bo[current_buf].filetype == "markdown"
 
@@ -305,14 +307,14 @@ M.generate_completions = function(_, command)
   )
 
   local ref = {
-    commands = M.commands,
+    commands = Cmd.commands,
   }
   local last_valid_ref = ref
   local last_completion_level = 0
 
   for _, cmd in ipairs(splitcmd) do
     -- if ref.enabled ~= nil and ref.enabled == false then return end
-    if not ref or not M.cond(ref.condition, current_buf, is_down) then
+    if not ref or not Cmd.cond(ref.condition, current_buf, is_down) then
       break
     end
 
@@ -338,7 +340,7 @@ M.generate_completions = function(_, command)
 
     if vim.endswith(command, " ") then
       local completions = last_valid_ref.complete[#splitcmd - last_completion_level + 1]
-        or {}
+          or {}
 
       if type(completions) == "function" then
         completions = completions(current_buf, is_down) or {}
@@ -347,7 +349,7 @@ M.generate_completions = function(_, command)
       return completions
     else
       local completions = last_valid_ref.complete[#splitcmd - last_completion_level]
-        or {}
+          or {}
 
       if type(completions) == "function" then
         completions = completions(current_buf, is_down) or {}
@@ -361,18 +363,18 @@ M.generate_completions = function(_, command)
 
   -- TODO: Fix `:down m <tab>` giving invalid completions
   local keys = ref and vim.tbl_keys(ref.commands or {})
-    or (
-      vim.tbl_filter(function(key)
-        return key:find(splitcmd[#splitcmd])
-      end, vim.tbl_keys(last_valid_ref.commands or {}))
-    )
+      or (
+        vim.tbl_filter(function(key)
+          return key:find(splitcmd[#splitcmd])
+        end, vim.tbl_keys(last_valid_ref.commands or {}))
+      )
   table.sort(keys)
   do
     local commands = (ref and ref.commands or last_valid_ref.commands) or {}
 
     return vim.tbl_filter(function(key)
       if type(commands[key]) == "table" then
-        return M.cond(commands[key].condition, current_buf, is_down)
+        return Cmd.cond(commands[key].condition, current_buf, is_down)
       end
     end, keys)
   end
@@ -381,7 +383,7 @@ end
 --- Queries the user to select next argument
 ---@param qargs table #A string of arguments previously supplied to the down command
 ---@param choices table #all possible choices for the next argument
-M.select_next_cmd_arg = function(qargs, choices)
+Cmd.select_next_cmd_arg = function(qargs, choices)
   local current = table.concat({ "Down ", qargs })
 
   local query
@@ -408,24 +410,24 @@ end
 -- The table containing all the functions. This can get a tad complex so I recommend you read the wiki entry
 
 ---@param mod_name string #An absolute path to a loaded init with a mod.config.commands table following a valid structure
-M.add_commands = function(mod_name)
+Cmd.add_commands = function(mod_name)
   local mod_config = mod.get_mod(mod_name)
 
   if
-    not mod_config
-    or not mod_config.commands
-    or (
-      mod_config.commands.enabled ~= nil
-      and mod_config.commands.enabled == false
-    )
+      not mod_config
+      or not mod_config.commands
+      or (
+        mod_config.commands.enabled ~= nil
+        and mod_config.commands.enabled == false
+      )
   then
     return
   end
 
-  M.commands = vim.tbl_extend("force", M.commands, mod_config.commands)
+  Cmd.commands = vim.tbl_extend("force", Cmd.commands, mod_config.commands)
 end
 
-M.enabled = function(c)
+Cmd.enabled = function(c)
   return vim.iter(c):filter(function(v)
     return v.enabled == nil or (v.enabled ~= nil and v.enabled == true)
   end)
@@ -433,16 +435,16 @@ end
 
 --- Recursively merges the provided table with the mod.config.commands table.
 ---@param f down.Command[] #A table that follows the mod.config.commands structure
-M.add_commands_from_table = function(f)
-  vim.tbl_extend("force", M.commands, f)
+Cmd.add_commands_from_table = function(f)
+  vim.tbl_extend("force", Cmd.commands, f)
 end
 
 --- Rereads data from all mod and rebuild the list of available autocompletiinitinitons and commands
-M.sync = function()
+Cmd.sync = function()
   for mn, lm in pairs(mod.mods) do
     for cn, c in pairs(lm.commands or {}) do
       if type(c) == "table" then
-        M.commands[cn] = vim.tbl_extend("force", M.commands[cn] or {}, c)
+        Cmd.commands[cn] = vim.tbl_extend("force", Cmd.commands[cn] or {}, c)
       end
     end
   end
@@ -450,27 +452,27 @@ end
 
 --- Defines a custom completion function to use for `base.cmd`.
 ---@param callback function
-M.set_completion = function(callback)
-  M.generate_completions = callback
+Cmd.set_completion = function(callback)
+  Cmd.generate_completions = callback
 end
 
-M.load = function()
-  vim.api.nvim_create_user_command("Down", M.cb, {
+Cmd.load = function()
+  vim.api.nvim_create_user_command("Down", Cmd.cb, {
     desc = "The down command",
     range = 2,
     force = true,
     -- bang = true,
     nargs = "*",
-    complete = M.generate_completions,
+    complete = Cmd.generate_completions,
   })
 end
 
 ---@class down.mod.cmd.Config
-M.config = {}
+Cmd.config = {}
 ---@class cmd
 
-M.post_load = function()
-  M.sync()
+Cmd.post_load = function()
+  Cmd.sync()
 end
 
-return M
+return Cmd

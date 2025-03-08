@@ -1,11 +1,10 @@
-local mod = require 'down.mod'
-local util = require 'down.util'
+local mod = require("down.mod")
+local util = require("down.util")
 local log = util.log
-local lib = util.lib
 
 ---TODO: imelement
 ---@class down.mod.Tool: down.Mod
-local E = mod.new 'tool'
+local E = mod.new("tool")
 
 --TODO: implement config to initialize sub tools depending on user confiE
 
@@ -15,7 +14,7 @@ E.config = {
   disabled = {},
   ---@brief List of tools to enable (relative to the tool dir)
   enabled = {
-    'telescope',
+    "telescope",
   },
 }
 

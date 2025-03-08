@@ -1,0 +1,4001 @@
+==============================================================================
+------------------------------------------------------------------------------
+clpi
+down.nvim 0.1.0
+MIT
+down.nvim
+neovim note-taking plugin with the
+comfort of mmarkdown and the power of org
+
+------------------------------------------------------------------------------
+                                                                          *down*
+                                     `down`
+Class ~
+{down.down}
+
+------------------------------------------------------------------------------
+                                                                  *down.setup()*
+                          `down.setup`({user}, {...})
+Load the user configuration, and load into config
+defined modules specifieed and workspaces
+@param user down.mod.Config user config to load
+@param ... string The arguments to pass into an optional user hook
+
+------------------------------------------------------------------------------
+                                                              *down:broadcast()*
+                          `down:broadcast`({e}, {...})
+Parameters ~
+{e} `(string)`
+{...} `(any)`
+
+------------------------------------------------------------------------------
+                                                                   *down.test()*
+                                 `down.test`()
+Test all modules loaded
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                        *Config*
+                                    `Config`
+The down.nvim configuration
+@class down.config.Config
+
+------------------------------------------------------------------------------
+                                                                *Config.toggles*
+                                `Config.toggles`
+Type ~
+`(down.config.Toggle[])`
+
+------------------------------------------------------------------------------
+                                                         *Config:check_toggle()*
+                        `Config:check_toggle`({k}, {v})
+Parameters ~
+{k} `(optional)` `(down.config.Toggle)`
+{v} `(optional)` `(boolean)`
+
+------------------------------------------------------------------------------
+                                                                 *Config:load()*
+                          `Config:load`({user}, {...})
+Parameters ~
+{user} `(down.mod.Config)` user config
+{...} `(any)`
+Return ~
+`(down.config.Config)`
+
+------------------------------------------------------------------------------
+                                                               *Config.vimdir()*
+                             `Config.vimdir`({...})
+@param ... string
+@return string
+
+------------------------------------------------------------------------------
+                                                              *Config.homedir()*
+                            `Config.homedir`({...})
+@param ... string
+@return string
+
+------------------------------------------------------------------------------
+                                                                 *Config:file()*
+                              `Config:file`({fp})
+@param fp? string
+@return string
+
+------------------------------------------------------------------------------
+                                                             *Config.fromfile()*
+                             `Config.fromfile`({f})
+@param f string | nil
+@return down.config.User
+
+------------------------------------------------------------------------------
+                                                                 *Config:save()*
+                               `Config:save`({f})
+@param f string | nil
+
+------------------------------------------------------------------------------
+                                                                *Config:setup()*
+                         `Config:setup`({user}, {...})
+@param self down.config.Config
+Parameters ~
+{user} `(down.mod.Config)`
+{...} `(any)`
+Return ~
+`(down.config.Config)`
+
+------------------------------------------------------------------------------
+                                                          *Config:check_tests()*
+                          `Config:check_tests`({mods})
+Parameters ~
+{mods} `(optional)` `({ [down.Mod.Id]?: down.Mod.Mod })`
+Return ~
+`(boolean)` `(optional)`
+
+------------------------------------------------------------------------------
+                                                       *Config.check_mod_test()*
+                         `Config.check_mod_test`({mod})
+Parameters ~
+{mod} `(down.Mod.Mod)``
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
+                                                                *Config:tests()*
+                             `Config:tests`({mods})
+Parameters ~
+{mods} `(optional)` `(down.Mod.Mod[])`
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
+                                                                 *Config.test()*
+                              `Config.test`({mod})
+Parameters ~
+{mod} `(down.Mod.Mod)`
+Return ~
+`(boolean)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                         *H.has_icon_provider()*
+                           `H.has_icon_provider`({i})
+Parameters ~
+{i} `(optional)` `(down.mod.ui.icon.Provider.Name)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@!TODO : Change to body access where appropriate and now available to avoid complex config for end user
+  1. Firsr try with  Ms, then workspace
+
+@TODO: Merge Module. with Module, Module.config as subfield for all modules
+       which have class then of down.mod.[Mod] as M
+
+
+TODO: Make Mod.subscribed be [string]: function() instead of [string]: boolean
+      and eliminate Mod.handler(e)
+
+------------------------------------------------------------------------------
+                                                                           *Mod*
+                                     `Mod`
+Class ~
+{down.mod.Root:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                     *Mod.new()*
+                             `Mod.new`({nm}, {im})
+@param nm string
+@param im? string[]
+
+------------------------------------------------------------------------------
+                                                                  *Mod.delete()*
+                              `Mod.delete`({mod})
+@param mod string
+Return ~
+`(nil)`
+
+------------------------------------------------------------------------------
+                                                     *Mod.load_mod_from_table()*
+                     `Mod.load_mod_from_table`({m}, {cfg})
+@param m down.Mod.Mod The actual mod to load.
+@return down.Mod|nil # Whether the mod successfully loaded.
+
+------------------------------------------------------------------------------
+                                                               *Mod.check_mod()*
+                              `Mod.check_mod`({n})
+@param n string
+@return down.config.Mod?
+
+------------------------------------------------------------------------------
+                                                                *Mod.load_mod()*
+                         `Mod.load_mod`({modn}, {cfg})
+@param modn string A path to a mod on disk. A path in down is '.', not '/'.
+@param cfg table? A config that reflects the structure of `down.config.user.setup["mod.id"].config`.
+@return down.Mod|nil # Whether the mod was successfully loaded.
+
+------------------------------------------------------------------------------
+                                       *Mod.load_mod_as_dependency_from_table()*
+          `Mod.load_mod_as_dependency_from_table`({md}, {parent_mod})
+Has the same principle of operation as load_mod_from_table(), except it then sets up the parent mod's "dep" table, allowing the parent to access the child as if it were a dependency.
+@param md down.Mod A valid table as returned by mod.new()
+@param parent_mod string|down.Mod If a string, then the parent is searched for in the loaded mod. If a table, then the mod is treated as a valid mod as returned by mod.new()
+
+------------------------------------------------------------------------------
+                                                  *Mod.load_mod_as_dependency()*
+           `Mod.load_mod_as_dependency`({modn}, {parent_mod}, {cfg})
+Normally loads a mod, but then sets up the parent mod's "dep" table, allowing the parent mod to access the child as if it were a dependency.
+@param modn string A path to a mod on disk. A path  in down is '.', not '/'
+@param parent_mod string The name of the parent mod. This is the mod which the dependency will be attached to.
+@param cfg? table A config that reflects the structure of down.config.user.setup["mod.id"].config
+
+------------------------------------------------------------------------------
+                                                              *Mod.mod_config()*
+                            `Mod.mod_config`({modn})
+Returns the mod.config table if the mod is loaded
+@param modn string The name of the mod to retrieve (mod must be loaded)
+@return table?
+
+------------------------------------------------------------------------------
+                                                                 *Mod.get_mod()*
+                             `Mod.get_mod`({modn})
+Retrieves the public API exposed by the mod.
+@return down.Mod.Mod?
+
+------------------------------------------------------------------------------
+                                                               *Mod.is_loaded()*
+                            `Mod.is_loaded`({modn})
+Returns true if mod with name modn is loaded, false otherwise
+@param modn string The name of an arbitrary mod
+@return down.Mod|nil
+
+------------------------------------------------------------------------------
+                                                                   *Mod.await()*
+                           `Mod.await`({modn}, {cb})
+Executes `callback` once `mod` is a valid and loaded mod, else the callback gets instantly executed.
+@param modn string The name of the mod to listen for.
+@param cb fun(mod_public_table: table)
+
+------------------------------------------------------------------------------
+                                                               *Mod.load_kind()*
+                          `Mod.load_kind`({mk}, {kt})
+Fields ~
+{k} `(table|function)`
+{kt} `(optional)` `(function)`
+
+------------------------------------------------------------------------------
+                                                               *Mod.load_opts()*
+                              `Mod.load_opts`({m})
+Parameters ~
+{m} `(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                               *Mod.load_maps()*
+                              `Mod.load_maps`({m})
+Parameters ~
+{m} `(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                                *Mod.mod_load()*
+                              `Mod.mod_load`({m})
+Parameters ~
+{m} `(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                                 *Mod.modules()*
+                              `Mod.modules`({ms})
+@param ms? table<any, string> list of modules to load
+@return table<integer, down.Mod>
+
+------------------------------------------------------------------------------
+                                                                    *Mod.test()*
+                                `Mod.test`({m})
+Parameters ~
+{m} `(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                              *Mod.handle_cmd()*
+              `Mod.handle_cmd`({self}, {e}, {cmd}, {cmds}, {...})
+Parameters ~
+{cmds} `(down.Command[])`
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
+                                                            *Mod.handle_event()*
+                     `Mod.handle_event`({self}, {e}, {...})
+@param e down.Event
+@param self down.Mod
+@param ... any
+@return boolean
+
+------------------------------------------------------------------------------
+                                                               *Mod.new_event()*
+                    `Mod.new_event`({m}, {id}, {body}, {ev})
+@param m down.Mod.Mod
+@param id string
+@param body table
+@param ev? table
+@return down.Event?
+
+------------------------------------------------------------------------------
+                                                            *Mod.define_event()*
+                      `Mod.define_event`({module}, {nid})
+Type ~
+`(fun(module: down.Mod.Mod, id: string): down.Event)`
+Return ~
+`(down.Event)`
+
+------------------------------------------------------------------------------
+                                                               *Mod.broadcast()*
+                              `Mod.broadcast`({e})
+Parameters ~
+{e} `(down.Event)`
+
+------------------------------------------------------------------------------
+                                                               *Mod.get_event()*
+                         `Mod.get_event`({self}, {id})
+Returns an event template defined in `mod.events`.
+@param m down.Mod.Mod A reference to the mod invoking the function
+@param id string A full path to a valid event type (e.g. `mod.events.some_event`)
+@return down.Event?
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                         *Event*
+                                    `Event`
+Class ~
+{down.Event}
+
+------------------------------------------------------------------------------
+                                                                            *Cb*
+                                      `Cb`
+@class down.Callback
+  @field callbacks table<string, { [1]: fun(event: down.Event, content: table|any), [2]?: fun(event: down.Event): boolean }>
+
+------------------------------------------------------------------------------
+                                                                *Event:get_cb()*
+                              `Event:get_cb`({ty})
+@param ty? string
+@return { [1]: fun(event: down.Event, content: table|any)> }
+
+------------------------------------------------------------------------------
+                                                              *Event.callback()*
+                     `Event.callback`({self}, {cb}, {filt})
+Triggers a new callback to execute whenever an event of the requested type is executed.
+@param self down.Event | string
+@param cb fun(event: down.Event, content: table|any) The function to call whenever our event gets triggered.
+@param filt? fun(event: down.Event): boolean # A filtering function to test if a certain event meets our expectations.
+
+------------------------------------------------------------------------------
+                                                          *Event.set_callback()*
+                       `Event.set_callback`({self}, {cb})
+@param cb? fun(event: down.Event, content: table|any)
+
+------------------------------------------------------------------------------
+                                                                *Event.handle()*
+                             `Event.handle`({self})
+Used internally by down to call all C with an event.
+@param self down.Event
+
+------------------------------------------------------------------------------
+                                                                *Event.define()*
+                    `Event.define`({module}, {name}, {body})
+Type ~
+`(fun(module: down.Mod.Mod, name: string, body?: any): down.Event)`
+Return ~
+`(down.Event)`
+
+------------------------------------------------------------------------------
+                                                              *Event.split_id()*
+                             `Event.split_id`({id})
+@param id string The full path of a init event
+@return string[]?
+
+------------------------------------------------------------------------------
+                                                             *Event.get_event()*
+                          `Event.get_event`({m}, {id})
+Returns an event template defined in `init.events`.
+@param m down.Mod.Mod A reference to the init invoking the function
+@param id string A full path to a valid event type (e.g. `init.events.some_event`)
+@return down.Event?
+
+------------------------------------------------------------------------------
+                                                                   *Event.new()*
+                      `Event.new`({m}, {id}, {body}, {ev})
+Returns a copy of the event template provided by a init.
+@param m down.Mod.Mod A reference to the init invoking the function
+@param id string A full path to a valid .vent type (e.g. `init.events.some_event`)
+@param body table|any? The body of the event, can be anything from a string to a table to whatever you please.
+@param ev? table The original event data.
+@return down.Event? # New event.
+
+------------------------------------------------------------------------------
+                                                          *Event.broadcast_to()*
+                      `Event.broadcast_to`({self}, {mods})
+Sends an event to all subscribed mod. The event contains the filename, filehead, cursor position and line body as a bonus.
+@param mods down.Mod.Mod[]
+@param self down.Event
+
+------------------------------------------------------------------------------
+                                                                  *Event.send()*
+                          `Event.send`({self}, {recv})
+@param recv down.Mod.Mod The name of a loaded init that will be the recipient of the event.
+@return nil
+@param self down.Event
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                    *U.defaults*
+                                  `U.defaults`
+Class ~
+{down.mod.Mods:} { [down.Mod.Id]?: down.Mod.Config }}
+
+------------------------------------------------------------------------------
+                                                                         *U.ids*
+                                    `U.ids`
+Type ~
+`(down.Mod.Id[])`
+
+------------------------------------------------------------------------------
+                                                                  *U.check_id()*
+                             `U.check_id`({mod_id})
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
+                                                          *U.check_default_id()*
+                         `U.check_default_id`({mod_id})
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
+                                                             *U.merge_default()*
+                            `U.merge_default`({def})
+Return ~
+`({ [down.Mod.Id]?: down.Mod.Config })`
+
+------------------------------------------------------------------------------
+                                                         *U.check_not_default()*
+                      `U.check_not_default`({def}, {defv})
+Return ~
+`(boolean)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.cmd.Cmd:} down.Mod
+
+------------------------------------------------------------------------------
+                                                      *M.generate_completions()*
+                    `M.generate_completions`({_}, {command})
+This function returns all available commands to be used for the :down command
+Parameters ~
+{_} `(nil)` #Placeholder variable
+{command} `(string)` #Supplied by nvim itself; the full typed out command
+
+------------------------------------------------------------------------------
+                                                       *M.select_next_cmd_arg()*
+                  `M.select_next_cmd_arg`({qargs}, {choices})
+Queries the user to select next argument
+Parameters ~
+{qargs} `(table)` #A string of arguments previously supplied to the down command
+{choices} `(table)` #all possible choices for the next argument
+
+------------------------------------------------------------------------------
+                                                              *M.add_commands()*
+                          `M.add_commands`({mod_name})
+Parameters ~
+{mod_name} `(string)` #An absolute path to a loaded init with a mod.config.commands table following a valid structure
+
+------------------------------------------------------------------------------
+                                                   *M.add_commands_from_table()*
+                        `M.add_commands_from_table`({f})
+Recursively merges the provided table with the mod.config.commands table.
+Parameters ~
+{f} `(down.Command[])` #A table that follows the mod.config.commands structure
+
+------------------------------------------------------------------------------
+                                                                      *M.sync()*
+                                   `M.sync`()
+Rereads data from all mod and rebuild the list of available autocompletiinitinitons and commands
+
+------------------------------------------------------------------------------
+                                                            *M.set_completion()*
+                         `M.set_completion`({callback})
+Defines a custom completion function to use for `base.cmd`.
+Parameters ~
+{callback} `(function)`
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.cmd.Config}
+
+------------------------------------------------------------------------------
+Class ~
+{cmd}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                          *Code*
+                                     `Code`
+@class down.mod.code.Code: down.Mod
+
+------------------------------------------------------------------------------
+                                                                   *Code.config*
+                                 `Code.config`
+@class down.mod.code.Config: down.mod.Config
+  @field languages string[]
+
+------------------------------------------------------------------------------
+                                                                     *Code.code*
+                                  `Code.code`
+Type ~
+`(table<string, string>)`
+
+------------------------------------------------------------------------------
+                                                                 *Code.commands*
+                                `Code.commands`
+Class ~
+{down.mod.code.Commands:} { [string]: down.Command }
+
+------------------------------------------------------------------------------
+                                                                  *Code.setup()*
+                                 `Code.setup`()
+Return ~
+`(down.mod.Setup)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.code.Snippet:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down..code.snippet.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down..code.run.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.data.Data:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                        *M.data*
+                                    `M.data`
+Class ~
+{down.mod.data.Data.Data}
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+@return down.mod.Setup
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod..Config}
+
+------------------------------------------------------------------------------
+                                                                        *M.mt()*
+                                 `M.mt`({name})
+Parameters ~
+{name} `(string)`
+Type ~
+`(fun(name: string): metatable)`
+Return ~
+`(metatable)`
+
+------------------------------------------------------------------------------
+                                                                       *M.tbl()*
+                              `M.tbl`({name}, {t})
+T: table
+Parameters ~
+{name} `(string)`
+{t} `(T)`
+Return ~
+`(T)`
+
+------------------------------------------------------------------------------
+                                                                     *M.files()*
+                           `M.files`({path}, {cond})
+@param path string
+@param cond? fun(name: string, ends: string): boolean
+@return table<string>
+
+------------------------------------------------------------------------------
+                                                            *M.copy_directory()*
+                   `M.copy_directory`({old_path}, {new_path})
+Recursively copies a directory froM.handlee path to another
+Parameters ~
+{old_path} `(string)` #The path to copy
+{new_path} `(string)` #The new location. This function will not
+succeed if the directory already exists.
+Return ~
+`(boolean)` #If true, the directory copying succeeded
+
+------------------------------------------------------------------------------
+                                                                      *M.sync()*
+                                   `M.sync`()
+Grabs the data present on disk and overwrites it with the data present in memory
+
+------------------------------------------------------------------------------
+                                                                       *M.put()*
+                             `M.put`({key}, {data})
+Stores a key-value pair in the store
+Parameters ~
+{key} `(string)` #The key to index in the store
+{data} `(any)` #The data to store at the specific key
+
+------------------------------------------------------------------------------
+                                                                       *M.del()*
+                                 `M.del`({key})
+Removes a key from store
+Parameters ~
+{key} `(string)` #The name of the key to remove
+
+------------------------------------------------------------------------------
+                                                                       *M.get()*
+                                 `M.get`({key})
+Retrieves a key from the store
+Parameters ~
+{key} `(string)` #The name of the key to index
+Return ~
+`(any|table)` #The data present at the key, or an empty table
+
+------------------------------------------------------------------------------
+                                                                     *M.flush()*
+                               `M.flush`({path})
+Flushes the contents in memory to the location specified
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *B*
+                                      `B`
+Class ~
+{down.mod..Bookmark:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *B.config*
+                                   `B.config`
+Class ~
+{down.mod..bookmark.Config}
+
+------------------------------------------------------------------------------
+                                                                   *B.bookmarks*
+                                 `B.bookmarks`
+Class ~
+{down.mod..bookmark.Data}
+
+------------------------------------------------------------------------------
+                                                                     *B.setup()*
+                                  `B.setup`()
+Return ~
+`(down.mod.Setup)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.data.History:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.data.history.Config:} down.mod.Config
+
+------------------------------------------------------------------------------
+                                                                    *M.commands*
+                                  `M.commands`
+Class ~
+{down.mod.data.history.Commands}
+
+------------------------------------------------------------------------------
+                                                                     *M.history*
+                                  `M.history`
+@type integer[]
+
+------------------------------------------------------------------------------
+                                                                     *M.clear()*
+                                  `M.clear`()
+Clear the stacks
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down..history.Config}
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+Return ~
+`(down.mod.Setup)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.data.Time:} down.Mod
+
+------------------------------------------------------------------------------
+                                                               *M.to_lua_date()*
+                           `M.to_lua_date`({parsedt})
+Converts a parsed date with `parse_date` to a lua date.
+Parameters ~
+{parsedt} `({weekday: {name: string, number: number}?, day: number?, month: {name: string, number: number}?, year: number?, timezone: string?, time: {hr: number, min: number, sec: number?}?})` #The date to convert
+Return ~
+`(osdate)` #A Lua date
+
+------------------------------------------------------------------------------
+                                                                   *M.to_date()*
+                       `M.to_date`({osdate}, {incltime})
+Converts a lua `osdate` to a down date.
+Parameters ~
+{osdate} `(osdate)` #The date to convert
+{incltime} `(boolean?)` #Whether to include the time (hh::mm.ss) in the output.
+Return ~
+`({weekday: {name: string, number: number}?, day: number?, month: {name: string, number: number}?, year: number?, timezone: string?, time: {hr: number, min: number, sec: number?}?})` #The converted date
+
+------------------------------------------------------------------------------
+                                                                *M.parse_date()*
+                            `M.parse_date`({input})
+Parses a date and returns a table representing the date
+Parameters ~
+{input} `(string)` #The input which should follow the date specification found in the down spec.
+Return ~
+`({weekday: {name: string, number: number}?, day: number?, month: {name: string, number: number}?, year: number?, timezone: string?, time: {hr: number, min: number, sec: number?}?}|string)` #The data extracted from the input or an error message
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Type ~
+`(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.edit.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *L*
+                                      `L`
+Class ~
+{down.mod.edit.Cursor:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                     *L.setup()*
+                                  `L.setup`()
+Return ~
+`(down.mod.Setup)`
+
+------------------------------------------------------------------------------
+                                                                      *L.config*
+                                   `L.config`
+Class ~
+{down.mod.edit.cursor.Config}
+
+------------------------------------------------------------------------------
+                                                                        *L.node*
+                                    `L.node`
+Class ~
+{down.edit.cursor.Data}
+Fields ~
+{public} `(node)` TSNode|nil
+{public} `(text)` string[]
+{public} `(prev)` TSNode|nil
+{public} `(next)` TSNode|nil
+{public} `(root)` function|TSNode
+{public} `(children)` TSNode[]
+{public} `(captures)` function|string[]
+{public} `(range)` ...
+{public} `(lspRange)` table
+{public} `(hl)` nil
+Class ~
+{edit.cursor.Node}
+
+------------------------------------------------------------------------------
+                                                             *L.node:lspRange()*
+                              `L.node:lspRange`()
+Return ~
+`(table)`
+
+------------------------------------------------------------------------------
+                                                                 *L.node:next()*
+                     `L.node:next`({switch}, {nextParent})
+Parameters ~
+{switch} `(boolean)`: switch parent
+{nextParent} `(boolean)`: nextParent parent
+Return ~
+`(TSNode|nil)`
+
+------------------------------------------------------------------------------
+                                                                 *L.node:prev()*
+                     `L.node:prev`({switch}, {prevParent})
+Parameters ~
+{switch} `(boolean)`: switch parent
+{prevParent} `(boolean)`: nextParent parent
+Return ~
+`(TSNode|nil)`
+
+------------------------------------------------------------------------------
+                                                                 *L.node:text()*
+                                `L.node:text`()
+Return ~
+`(string[])`
+
+------------------------------------------------------------------------------
+                                                                  *L.node.get()*
+                                 `L.node.get`()
+Return ~
+`(TSNode|nil)`
+
+------------------------------------------------------------------------------
+                                                                 *L.node:root()*
+                                `L.node:root`()
+Return ~
+`(TSNode)`
+
+------------------------------------------------------------------------------
+                                                                *L.node:range()*
+                                `L.node:range`()
+Return ~
+`(...)`
+
+------------------------------------------------------------------------------
+                                                                   *L.node:hl()*
+                          `L.node:hl`({ns}, {hgroup})
+Parameters ~
+{ns} `(optional)` `(string)`: namespace
+{hgroup} `(optional)` `(string)`: hilite group
+Return ~
+`(nil)`
+
+------------------------------------------------------------------------------
+                                                              *L.in_codeblock()*
+                               `L.in_codeblock`()
+Return ~
+`(boolean)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.edit.indent.Config}
+
+------------------------------------------------------------------------------
+                                                                        *M.head*
+                                    `M.head`
+Class ~
+{down.edit.indent.Data}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.edit.Inline:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.edit.inline.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *P.config*
+                                   `P.config`
+Class ~
+{down.mod.parse.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+
+  A module for users to export their data
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *F*
+                                      `F`
+Class ~
+{down.mod.find.Find:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *F.config*
+                                   `F.config`
+Class ~
+{down.mod.find.Config:} down.mod.Config
+Fields ~
+{public} `(default?)` "telescope" | "mini" | "snacks" | "fzflua" | "builtin" The default finder
+{public} `(finders?)` ("telescope" | "mini" | "snacks" | "fzflua" | "builtin")[] The default finder
+
+------------------------------------------------------------------------------
+'file'
+'link'
+'tag'
+'workspace'
+'task'
+'note'
+'template'
+'markdown'
+'project'
+
+------------------------------------------------------------------------------
+                                                                    *F.picker()*
+                                `F.picker`({n})
+Parameters ~
+{n} 
+Return ~
+`(fun()|table)`
+
+------------------------------------------------------------------------------
+                                                                    *F.commands*
+                                  `F.commands`
+Class ~
+{down.mod.find.telescope.Commands:} { [string]: down.Command }
+
+------------------------------------------------------------------------------
+                                                                        *F.maps*
+                                    `F.maps`
+Class ~
+{down.mod.find.Maps:} { [string]: down.Map }
+
+
+==============================================================================
+------------------------------------------------------------------------------
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *T*
+                                      `T`
+Class ~
+{down.mod.find.telescope.Telescope:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                    *T.picker()*
+                                `T.picker`({n})
+Parameters ~
+{n} 
+
+------------------------------------------------------------------------------
+                                                                     *T.setup()*
+                                  `T.setup`()
+Return ~
+`(down.mod.Setup)`
+
+------------------------------------------------------------------------------
+                                                                      *T.config*
+                                   `T.config`
+Class ~
+{down.mod.find.telescope.Config:} down.mod.Config
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Parameters ~
+{o} `(table)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Parameters ~
+{o} `(table)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Parameters ~
+{o} `(table)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Parameters ~
+{o} `(table)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Parameters ~
+{o} `(table)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Parameters ~
+{o} `(table)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                          *Link*
+                                     `Link`
+Class ~
+{down.mod.Link:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                  *Link.setup()*
+                                 `Link.setup`()
+@return down.mod.Setup
+
+------------------------------------------------------------------------------
+                                                                     *Link.maps*
+                                  `Link.maps`
+TODO: <tab> and <s-tab> for next and previous links
+
+------------------------------------------------------------------------------
+                                                                     *Link.type*
+                                  `Link.type`
+down.mod.link.Type
+"local"
+"web"
+"heading"
+
+------------------------------------------------------------------------------
+                                                                *Link.resolve()*
+                              `Link.resolve`({ln})
+Parameters ~
+{ln} `(string)`
+Return ~
+`(string)`, "file" | "web" | "heading"
+
+------------------------------------------------------------------------------
+                                                                  *Link.query()*
+                          `Link.query`({node}, {lang})
+Parameters ~
+{node} `(TSNode)`
+
+------------------------------------------------------------------------------
+                                                             *Link.iswikilink()*
+                      `Link.iswikilink`({node}, {parent})
+Checks whether a node is a wikilink, and if not, checks if parent is a wikilink
+If either are, then returns the link destination, otherwise nil
+@return string|nil
+
+------------------------------------------------------------------------------
+                                                                   *Link.config*
+                                 `Link.config`
+Class ~
+{down.mod.link.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{data.log.Config}
+
+------------------------------------------------------------------------------
+                                                                        *M.data*
+                                    `M.data`
+Class ~
+{log}
+
+------------------------------------------------------------------------------
+                                                                  *M.open_log()*
+                      `M.open_log`({time}, {custom_date})
+Opens a log entry at the given time
+Parameters ~
+{time} `(optional)` `(number)` #The time to open the log entry at as returned by `os.time()`
+{custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the log at instead
+
+------------------------------------------------------------------------------
+                                                              *M.log_tomorrow()*
+                               `M.log_tomorrow`()
+Opens a log entry for tomorrow's date
+
+------------------------------------------------------------------------------
+                                                             *M.log_yesterday()*
+                              `M.log_yesterday`()
+Opens a log entry for yesterday's date
+
+------------------------------------------------------------------------------
+                                                                   *M.log_new()*
+                                 `M.log_new`()
+Opens a log entry for new's date
+
+------------------------------------------------------------------------------
+                                                           *M.create_template()*
+                             `M.create_template`()
+Creates a template file
+
+------------------------------------------------------------------------------
+                                                                  *M.open_toc()*
+                                 `M.open_toc`()
+Opens the toc file
+
+------------------------------------------------------------------------------
+                                                                *M.create_toc()*
+                                `M.create_toc`()
+Creates or updates the toc file
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                           *Lsp*
+                                     `Lsp`
+Class ~
+{down.mod.lsp.Lsp:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                    *Lsp.load()*
+                                  `Lsp.load`()
+Load the lsp and clone the repo
+
+------------------------------------------------------------------------------
+                                                                  *Lsp.lsp_opts*
+                                 `Lsp.lsp_opts`
+Class ~
+{down.mod.lsp.LspOpts:} vim.lsp.start.Opts
+
+------------------------------------------------------------------------------
+                                                                   *Lsp.setup()*
+                                 `Lsp.setup`()
+Return ~
+`(down.mod.Setup)`
+
+------------------------------------------------------------------------------
+                                                                  *Lsp.commands*
+                                 `Lsp.commands`
+@class down.mod.lsp.Commands: { [string]: down.Command }
+
+------------------------------------------------------------------------------
+                                                                      *Lsp.info*
+                                   `Lsp.info`
+Class ~
+{down.mod.lsp.Config:} vim.lsp.ClientConfig
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *U*
+                                      `U`
+Class ~
+{down.mod.lsp.Util}
+
+------------------------------------------------------------------------------
+                                                                     *U.which()*
+                                `U.which`({exe})
+Parameters ~
+{exe} `(string?)` @The down.lsp to run
+Return ~
+`(string)` `(optional)`
+
+------------------------------------------------------------------------------
+                                                                    *U.tmpdir()*
+                               `U.tmpdir`({dir})
+Return the cache dir
+@param dir? string
+@return string
+
+------------------------------------------------------------------------------
+Class ~
+{down.mod.lsp.InstallOpts:} {
+ target?: string,
+ update?: boolean
+
+------------------------------------------------------------------------------
+                                                                   *U.install()*
+                              `U.install`({opts})
+Parameters ~
+{opts} `(down.mod.lsp.InstallOpts?)` opts
+Return ~
+`(string)` # The path cloned to (dir)
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.Mod:} down.Mod
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.note.Note:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                *M.week_index()*
+                                `M.week_index`()
+Class ~
+{down.mod.note.Data}
+
+------------------------------------------------------------------------------
+                                                              *M.select_month()*
+                               `M.select_month`()
+select onth from vim.ui.select
+
+------------------------------------------------------------------------------
+                                                                 *M.open_year()*
+                      `M.open_year`({time}, {custom_date})
+Opens a note entry at the given time
+Parameters ~
+{time} `(optional)` `(number)` #The time to open the note entry at as returned by `os.time()`
+{custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the note at instead
+
+------------------------------------------------------------------------------
+                                                                *M.open_month()*
+                     `M.open_month`({time}, {custom_date})
+Parameters ~
+{time} `(optional)` `(number)` #The time to open the note entry at as returned by `os.time()`
+{custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the note at instead
+
+------------------------------------------------------------------------------
+                                                                 *M.open_note()*
+                      `M.open_note`({time}, {custom_date})
+Opens a note entry at the given time
+Parameters ~
+{time} `(optional)` `(number)` #The time to open the note entry at as returned by `os.time()`
+{custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the note at instead
+
+------------------------------------------------------------------------------
+                                                             *M.note_tomorrow()*
+                              `M.note_tomorrow`()
+Opens a note entry for tomorrow's date
+
+------------------------------------------------------------------------------
+                                                            *M.note_yesterday()*
+                              `M.note_yesterday`()
+Opens a note entry for yesterday's date
+
+------------------------------------------------------------------------------
+                                                                *M.note_today()*
+                                `M.note_today`()
+Opens a note entry for today's date
+
+------------------------------------------------------------------------------
+                                                      *M.create_year_template()*
+                           `M.create_year_template`()
+Creates a template file
+
+------------------------------------------------------------------------------
+                                                                  *M.open_toc()*
+                                 `M.open_toc`()
+Opens the toc file
+
+------------------------------------------------------------------------------
+                                                                *M.create_toc()*
+                                `M.create_toc`()
+Creates or updates the toc file
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{(exact)} down.mod.note.Config
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+Return ~
+`(down.mod.Setup)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Type ~
+`(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+Return ~
+`(down.mod.Setup)`
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.note.capture.Config}
+
+------------------------------------------------------------------------------
+                                                                      *M.events*
+                                   `M.events`
+Class ~
+{down.mod.note.capture.Events}
+
+------------------------------------------------------------------------------
+                                                                      *M.handle*
+                                   `M.handle`
+Class ~
+{down.mod.note.capture.Subscribed}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.Tag:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                    *M.commands*
+                                  `M.commands`
+Class ~
+{down.mod.tag.Commands:} down.Commands
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+Return ~
+`(down.mod.Setup)`
+
+------------------------------------------------------------------------------
+Class ~
+{(exact)} down.Tag.Instance: {
+ tag: string,
+ line?: string,
+ position: down.Position,
+ path: string,
+ workspace?: string,
+
+------------------------------------------------------------------------------
+Class ~
+{(exact)} down.Tag.Instances: {
+ [string]: down.Tag.Instance[],
+
+------------------------------------------------------------------------------
+                                                                        *M.tags*
+                                    `M.tags`
+Class ~
+{down.mod.tag.Data}
+
+------------------------------------------------------------------------------
+                                                                  *M.parse_ln()*
+                               `M.parse_ln`({ln})
+Parse a single line for tag instances
+@param ln string
+@param lnno number
+@param path string
+@return string[]
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.tag.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@class (exact) down.Tag
+  @field tag string
+  @field ln number
+  @field col number
+  @field uri string
+  @field workspace string
+
+------------------------------------------------------------------------------
+                                                                           *Tag*
+                                     `Tag`
+Type ~
+`(down.Tag)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.Task:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                        *M.Task*
+                                    `M.Task`
+Class ~
+{down.mod.task.Task}
+
+------------------------------------------------------------------------------
+                                                                       *M.tasks*
+                                   `M.tasks`
+Class ~
+{table<integer,} down.mod.task.Task>
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.task.Config}
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+Return ~
+`(down.mod.Setup)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                        *Status*
+                                    `Status`
+down.task.Status
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Type ~
+`(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                                      *M.Agenda*
+                                   `M.Agenda`
+Class ~
+{down..task.agenda.Agenda}
+
+------------------------------------------------------------------------------
+                                                                     *M.agendas*
+                                  `M.agendas`
+Class ~
+{table<down.mod..task.agenda.Agenda>}
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod..task.agenda.Config}
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+Return ~
+`(down.mod.Setup)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.template:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{(exact)} down.mod.template.Config
+
+------------------------------------------------------------------------------
+Class ~
+{down.mod.template.Data}
+
+------------------------------------------------------------------------------
+                                                             *M.open_template()*
+                    `M.open_template`({time}, {custom_date})
+Opens a template entry at the given time
+Parameters ~
+{time} `(optional)` `(number)` #The time to open the template entry at as returned by `os.time()`
+{custom_date} `(optional)` `(string)` #A YYYY-mm-dd string that specifies a date to open the template at instead
+
+------------------------------------------------------------------------------
+                                                         *M.template_tomorrow()*
+                            `M.template_tomorrow`()
+Opens a template entry for tomorrow's date
+
+------------------------------------------------------------------------------
+                                                        *M.template_yesterday()*
+                            `M.template_yesterday`()
+Opens a template entry for yesterday's date
+
+------------------------------------------------------------------------------
+                                                            *M.template_today()*
+                              `M.template_today`()
+Opens a template entry for today's date
+
+------------------------------------------------------------------------------
+                                                           *M.create_template()*
+                             `M.create_template`()
+Creates a template file
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                     *T.setup()*
+                                  `T.setup`()
+Return ~
+`(down.mod.Setup)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *E*
+                                      `E`
+imelement
+Class ~
+{down.mod.Tool:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *E.config*
+                                   `E.config`
+Class ~
+{down.mod.tool.Config}
+
+------------------------------------------------------------------------------
+                                                                       *E.get()*
+                                 `E.get`({ext})
+Parameters ~
+{ext} `(string)`
+Return ~
+`(string)`
+
+------------------------------------------------------------------------------
+                                                                      *E.deps()*
+                                `E.deps`({ext})
+implement
+either a table of the loaded dependencies or nil of one is unsuccessful
+Return ~
+`(table<string, any>|nil)`: the loaded dependency package
+Parameters ~
+{ext} `(string)`: the tool module to check
+
+------------------------------------------------------------------------------
+                                                                       *E.has()*
+                                 `E.has`({ext})
+Return ~
+`(boolean)`, nil|nil
+Parameters ~
+{ext} `(string)`
+
+------------------------------------------------------------------------------
+                                                             *E.generic_setup()*
+                        `E.generic_setup`({ext}, {req})
+Generic setup function for tool submodules
+@param ext string: the tool to setup
+@param req table<string>: the modules dep by the tool module
+@return down.mod.Setup
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Type ~
+`(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.tool.blink.Config}
+
+------------------------------------------------------------------------------
+                                                                      *M.source*
+                                   `M.source`
+Class ~
+{down.tool.blink.Data}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                           *Src*
+                                     `Src`
+Type ~
+`(blink.cmp.Source)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Class ~
+{down.mod.tool.blink.source.FileOptions}
+Fields ~
+{pre_min_len} `(optional)` `(number)`: min
+{public} `(cmd?)` fun(ctx: blink.cmp.Context, pre: string): string[]
+{public} `(pre?)` fun(ctx: blink.cmp.Context): string[]
+
+------------------------------------------------------------------------------
+                                                                      *Fs:new()*
+                                `Fs:new`({opt})
+Return ~
+`(blink.cmp.Source)`
+Parameters ~
+{opt} `(down.mod.tool.blink.source.FileOptions)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.tool.Cmp:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                     *M.files()*
+                                  `M.files`()
+Class ~
+{down.mod.tool.cmp.Data}
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.tool.cmp.Config}
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+Return ~
+`(down.mod.Setup)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.tool.Telescope:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+Return ~
+`(down.mod.Setup)`
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.tool.telescope.Config:} down.Mod.Config
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.tool.telescope.Config:} down.mod.Config
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.tool.Treesitter:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                    *M.ts_utils*
+                                  `M.ts_utils`
+Class ~
+{down.mod.tool.treesitter.Data}
+
+------------------------------------------------------------------------------
+                                                                     *M.queries*
+                                  `M.queries`
+Class ~
+{treesitter}
+
+------------------------------------------------------------------------------
+                                                                    *M.inject()*
+                      `M.inject`({language}, {injection})
+Parameters ~
+{language} `(string)`
+{injection} `(render.md.Injection?)`
+
+------------------------------------------------------------------------------
+                                                              *M.get_ts_utils()*
+                               `M.get_ts_utils`()
+Gives back an instance of `nvim-treesitter.ts_utils`
+Return ~
+`(table)` #`nvim-treesitter.ts_utils`
+
+------------------------------------------------------------------------------
+                                                     *M.goto_next_query_match()*
+                   `M.goto_next_query_match`({query_string})
+Jumps to the next match of a query in the current buffer
+Parameters ~
+{query_string} `(string)` Query with `@next-segment` captures
+
+------------------------------------------------------------------------------
+                                                 *M.goto_previous_query_match()*
+                 `M.goto_previous_query_match`({query_string})
+Jumps to the previous match of a query in the current buffer
+Parameters ~
+{query_string} `(string)` Query with `@next-segment` captures
+
+------------------------------------------------------------------------------
+                                                             *M.get_all_nodes()*
+                     `M.get_all_nodes`({node_type}, {opts})
+ Gets all nodes of a given type from the AST
+Parameters ~
+{node_type} `(string)` #The type of node to filter out
+{opts} `(optional)` `(table)` #A table of two options: `buf` and `ft`, for the buffer and format to use respectively.
+
+------------------------------------------------------------------------------
+                                                     *M.get_all_nodes_in_file()*
+           `M.get_all_nodes_in_file`({node_type}, {path}, {filetype})
+all nodes of a given type from the AST
+Parameters ~
+{node_type} `(string)` #The type of node to filter out
+{path} `(string)` path to the file to parse
+{filetype} `(string?)` file type of the file or `down` if omitted
+
+------------------------------------------------------------------------------
+                                                                  *M.tree_map()*
+                      `M.tree_map`({callback}, {ts_tree})
+Executes function callback on each child node of the root
+Parameters ~
+{callback} `(function)`
+{ts_tree} `(any)` #Optional syntax tree ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
+
+------------------------------------------------------------------------------
+                                                              *M.tree_map_rec()*
+                    `M.tree_map_rec`({callback}, {ts_tree})
+Executes callback on each child recursive
+Parameters ~
+{callback} `(function)` Executes with each node as parameter, can return false to stop recursion
+{ts_tree} `(any)` #Optional syntax tree ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
+
+------------------------------------------------------------------------------
+                                                         *M.node_to_lsp_range()*
+                         `M.node_to_lsp_range`({node})
+Get the range of a TSNode as an LspRange
+Parameters ~
+{node} `(TSNode)`
+Return ~
+`(lsp.Range)`
+
+------------------------------------------------------------------------------
+                                                                *M.swap_nodes()*
+         `M.swap_nodes`({node1}, {node2}, {bufnr}, {cursor_to_second})
+Swap two nodes in the buffer. Ignores newlines at the end of the node
+Parameters ~
+{node1} `(TSNode)`
+{node2} `(TSNode)`
+{bufnr} `(number)`
+{cursor_to_second} `(boolean)` move the cursor to the start of the second node (default false)
+
+------------------------------------------------------------------------------
+                                                            *M.get_first_node()*
+                  `M.get_first_node`({type}, {buf}, {parent})
+Returns the first node of given type if present
+Parameters ~
+{type} `(string)` #The type of node to search for
+{buf} `(number)` #The buffer to search in
+{parent} `(userdata)` #The node to start searching in
+
+------------------------------------------------------------------------------
+                                                    *get_first_node_recursive()*
+                   `get_first_node_recursive`({type}, {opts})
+Recursively attempts to locate a node of a given type
+Parameters ~
+{type} `(string)` #The type of node to look for
+{opts} `(table)` #A table of two options: `buf` and `ft`, for the buffer and format respectively
+Return ~
+`(any)` ---@diagnostic disable-line -- TODO: type error workaround <pysan3>
+
+------------------------------------------------------------------------------
+                                                              *M.get_tag_info()*
+                     `M.get_tag_info`({tag_node}, {throw})
+Given a node this function will break down the AST elements and return the corresponding text for certain nodes
+@param tag_node TSNode - a node of type tag/carryover_tag
+@param throw boolean - when true, throw an error instead of logging and returning on failure
+
+------------------------------------------------------------------------------
+                                                            *M.get_node_range()*
+                           `M.get_node_range`({node})
+Gets the range of a given node
+Parameters ~
+{node} `(userdata)` #The node to get the range of
+Return ~
+`({ row_start: number, column_start: number, row_end: number, column_end: number })` range
+
+------------------------------------------------------------------------------
+                                                         *M.get_document_root()*
+                    `M.get_document_root`({src}, {filetype})
+Extracts the document root from the current document or from the string
+Parameters ~
+{src} `(number|string)` The number of the buffer to extract or string with code (can be nil)
+{filetype} `(string?)` #The filetype of the buffer or the string with code
+Return ~
+`(TSNode)` `(optional)` #The root node of the document
+
+------------------------------------------------------------------------------
+Attempts to find a parent of a node recursively
+Parameters ~
+{node} `(userdata)` #The node to start at
+{types} `(table|string)` #If `types` is a table, this function will attempt to match any of the types present in the table.
+
+------------------------------------------------------------------------------
+Retrieves the first node at a specific line
+Parameters ~
+{buf} `(number)` #The buffer to search in (0 for current)
+{line} `(number)` #The line number (0-indexed) to get the node from
+
+------------------------------------------------------------------------------
+                                                    *M.get_first_node_on_line()*
+             `M.get_first_node_on_line`({buf}, {line}, {stop_type})
+Parameters ~
+{stop_type} `(string|table?)` #Don't recurse to the provided type(s)
+Return ~
+`(TSNode|nil)` #The first node on `line`
+
+------------------------------------------------------------------------------
+                                                     *M.get_document_metadata()*
+                 `M.get_document_metadata`({source}, {no_trim})
+document's metadata
+Parameters ~
+{source} `(number | string | PathutilPath)`
+{no_trim} `(boolean?)`
+Return ~
+`(table)` `(optional)`
+
+------------------------------------------------------------------------------
+                                                             *M.execute_query()*
+   `M.execute_query`({query_string}, {callback}, {source}, {start}, {finish})
+Parses a query and automatically executes it for down
+Parameters ~
+{query_string} `(string)` #The query string
+{callback} `(function)` #The callback to execute with all values returned by
+When callback returns true, this function returns early
+{source} `(number | string | PathutilPath)` #buf number, or file path or 0 for current buffer
+{start} `(number?)` #The start line for the query
+{finish} `(number?)` #The end line for the query
+
+------------------------------------------------------------------------------
+                                                             *M.get_ts_parser()*
+                          `M.get_ts_parser`({source})
+a down TS parser from the given source
+Parameters ~
+{source} `(string | number | PathutilPath)` file path or buf number or 0 for current buffer
+Return ~
+`(vim.treesitter.LanguageTree)` `(optional)` down_parser
+Return ~
+`(string | number)` iter_src the corresponding source that you must pass to
+either the full file text, or the buffer number
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Type ~
+`(down.Mod)`
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.ui.Config}
+
+------------------------------------------------------------------------------
+                                                           *M.get_window_size()*
+                          `M.get_window_size`({half})
+Returns a table in the form of { width, height } containing the width and height of the current window
+Parameters ~
+{half} `(boolean)` #If true returns a position that could be considered the center of the window
+
+------------------------------------------------------------------------------
+Returns a modified version of floating window options.
+Parameters ~
+{modifiers} `(table)` #This option set has two values - center_x and center_y.
+
+------------------------------------------------------------------------------
+                                                      *M.apply_custom_options()*
+                `M.apply_custom_options`({modifiers}, {config})
+Parameters ~
+{config} `(table)` #A table containing regular Neovim options for a floating window
+
+------------------------------------------------------------------------------
+                                                      *M.apply_buffer_options()*
+                 `M.apply_buffer_options`({buf}, {option_list})
+Applies a set of options to a buffer
+Parameters ~
+{buf} `(number)` the buffer number to apply the options to
+{option_list} `(table)` a table of option = value pairs
+
+------------------------------------------------------------------------------
+                                                                 *M.new_split()*
+                   `M.new_split`({name}, {config}, {height})
+a new horizontal split at the bottom of the screen
+Parameters ~
+ {name} `(string)` the name of the buffer contained within the split (will have down:// prepended to it)
+ {config} `(table?)` a table of <option> = <value> keypairs signifying buffer-local options for the buffer contained within the split
+ {height} `(number?)` the height of the new split
+Return ~
+`(number)` `(optional)`, number? #Both the buffer ID and window ID
+
+------------------------------------------------------------------------------
+                                                                *M.new_vsplit()*
+          `M.new_vsplit`({name}, {enter}, {buf_config}, {win_config})
+Creates a new vertical split
+Parameters ~
+{name} `(string)` the name of the buffer
+{enter} `(boolean)` enter the window or not
+{buf_config} `(table)` a table of <option> = <value> keypairs signifying buffer-local options for the buffer contained within the split
+{win_config} `(table)` table of <option>=<value> keypairs for `nvim_open_win`, must provide `win`
+Return ~
+`(number)` `(optional)`, number? #The buffer and window numbers of the vertical split
+
+------------------------------------------------------------------------------
+                                                               *M.new_display()*
+                `M.new_display`({name}, {split_type}, {content})
+Creates a new display in which you can place organized data
+Parameters ~
+{name} `(string)` #The name of the display
+{split_type} `(string)` #"vsplitl"|"vsplitr"|"split"|"nosplit" - if suffixed with "l" vertical split will be spawned on the left, else on the right. "split" is a horizontal split.
+{content} `(table)` #A table of content for the display
+
+------------------------------------------------------------------------------
+                                                       *M.new_markdown_buffer()*
+        `M.new_markdown_buffer`({name}, {split_type}, {config}, {opts})
+Creates a new down buffer in a split or in the main window
+Parameters ~
+{name} `(string)` the name of the buffer *without* the .down extension
+{split_type} `(string)` "vsplitl"|"vsplitr"|"split"|"nosplit" - if suffixed with "l" vertical split will be spawned on the left, else on the right. "split" is a horizontal split.
+{config} `(table|nil)` a table of { option = value } pairs that set buffer-local options for the created down buffer
+{opts} `(table|nil)`
+  - opts.keys (boolean)             if false, will not use the base keys
+  - opts.del_on_autocmd (table)    delete buffer on specified autocmd
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *D*
+                                      `D`
+Class ~
+{down.mod.ui.calendar.Day:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                     *D.setup()*
+                                  `D.setup`()
+Return ~
+`(down.mod.Setup)`
+
+------------------------------------------------------------------------------
+                                                                      *D.config*
+                                   `D.config`
+Class ~
+{down.mod.ui.calendar.day.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                          *M.get_month_length()*
+                     `M.get_month_length`({month}, {year})
+get the number of days in the month, months are wrapped (ie, month 13 <==> month 1)
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.edit.conceal.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *D.config*
+                                   `D.config`
+Class ~
+{down.ui.dashboard.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *F.config*
+                                   `F.config`
+Class ~
+{down.edit.fold.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Class ~
+{base.highlight}
+
+------------------------------------------------------------------------------
+                                                         *M.trigger_highlight()*
+                            `M.trigger_highlight`()
+Reads the highlight configuration table and applies all defined highlight
+
+------------------------------------------------------------------------------
+                                                             *M.add_highlight()*
+                         `M.add_highlight`({highlight})
+Takes in a table of highlight and applies them to the current buffer
+Parameters ~
+{highlight} `(table)` #A table of highlight
+
+------------------------------------------------------------------------------
+                                                                   *M.add_dim()*
+                               `M.add_dim`({dim})
+Takes in a table of items to dim and applies the dimming to them
+Parameters ~
+{dim} `(table)` #A table of items to dim
+
+------------------------------------------------------------------------------
+                                                           *M.clear_highlight()*
+                             `M.clear_highlight`()
+Assigns all down* highlight to `clear`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.util.style}
+
+------------------------------------------------------------------------------
+                                                                    *M.set_hl()*
+                          `M.set_hl`({groups}, {opts})
+Parameters ~
+{groups} `(table<string, string|vim.api.keyset.highlight>)`
+{opts} `(optional)` `({ prefix?:string, default?:boolean, managed?:boolean })`
+
+------------------------------------------------------------------------------
+                                                                     *M.color()*
+                           `M.color`({group}, {prop})
+Parameters ~
+{group} `(string)`
+{prop} `(optional)` `(string)`
+
+------------------------------------------------------------------------------
+                                                                        *M.wo()*
+                              `M.wo`({win}, {wo})
+Parameters ~
+{win} `(number)`
+{wo} `(vim.wo)`
+
+------------------------------------------------------------------------------
+                                                                        *M.bo()*
+                              `M.bo`({buf}, {bo})
+Parameters ~
+{buf} `(number)`
+{bo} `(vim.bo)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@meta
+
+@alias down.mod.ui.icon.Provider.Type
+| "file"
+| "function"
+| "method"
+| "enum"
+| "value"
+| "extension"
+| "class"
+| "namespace"
+| "symbol"
+| "enummember"
+| "struct"
+| "variable"
+| "module"
+| "directory"
+| "field"
+| "parameter"
+| "type"
+| "constructor"
+| "constant"
+| "interface"
+| "property"
+| "event"
+| "operator"
+| "default"
+| "identifier"
+| "macro"
+| "unit"
+| "keyword"
+| "string"
+| "number"
+| "boolean"
+| "array"
+| "object"
+| "key"
+| "snippet"
+| "color"
+| "reference"
+
+@alias down.mod.ui.icon.Provider.Highlight.Name
+| "Identifier"
+| "Class"
+| "Value"
+| "Directory"
+| "Typedef"
+| "Error"
+| "Symbol"
+| "File"
+| "Module"
+| "Struct"
+| "Snippet"
+| "Color"
+| "Reference"
+| "Operator"
+| "Text"
+| "Field"
+| "Property"
+| "Event"
+| "Macro"
+| "Keyword"
+| "Definition"
+| "Comment"
+| "Unit"
+| "Enum"
+| "Method"
+| "Enum"
+| "Function"
+| "Constant"
+| "Constructor"
+| "Variable"
+| "Type"
+
+@class (exact) down.mod.ui.icon.Provider.Highlight.Info
+  @field public fg string The foreground color
+  @field public bg string The background color
+  @field public style string The style
+  @field public sp string The special color
+
+@alias down.mod.ui.icon.Provider.Hl table<down.mod.ui.icon.Provider.Type, down.mod.ui.icon.Provider.Highlight.Name>
+
+@alias down.mod.ui.icon.Provider.Category.Icons down.mod.ui.icon.Provider.Icon|down.mod.ui.icon.Builtin.Icon[]
+
+------------------------------------------------------------------------------
+"mini.icons"
+"nvim-web-devicons"
+"down"
+
+"file"
+"extension"
+"lsp"
+"directory"
+
+@class (exact) down.mod.ui.icon.Provider.Icon # The icon
+  @field public icon string The icon
+  @field public hl string The highlight group
+  @field public default boolean If the icon is default
+  @field public category  The category
+  @field public provider  The provider name
+  @field public name string The name of the icon
+
+------------------------------------------------------------------------------
+@class (exact) down.mod.ui.icon.Provider.Result # The result of the provider
+  @field public icons table? Icons (`require("nvim-web-devicons")` or `require("mini.icons")`)
+  @field public provider  The provider name
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *U*
+                                      `U`
+Class ~
+{down.mod.ui.icon.Util}
+
+------------------------------------------------------------------------------
+                                                                  *U.provider()*
+                             `U.provider`({choice})
+the icons provider
+Parameters ~
+{choice} `(optional)`  `(The)` choice of provider (default: "mini.icons")
+Return ~
+`(down.mod.ui.icon.Provider.Result)` provider and provider name
+
+------------------------------------------------------------------------------
+                                                                     *U.icons()*
+                                 `U.icons`({c})
+the icons provider
+Parameters ~
+{c} ? `(The)` choice of provider (default: "mini.icons")
+Return ~
+`(table)` `(optional)` The provider
+
+------------------------------------------------------------------------------
+                                                                      *U.list()*
+                        `U.list`({category}, {provider})
+the icon categories
+Parameters ~
+{category} `(optional)`  `(The)` category of the icons
+{provider} `(optional)`  `(The)` choice of provider (default: "mini.icons")
+Return ~
+`([])` categories The categories of the icons
+
+------------------------------------------------------------------------------
+                                                                 *U.directory()*
+                        `U.directory`({dir}, {provider})
+the file icons
+Parameters ~
+{dir} `(optional)` `(string)` The directory of the file
+{provider} `(optional)`  `(The)` choice of provider (default: "mini.icons")
+Return ~
+`(down.mod.ui.icon.Provider.Icon)` `(optional)`
+
+------------------------------------------------------------------------------
+                                                                       *U.get()*
+                    `U.get`({category}, {name}, {provider})
+the icon for a category and name (and optional provider)
+Parameters ~
+{name} `(optional)` `(string)` The name of the icon
+{category} `(optional)` `(string)` The category of the icon
+{provider} `(optional)`  `(The)` choice of provider (default: "mini.icons")
+Return ~
+`(down.mod.ui.icon.Provider.Icon)` `(optional)` icon The icon
+
+------------------------------------------------------------------------------
+                                                              *U.has_provider()*
+                           `U.has_provider`({choice})
+if the icons provider is available
+Parameters ~
+{choice} `(optional)`  `(The)` choice of provider (default: "mini.icons")
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.ui.icon.basic.Config}
+
+------------------------------------------------------------------------------
+                                                                       *M.icons*
+                                   `M.icons`
+Class ~
+{down.ui.icon.basic.Data}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+The builtin icon provider
+@class (exact) down.mod.ui.icon.Builtin
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                    *highlights*
+                                  `highlights`
+@type down.mod.ui.icon.Provider.Hl
+
+------------------------------------------------------------------------------
+                                                                            *hl*
+                                      `hl`
+@type down.mod.ui.icon.Provider.Hl
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@meta
+
+@alias down.mod.ui.icon.Builtin.Icons table<, table<string, down.mod.ui.icon.Builtin.Icon>>
+
+@class (exact) down.mod.ui.icon.Builtin.Icon.Details
+@field public icon string The icon
+@field public hl string The highlight group
+@field public type? down.mod.ui.icon.Provider.Type The type
+
+@alias down.mod.ui.icon.Builtin.Icon
+|down.mod.ui.icon.Builtin.Icon.Details
+|string
+
+@alias down.mod.ui.icon.Builtin.Icon.Set table<string, down.mod.ui.icon.Builtin.Icon>
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@type down.mod.ui.icon.Builtin.Icons
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                         *roman*
+                                    `roman`
+Roman numerals
+
+------------------------------------------------------------------------------
+                                                               *roman.tolower()*
+                              `roman.tolower`({n})
+@param n number
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@type down.mod.ui.icon.Builtin.Icons
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.ui.icon.diamond.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.ui.icon.diamond.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.ui.icon.render}
+
+------------------------------------------------------------------------------
+                                                           *M.quote_concealed()*
+                 `M.quote_concealed`({config}, {bufid}, {node})
+Parameters ~
+{node} `(TSNode)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.ui.icon.render.Mark}
+
+------------------------------------------------------------------------------
+                                                           *M.query_get_nodes()*
+`M.query_get_nodes`({query}, {document_root}, {bufid}, {row_start_0b}, {row_end_0bex})
+@param query TSQuery|any
+@param document_root Node|any
+@param bufid number
+@param row_start_0b number
+@param row_end_0bex number
+
+------------------------------------------------------------------------------
+                                                                *M.render_buf()*
+                          `M.render_buf`({bufid}, {p})
+@param bufid? integer
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.ui.Mark:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                     *M.queries*
+                                  `M.queries`
+Class ~
+{down.mod.ui.mark.Data}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                           *M.begin_selection()*
+                `M.begin_selection`({buffer}, {keybind_buffer})
+Constructs a new selection
+Parameters ~
+{buffer} `(number)` #The number of the buffer the selection should attach to
+{keybind_buffer} `(number?)` #An alternate buffer from which the keys for the selection popup are entered.
+Return ~
+`(table)` #A selection object
+
+------------------------------------------------------------------------------
+                                                             *M.create_prompt()*
+   `M.create_prompt`({name}, {input_text}, {callback}, {modifiers}, {config})
+Opens a floating window at the specified position and asks for user input
+Parameters ~
+{name} `(string)` #The name of the floating window
+{input_text} `(string)` #The input text to prompt the user for input
+{callback} `(fun(entered_text: string, data: table))` #A function that gets invoked whenever the user provides some text.
+{modifiers} `(table)` #Special table to modify certain attributes of the floating window (like centering on the x or y axis)
+{config} `(table)` #A config like you would pass into nvim_open_win()
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                *Spinner.config*
+                                `Spinner.config`
+Class ~
+{down.ui.progress.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.ui.prompt.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *S.config*
+                                   `S.config`
+Class ~
+{down.ui.sidebar.Config}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                         *M.win*
+                                    `M.win`
+Class ~
+{ui.win.Win}
+Fields ~
+{win} `(integer)`
+{buf} `(integer)`
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.ui.win.Config}
+
+------------------------------------------------------------------------------
+                                                                       *M.cmd()*
+                               `M.cmd`({w}, {f})
+Parameters ~
+{w} `(integer)`
+{f} `(function)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Class ~
+{down.Workspace:} string
+Class ~
+{down.Workspaces:} { [string]?: string }
+
+------------------------------------------------------------------------------
+                                                                             *M*
+                                      `M`
+Class ~
+{down.mod.workspace.Workspace:} down.Mod
+
+------------------------------------------------------------------------------
+                                                                      *M.path()*
+                                `M.path`({name})
+Return ~
+`(string)`
+
+------------------------------------------------------------------------------
+                                                                        *M.data*
+                                    `M.data`
+Class ~
+{down.mod.workspace.Data}
+
+------------------------------------------------------------------------------
+                                                                      *M.config*
+                                   `M.config`
+Class ~
+{down.mod.workspace.Config}
+
+------------------------------------------------------------------------------
+                                                                     *M.setup()*
+                                  `M.setup`()
+Return ~
+`(down.mod.Setup)`
+
+------------------------------------------------------------------------------
+                                                                      *M.iter()*
+                                   `M.iter`()
+Returns an iterator for the workspaces
+@return Iter
+
+------------------------------------------------------------------------------
+                                                          *M.as_lsp_workspace()*
+                      `M.as_lsp_workspace`({name}, {path})
+Returns the workspace folder as lsp
+@return lsp.WorkspaceFolder
+@param name? string
+@param path? string
+
+------------------------------------------------------------------------------
+                                                         *M.as_lsp_workspaces()*
+                            `M.as_lsp_workspaces`()
+Returns the workspace folders as lsp
+@return lsp.WorkspaceFolder[]
+
+------------------------------------------------------------------------------
+                                                                      *M.load()*
+                                   `M.load`()
+Loads the workspace module
+
+------------------------------------------------------------------------------
+                                                                     *M.index()*
+                                 `M.index`({p})
+Returns the index file for a workspace
+Class ~
+{down.mod.workspace.Data}
+
+------------------------------------------------------------------------------
+                                                                   *M.current()*
+                                 `M.current`()
+Returns the current workspace name
+@return string
+
+------------------------------------------------------------------------------
+                                                              *M.current_path()*
+                               `M.current_path`()
+Returns the current workspace path
+@return string
+
+------------------------------------------------------------------------------
+                                                                     *M.files()*
+                            `M.files`({ws}, {patt})
+Returns all files in a workspace
+@return string[]
+
+------------------------------------------------------------------------------
+                                                                      *M.edit()*
+                                `M.edit`({path})
+Opens a file in the current workspace or at path
+Parameters ~
+{path} `(string)`
+
+------------------------------------------------------------------------------
+                                                                       *M.get()*
+                                `M.get`({name})
+If present retrieve a workspace's path by its name, else returns nil
+Parameters ~
+{name} `(string)` #The name of the workspace
+
+------------------------------------------------------------------------------
+                                                             *M.set_workspace()*
+                        `M.set_workspace`({n}, {create})
+Sets the workspace to the one specified (if it exists) and broadcasts the wschanged event
+Parameters ~
+{n} `(string)` #The name of a valid namespace we want to switch to
+{create} `(optional)` `(boolean)`
+Return ~
+`(boolean)` #True if the workspace is set correctly, false otherwise
+
+------------------------------------------------------------------------------
+                                                             *M.add_workspace()*
+                     `M.add_workspace`({wsname}, {wspath})
+Dynamically defines a new workspace if the name isn't already occupied and broadcasts the wsadded event
+Return ~
+`(boolean)` True if the workspace is added successfully, false otherwise
+Parameters ~
+{wsname} `(string)` #The unique name of the new workspace
+{wspath} `(string)` #A full path to the workspace root
+
+------------------------------------------------------------------------------
+                                                                      *M.sync()*
+                                   `M.sync`()
+Updates completions for the :down command
+
+------------------------------------------------------------------------------
+                                                                    *M.select()*
+                       `M.select`({prompt}, {fmt}, {fn})
+@param prompt? string | nil
+@param fmt? fun(item: string): string
+@param fn? fun(item: number|string, idx: number|string)|nil
+
+------------------------------------------------------------------------------
+Class ~
+{down.mod.workspace.CreateFileOpts}
+Fields ~
+{open} `(optional)` `(boolean)` do not open the file after creation?
+{force} `(optional)` `(boolean)` overwrite file if it already exists?
+
+------------------------------------------------------------------------------
+                                                                  *M.new_file()*
+                   `M.new_file`({path}, {workspace}, {opts})
+Takes in a path (can include directories) and creates a .down file from that path
+Parameters ~
+{path} `(string)`
+{workspace} `(optional)` `(string)` workspace name
+{opts} `(optional)` `(down.mod.workspace.CreateFileOpts)`
+
+------------------------------------------------------------------------------
+                                                                 *M.open_file()*
+                        `M.open_file`({wsname}, {path})
+Takes in a workspace name and a path for a file and opens it
+Parameters ~
+{wsname} `(string)` #The name of the workspace to use
+{path} `(string)` #A path to open the file (e.g directory/filename.down)
+
+------------------------------------------------------------------------------
+                                                                    *M.exists()*
+                             `M.exists`({filepath})
+Checks for file existence by supplying a full path in `filepath`
+Parameters ~
+{filepath} `(string)`
+
+------------------------------------------------------------------------------
+                                                                     *M.bufnr()*
+                             `M.bufnr`({filepath})
+Get the bufnr for a `filepath` (full path)
+Parameters ~
+{filepath} `(string)`
+
+------------------------------------------------------------------------------
+                                                                     *M.notes()*
+                      `M.notes`({wsname}, {year}, {month})
+Returns a list of all files relative path from a `wsname`
+Parameters ~
+{wsname} `(string)`
+Return ~
+`(string)` `(optional)`
+
+------------------------------------------------------------------------------
+                                                                  *M.markdown()*
+                              `M.markdown`({name})
+Returns a list of all files relative path from a `wsname`
+Parameters ~
+{name} `(string)`
+Return ~
+`(string[])` `(optional)`
+
+------------------------------------------------------------------------------
+                                                                      *M.open()*
+                             `M.open`({workspace})
+Sets the current workspace and opens that workspace's index file
+Parameters ~
+{workspace} `(string)` #The name of the workspace to open
+
+------------------------------------------------------------------------------
+                                                                     *M.touch()*
+                          `M.touch`({p}, {workspace})
+Touches a file in workspace
+Parameters ~
+{p} `(string)`
+{workspace} `(string)`
+
+------------------------------------------------------------------------------
+                                                                *M.edit_index()*
+                              `M.edit_index`({e})
+Edit index of current directory
+@param e down.Event
+
+------------------------------------------------------------------------------
+                                                               *M.select_file()*
+                     `M.select_file`({prompt}, {fmt}, {fn})
+@param prompt? string | nil
+@param fmt? fun(item: string): string
+@param fn? fun(item: number|string, idx: number|string)|nil
+
+------------------------------------------------------------------------------
+                                                                  *M.filemenu()*
+                               `M.filemenu`({e})
+Select markdown file in current workspace
+Parameters ~
+{e} `(down.Event)`
+
+------------------------------------------------------------------------------
+                                                                      *M.menu()*
+                                 `M.menu`({e})
+Select workspace
+@param e down.Event
+
+------------------------------------------------------------------------------
+                                                                    *M.commands*
+                                  `M.commands`
+Class ~
+{down.mod.workspace.Commands:} { [string]: down.Command }
+
+------------------------------------------------------------------------------
+                                                                      *M.events*
+                                   `M.events`
+Class ~
+{down.mod.workspace.Events}
+
+------------------------------------------------------------------------------
+                                                                      *M.handle*
+                                   `M.handle`
+Class ~
+{down.mod.workspace.Subscribed}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                      *W.init()*
+                                   `W.init`()
+Return ~
+`(down.Workspace)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@meta down.ids
+@brief Provides core data types
+@version <5.2,JIT
+
+
+The important store value object
+@class (exact) down.old.Store<V>: { id: down.store.id, uri: down.Uri, data?: down.store.Data<V> } store
+
+[string]: down.Store<V>
+@class (exact) down.old.store.Map<V>: { [down.store.Key]?: down.Store<V> } Map { log1 = { i}}
+
+The important store value object
+@class (exact) down.old.store.Kind: { [down.store.ItemKind]?: down.store.Map<down.store.Key> }
+
+
+
+
+down.Mods
+@class (exact) down.mod.config.Cfg: table
+  @field [string]? { [string]?: any }
+  @field enabled? boolean
+
+TODO: merge data field to [string]? { [string]?: down.Event }
+TODO:   down.mod.Events.defined ->
+TODO:     #field [string]? { [string]?: down.Event }
+
+@class (exact) down.event.Subscribed
+  @field public [string]? { [string]: boolean }
+
+------------------------------------------------------------------------------
+
+@class (exact) down.mod.Config: { [string]?: any }
+@field public enabled? boolean
+  @field public [string]? any
+
+------------------------------------------------------------------------------
+TODO: merge data field to [string]?: down.mod.Data
+TODO:   down.Mod. ->
+TODO:     #field [string]? down.config.UserMod
+TODO:   down.Mod.config ->
+TODO:     #field config? down.mod.Config
+
+------------------------------------------------------------------------------
+
+@class (exact) down.config.Ft
+  @field md boolean
+  @field mdx boolean
+  @field markdown boolean
+  @field down boolean
+
+TODO: make down.config.User? table
+TODO:   down.config.config.User.mod.config ->
+TODO:     #field [string]? down.config.UserMod
+
+@class (exact) down.config.User
+  @field [string]? down.config.mod.Config
+  @field hook? fun(args?: string) Hook to optionally run on load
+  @field dev? boolean Whether to start in dev mode
+
+TODO: make down.config.UserMod? table
+TODO:   down.config.UserMod.config ->
+TODO:     #field [string]? down.Mod
+
+@class (exact) down.config.UserConfig: down.config.BaseConfig, {
+  lsp?: down.mod.lsp.Config,
+  data?: down.mod..Config,
+  edit?: down.mod.edit.Config,
+  config?: down.mod.config.Config,
+  cmd?: down.mod.cmd.Config,
+  tool?: down.mod.tool.Config,
+  workspace?: down.mod.worksspace.Config,
+  note?: down.mod.note.Config,
+  ui?: down.mod.ui.Config,
+  config?: down.mod.config.Config,
+}
+
+------------------------------------------------------------------------------
+@alias down.Pathsep "\\" | "/"
+
+@class  down.Config
+  @field log? down.log.Config
+  @field defaults? boolean|string[]
+  @field dev? boolean  Whether to start in dev mode
+  @field debug? boolean Whether to start in debug mode
+  @field bench? boolean Whether to start in benchmark mode
+  @field test? boolean Whether to start in test mode
+  @field load? boolean Whether to load the user config
+  @field user down.mod.Config The user config to load in
+  @field hook? fun()   A hook that is run when down is started
+  @field started boolean                                   Set to `true` when down is fully initialized.
+  @field version string                                    The version of down that is currently active. Automatically updated by CI on every release.
+  @field setup fun(user: down.config.User, default: string[], ...: any): boolean Loads user config
+  @field homedir fun(...: string): string
+  @field vimdir fun(...: string): string
+  @field file fun(file: string | nil): string
+  @field fromfile fun(f: string | nil): down.config.User
+
+------------------------------------------------------------------------------
+Stores the config for the entirety of down.
+This includes not only the user config (passed to `setup()`), but also internal
+variables that describe something specific about the user's hardware.
+@see down.Setup
+
+
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@meta    down.ids.config
+@brief   Provides core data types
+@version <5.2,JIT
+
+@brief down.config
+
+The local config for setting up workspaces.
+@class (exact) down.config.Local workspace config local
+  @field public dir? down.Uri"./.down/" by default
+  @field public init? down.config.Init, optional init
+  metadata?: { [string]?: any },
+
+Configuration for base directories globally.
+@class (exact) down.config.Dirs dirs
+  @field public home down.Dir default "~/.down/"
+  @field public config down.Dir default "~/.config/down/"
+  @field public cache down.Dir  default "~/.cache/down/"
+  @field public temp down.Dir default "~/.temp/down/"
+  @field public runtime down.Dir string default "~/.down/runtime/"
+  @field public log down.Dir string default "~/.down/log/"
+
+Configuration for global settings.
+@class (exact) down.config.Global: down.Workspaces Down global configuration
+  @field public user down.User used
+  @field public dirs down.config.Dirs dirs
+  @field public workspaces down.Workspace> workspace list
+  @field public mod table<string, down.Mod> mod list
+  @field public config down.Config config
+  @field public [string]? down.Mod modules
+
+@brief down.config.local
+
+@brief down.config.global
+
+@brief down.handlefig.init
+
+The important store value object
+@class (exact) down.config.Init Init
+  @field git? down.config.init.Git Git
+  @field sync? down.config.init.Sync sync
+  @field markdown? down.config.init.Markdown sync
+  @field command? down.config.init.Command command
+  @field [string]? down.config.init.Command
+
+The important store value object
+@class (exact) down.config.init.Markdown Git init
+  @field public enabled boolean Enable
+
+The important store value object
+@class (exact) down.config.init.Git Git init
+  @field public enabled boolean Enable
+
+The important store value object
+@class (exact) down.config.init.Command command init
+  @field public enabled? boolean Enable
+  @field public command? string Enable
+  @field public args? string[] Enable
+
+The important store value object
+@class (exact) down.config.init.Sync Sync init
+  @field public enabled boolean Enable
+
+@alias down.config.Toggle
+| "dev"
+| "debug"
+| "bench"
+| "test"
+| "defaults
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@meta down.ids.context
+
+The position of a character aaagin a file.
+@class (exact) down.Position: { line?: number, char?: number } position of a character in a file
+
+The position of a character aaagin a file.
+@class (exact) down.Range: { start: down.Position,start: down.Position } position of a character in a file
+
+------------------------------------------------------------------------------
+The context of an in-file object.
+@class (exact) down.Context context of in-file object
+  @field public position? down.Position location
+  @field public buf? number
+  @field public win? number
+  @field public file? down.Id  root node in file scope
+  @field public dir? down.Id  root node in file scope
+  @field public scope? down.Scope in file scope
+
+The scope of an entity.
+@class (exact) down.Info
+  @field public id down.Id
+  @field public uri down.Uri
+  @field public context? down.Context
+  @field public metadata? { [string]: any }
+  @field public tags? { [string]: down.Tag }
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@meta down.ids.date
+
+The time part of the datetime.
+@class (exact) down.Time Time
+  @field public hour? integer|string Hours
+  @field public minute? integer|string Minutes
+  @field public second? integer|string Seconds
+  @field public fmt fun(t: down.Time, tf: string): string Format the time part of the datetime.
+  @field public time fun(t: down.Time): integer Get the time part of the datetime.
+  @field public params fun(t: down.Time): osdateparam Get the time part of the datetime.
+
+The datetime data structure.
+@class (exact) down.Datetime
+  @field public date? down.Date The date part of the datetime.
+  @field public time? down.Time The time part of the datetime.
+  @field public params fun(t: down.Datetime): osdateparam Get the time part of the datetime.
+  @field public fmt fun(t: down.Datetime, f: string): string Format the time part of the datetime.
+
+The date part of the datetime.
+@class (exact) down.Date
+  @field public day integer|string Hours
+  @field public week integer|string Minutes
+  @field public month integer|string Seconds
+  @field public year integer|string Seconds
+  @field public fmt fun(t: down.Date, tf: string|nil): string Format the time part of the datetime.
+  @field public date fun(t: down.Date): integer Get the time part of the datetime.
+  @field public params fun(t: down.Date, d: down.Time|nil): osdateparam Get the time part of the datetime.
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@meta down.ids.workspcae
+The context of an in-file object.
+@class (exact) down.Log: { data?: { [string]: string } }
+
+The context of an in-file object.
+@class (exact) down.Template: {
+  id: string,
+  uri: down.Uri,
+  context: down.Context,
+  body: string,
+  kind: string } Link
+
+The context of an in-file object.
+@class (exact) down.Snippet: {
+  id: string,
+  uri: down.Uri,
+  context: down.Context,
+  body: string,
+  kind: string } Link
+
+The context of an in-file object.
+@class (exact) down.Link: {
+  id: string,
+  uri: down.Uri,
+  context: down.Context,
+  target: down.Uri,
+  body: string,
+  kind: string } Link
+
+The context of an in-file object.
+@class (exact) down.Anchor: {
+  id: string,
+  uri: down.Uri,
+  context: down.Context,
+  body: string,
+  kind: string } Link
+
+The context of an in-file object.
+@class (exact) down.Note: {
+  id: string,
+  uri: down.Uri,
+  context: down.Context,
+  body: string,
+  kind: string } Link
+
+The context of an in-file object.
+@class (exact) down.Agenda: {
+  id: string,
+  uri: down.Uri,
+  body: string,
+  groups: down.Group[],
+  tasks: down.Task[],
+  scope: down.Scope[],
+  kind: string } Link
+
+The tag object.
+@class down.Tag: { id: string, context: down.Context, flags: down.Flag[] } tags
+
+@class down.TagsField: { tags: down.Tag[] } Has tags
+
+@alias down.Tags down.Tag[] Has tags
+
+@class (exact) Node<I, E, N>: { index: I, edges: E[], weight: N }
+
+@class (exact) Edge<K1, K2, E>: { [K1]: { [K2]: E } }
+
+The category object.
+@class down.Category: { group?: string }
+
+The project object.
+@class (exact) down.Group: { group?: string }
+  @field public name string
+  @field public data table<any, any>
+  @field public agenda? down.Data<down.Agenda>
+  @field public info? down.Info
+  @field public tasks? down.Data<down.Task>
+
+The project object.
+@class (exact) down.Project
+  @field public id down.Uri
+  @field public info? down.Info
+  @field public data table<any, any>
+  @field public agenda? down.Data<down.Agenda>
+  @field public tasks? down.Data<down.Task>
+
+The scope of an entity.
+@alias down.Flag {
+  flag: string,
+  info: down.Info,
+  data: table<any, any>,
+}
+
+
+The important store value object
+@class (exact) down.Log<S>: { id: string, uri: down.Uri, config?: down.config.Local }
+
+The user object.
+@class (exact) down.User User
+  @field public id down.Id uri
+  @field public home down.Uri home
+  @field public email? string uri
+  @field public username? string uri
+
+@class (exact) down.Entity<V>: down.Base, {
+  tags?: down.Tag[],
+  info?: down.HasInfo,
+  context: down.Context,
+}
+
+The scope of an entity.
+@class (exact) down.Task
+  @field public name string
+  @field public info down.Info
+  @field public context down.Context
+  @field public store? down.Id
+  @field public status down.task.Status
+  @field public priority down.task.Priority
+
+
+==============================================================================
+------------------------------------------------------------------------------
+down.ids.enum
+
+The scope of an entity.
+@alias down.Mode
+| "n"
+| "no"
+| "nov"
+| "noV"
+| "noCTRL-V"
+| "CTRL-V"
+| "niI"
+| "niR"
+| "niV"
+| "nt"
+| "Terminal"
+| "ntT"
+| "v"
+| "vs"
+| "V"
+| "Vs"
+| "CTRL-V"
+| "CTRL-Vs"
+| "s"
+| "S"
+| "CTRL-S"
+| "i"
+| "ic"
+| "ix"
+| "R"
+| "Rc"
+| "Rx"
+| "Rv"
+| "Rvc"
+| "Rvx"
+| "c"
+| "cr"
+| "cv"
+| "cvr"
+| "r"
+| "rm"
+| "r?"
+| "!"
+| "t"
+
+------------------------------------------------------------------------------
+The scope of an entity.
+@alias down.Status 'queued' status of a task
+  | 'waiting'   Waiting
+  | 'finished'  Finished
+  | 'cancelled' Cancelled
+  | 'pending'   Pending, todo
+  | 'blocked'   Blocked
+
+The scope of an entity.
+@alias down.Scope
+ | "priority"
+ | "category"
+ | "group"
+ | "flag"
+ | "user" for entities in the same profile
+ | "tag"         for shared tag entities
+ | "workspace"   for all files in workspace
+ | "project"     for entities in the same project
+ | "global"      for all entities across workspaces and profiles
+ | "local"       for this file only
+ | "dir"         for this and other files in the same dir
+ | "children"    for this file, all in same dir, and all children of dirs
+ | "dynamic"     for entities in the same dynamic scope
+ | "other"       for entities in other scopes
+
+
+Operating system
+@alias down.Os
+| "windows"
+| "wsl"
+| "wsl2"
+| "mac"
+| "linux"
+| "bsd"
+
+@alias down.dirs.Down
+  | { name: "home", uri: "~/.down" }
+  | { name: "config", uri: "~/.config/down" }
+  | { name: "data", uri: "~/.local/share/down"}
+  | { name: "cache", uri: "~/.local/share/down"}
+  | { name: "temp", uri: "/tmp/down"}
+  | { name: "log", uri: "~/.down/log"}
+  | { name: "lsp", uri: "~/.down/lsp"}
+  | { name: "workspace", uri: "~/.down/workspace"}
+
+The status of a task.
+
+
+==============================================================================
+------------------------------------------------------------------------------
+down.ids.event
+
+@class (exact) down.Event
+  @field id string The type of the event. Exists in the format of `category.id`.
+  @field split string[] The event type, just split on every `.` character, e.g. `{ "category", "name" }`.
+  @field body? table|any The content of the event. The data found here is specific to each individual event. Can be thought of as the payload.
+  @field ref string The name of the init that triggered the event.
+  @field broadcast boolean Whether the event was broadcast to all mod. `true` is so, `false` if the event was specifically sent to a single recipient.
+  @field position { [1]: number, [2]: number } The position of the cursor at the moment of broadcasting the event.
+  @field file string The name of the file that the user was in at the moment of broadcasting the event.
+  @field dir string The name of the file that the user was in at the moment of broadcasting the event.
+  @field line string The content of the line the user was editing at the moment of broadcasting the event.
+  @field buf number The buffer ID of the buffer the user was in at the moment of broadcasting the event.
+  @field win number The window ID of the window the user was in at the moment of broadcasting the event.
+  @field mode string The mode Neovim was in at the moment of broadcasting the event.
+  @field broadcast fun(self: down.Event)
+  @field new fun(m: down.Mod.Mod, type: string, body: table|string, ev?: table): down.Event?
+  @field send fun(self: down.Event, recipient: down.Mod.Mod[])
+  @field handle fun(self: down.Event)
+  @field define fun(module: down.Mod.Mod, type: string): down.Event
+  @field context? down.Context
+
+
+@class (exact) down.mod.Events: {
+  [string]: down.Event
+}
+
+@class (exact) down.mod.Subscribed: {
+  [string]: {
+    [string]: boolean
+  }
+}
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@alias down.log.Level
+| "trace"
+| "debug"
+| "info"
+| "warn"
+| "error"
+| "fatal"
+
+------------------------------------------------------------------------------
+@class (exact) down.log.Config
+@field plugin string                                           Name of the plugin. Prepended to log messages.
+@field outfile string
+@field use_console boolean                                     Whether to print the output to Neovim while running.
+@field highlights boolean                                      Whether highlighting should be used in console (using `:echohl`).
+@field use_file boolean                                        Whether to write output to a file.
+@field level down.log.Level                                          Any messages above this level will be logged.
+@field modes ({ name: down.log.Level, hl: string, level: number })[] Level config.
+@field float_precision number                                  Can limit the number of decimals displayed for floats.
+
+------------------------------------------------------------------------------
+@class (exact) down.Log
+  @field levels table<string, number>
+  @field number_level table<number, string>
+  @field config down.log.Config
+
+
+==============================================================================
+------------------------------------------------------------------------------
+down.ids.mod
+
+@alias down.mod.Handler fun(event: down.Event)
+
+@alias down.Opts { [string]?: string } | function
+
+@alias down.VimMode
+| 'n'
+| 'i'
+| 'v'
+| 'x'
+| 'c'
+
+@class down.Map: {
+  [1]: down.VimMode | down.VimMode[],
+  [2]: string,
+  [3]: string | fun(),
+  [4]?: string,
+  [5]?: down.MapOpts,
+
+@class down.MapOpts: {
+  mode?: down.VimMode | down.VimMode[],
+  key?: string,
+  callback?: string | fun(),
+  desc?: string,
+  noremap?: boolean,
+  nowait?: boolean
+}
+
+@alias down.Maps down.Map[]|fun()
+@alias down.Handler fun(event: down.Event, ...: any)
+@alias down.Handlers {
+  [string]?: down.Handler|down.Handlers,
+  __call?: down.Handler,
+}
+@class down.Mod
+  @field public config? down.mod.Config The config for the mod.
+  @field public import? table<string, down.Mod> Imported submod of the given mod. Contrary to `dep`, which only exposes the public API of a mod, imported mod can be accessed in their entirety.
+  @field public commands?  down.Command[] that adds all the commands for the mod.
+  @field public maps? down.Maps
+  @field public opts? down.Opts Function that adds all the options for the mod.
+  @field public load? fun() Function that is invoked once the mod is considered "stable", i.e. after all dependencies are loaded. Perform your main loading routine here.
+  @field public bench? fun() Function that is invoked when the mod is being benchmarked.
+  @field public id string The name of the mod.
+  @field public namespace string The name of the mod.
+  @field public data down.Data.Data
+  @field public post_load? fun() Function that is invoked after all mod are loaded. Useful if you want the down environment to be fully set up before performing some task.
+  @field public dep? { [down.Mod.Id]: down.Mod.Mod } Contains the public tables of all mod that were dep via the `dependencies` array provided in the `setup()` function of this mod.
+  @field public setup? fun(): down.mod.Setup Function that is invoked before any other loading occurs. Should perform preliminary startup tasks.
+  @field public replaced? boolean If `true`, this means the mod is a replacement for a base mod. This flag is set automatically whenever `setup().replaces` is set to a value.
+  @field public handle? down.Handlers callback that is invoked any time an event the mod has subscribed to has fired.
+  @field public tests? table<string, fun()> Function that is invoked when the mod is being tested.
+  @field public events? down.mod.Events
+  @field public [any]? any
+
+@class (exact) down.mod.Setup
+@field loaded? boolean
+@field dependencies? down.Mod.Id[]
+@field replaces? string
+@field merge? boolean
+
+@class (exact) down.mod.Events: { [string]: down.Event }
+
+The entire mod configuration
+@alias down.Mod.Mod
+  | down.mod.lsp.Lsp
+  | down.mod.code.Code
+  | down.mod.time.Time
+  | down.mod.export.Export
+  | down.mod.tag.Tag
+  | down.mod.parse.Parse
+  | down.mod.edit.Edit
+  | down.mod.data.Data
+  | down.mod.link.Link
+  | down.mod.task.Task
+  | down.mod.template.Template
+  | down.mod.log.Log
+  | down.mod.cmd.Cmd
+  | down.mod.tool.Tool
+  | down.mod.workspace.Workspace
+  | down.mod.note.Note
+  | down.mod.ui.Ui
+  | down.mod.data.bookmark.Bookmark
+  | down.mod.data.Store
+  | down.mod.data.history.History
+  | down.mod.task.agenda.Agenda
+  | down.mod.ui.calendar.Calendar
+  | down.mod.ui.calendar.day.Day
+  | down.mod.ui.calendar.month.Month
+  | down.mod.ui.calendar.week.Week
+  | down.mod.keymap.Keymap
+
+@alias down.Mod.Data
+  | down.mod.keymap.Data
+  | down.mod.lsp.Data
+  | down.mod.data.Data.Data
+  | down.mod.edit.Data
+  | down.mod.cmd.Data
+  | down.mod.tool.Data
+  | down.mod.workspace.Data
+  | down.mod.note.Data
+  | down.mod.ui.Data
+  | down.mod.parse.Data
+  | down.mod.code.Data
+  | down.mod.link.Data
+  | down.mod.task.Data
+  | down.mod.tag.Data
+  | down.mod.template.Data
+  | down.mod.export.Data
+  | down.mod.log.Data
+  | down.mod.task.agenda.Data
+  | down.mod.data.bookmark.Data
+  | down.mod.data.store.Data
+  | down.mod.data.history.Data
+  | down.mod.ui.calendar.Config
+  | down.mod.ui.calendar.day.Data
+  | down.mod.ui.calendar.month.Data
+  | down.mod.ui.calendar.week.Data
+
+@alias down.Mod.Config
+  | down.mod.keymap.Config
+  | down.mod.lsp.Config
+  | down.mod.data.Config
+  | down.mod.edit.Config
+  | down.mod.cmd.Config
+  | down.mod.tool.Config
+  | down.mod.workspace.Config
+  | down.mod.note.Config
+  | down.mod.ui.Config
+  | down.mod.parse.Config
+  | down.mod.code.Config
+  | down.mod.link.Config
+  | down.mod.task.Config
+  | down.mod.tag.Config
+  | down.mod.template.Config
+  | down.mod.export.Config
+  | down.mod.log.Config
+  | down.mod.task.agenda.Config
+  | down.mod.data.bookmark.Config
+  | down.mod.data.store.Config
+  | down.mod.data.history.Config
+  | down.mod.ui.calendar.Config
+  | down.mod.ui.calendar.day.Config
+  | down.mod.ui.calendar.month.Config
+  | down.mod.ui.calendar.week.Config
+
+ @alias down.Mod.Id
+ | "find.telescope",
+ | "log"
+ | "mod"
+ | "data.store"
+ | 'tool.telescope'
+ | 'find.fzflua'
+ | 'find.builtin'
+ | 'find.snacks'
+ | 'find.mini'
+ | 'find'
+ | "data"
+ | "edit"
+ | "cmd"
+ | "tool"
+ | "workspace"
+ | 'edit.inline'
+ | "note"
+ | "ui"
+ | "keymap"
+ | "lsp"
+ | "tag"
+ | "time"
+ | "code"
+ | "link"
+ | "template"
+ | "task"
+ | "export"
+ | "ui.calendar"
+ | "ui.calendar.day"
+ | "ui.calendar.month"
+ | "ui.popup"
+ | "ui.calendar.year"
+ | "edit.indent"
+ | "edit.cursor"
+ | "edit.parse"
+ | "data.history"
+ | "tool.treesitter"
+ | "task.agenda"
+ | "ui.calendar.week"
+ | "data.bookmark"
+ | "task.agenda"
+ | "parse"
+ | "ui.win"
+ | "ui.icon"
+ | "ui.hl"
+ | "edit.indent"
+
+
+ The user configuration passed into down.setup
+ @class (exact) down.mod.Config: {
+   [down.Mod.Id]?: down.Mod.Config,
+   dev?: boolean,
+   test?: boolean|string[],
+   bench?: boolean|string[],
+   load?: boolean|string[],
+   defaults?: boolean,
+   debug?: boolean,
+   hook?: fun(...: any)
+ }
+
+The base configuration
+@class (exact) down.config.BaseConfig: {
+  [string]?: any,
+  dev?: boolean,
+}
+
+@class (exact) down.Command
+@field name? string
+@field args? number
+@field max_args? number
+@field condition? string
+@field complete? table<string, string[]>
+@field callback? fun(e?: down.Event, ...: any)
+@field min_args? number
+@field commands? { [string]?:down.Command}
+
+------------------------------------------------------------------------------
+@alias down.CommandsB {[string]?: down.Command } | function
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@meta    down.ids.store
+@brief   Provides core data types
+@version <5.2,JIT
+
+@brief down.Store --------------------------------
+
+The important store value object
+@class (exact) down.Store<I>: { [down.store.Item.Kind]?: down.store.map.Kind<I> }
+
+@brief down.store.Key | down.store.Item ----------
+
+@alias down.store.Item.Kind "log" log"
+| "workspace" log"
+| "note" log"
+| "project" log"
+| "group" group
+| "scope" scope
+| "task" task
+| "scope" scope
+| "tag" tag
+| "flag" flag
+| "store" store
+| "status" status
+| "priority" priority
+| "weekday" weekday
+| "category" category
+| "month" month
+| "year" year
+| "time" time
+| "date" date
+| "datetime" datetime
+| "location" location
+| "event" event
+| "person" person
+| "rank" rank
+| "file" file
+| "folder" folder
+| "definition" definition
+| "mod" mod ``
+
+@alias down.store.Key.Kind
+| "uri" uri
+
+Configuration for global settings.
+@alias down.store.Key down.Tag Tag
+| down.Flag Flag
+| down.Tag
+| down.Uri
+| down.Id
+| down.Dir
+| down.File File
+| down.Workspace
+| down.Scope
+| down.Project
+| down.task.Priority
+| "done"
+| "todo"
+| "cancelled"
+| "waiting"
+| "blocked"
+| "doing"
+
+The priority of a task.
+@alias down.task.Priority "misc"
+| "lowest"
+| "low"
+| "medium"
+| "high"
+| "highest"
+
+Ranking
+@alias down.Ranking integer 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+| down.Uri
+| down.Anchor
+| down.Ranking
+| number string
+| down.Category
+| down.Date
+| string
+
+Configuration for global settings.
+@alias down.store.Item down.Store
+| down.Workspace workspace
+| down.User User
+| down.Anchor Anchor
+| down.Dir dir
+| down.Id Id
+| down.File file
+| down.Position file
+| down.Task task
+| down.Position position
+| down.Uri task
+| down.Log log
+| down.Project PProject
+| down.Note note
+| down.Tag tag
+| down.Agenda agenda
+| down.Flag Flag
+| down.Store Store
+| down.store.Item Item
+| down.store.Key Key
+| down.Scope Scope
+| down.Group Group
+| down.Category Category
+| down.Mod mod Tag
+| down.Category Category
+| down.Ranking Ranking
+| down.task.Priority
+| "done"
+| "todo"
+| "cancelled"
+| "waiting"
+| "blocked"
+| "doing"
+
+The priority of a task.
+@alias down.task.Priority "misc"
+| "lowest"
+| "low"
+| "medium"
+| "high"
+| "highest"
+
+Ranking
+@alias down.Ranking integer 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+| { [down.store.Key]: down.store.Item }
+| { [string]: string }
+
+@brief down.store ----------------------
+
+@alias down.store.id string The name associated with the vault of a certain kind
+
+@alias down.store.Index integer The index in the list of vault
+
+The important store value object
+  Contains a map of K to item type V
+  And an identifier, name, and kind string
+  id is like (if local): default.kind.item.
+@class down.Store<K, V>: {
+  id?: down.Id,
+  uri?: down.Uri,
+  name?: string,
+  about?: string,
+  workspace?: down.Id,
+  default?: K,
+  store?: { [K]?: V },
+  config?: down.config.Local,
+  metadata?: { [string]?: any },
+  scope?: down.Scope,
+  index?: number | down.store.Item.Kind,
+  config?: down.config.Local,
+  type?: type,
+} Map from id to store of kind
+
+@alias down.store.Workspace<V> down.Store<string, V, down.config.Local>
+
+@alias down.store.List<V> down.Store<integer, V>
+
+@alias down.store.Id<V> down.Store<down.Id, V>
+
+@alias down.store.Kind<V> down.Store<down.store.Item.Kind, V>
+
+@alias down.store.Map<KK, VK, VV> down.Store<KK, down.Store<VK, VV>>
+
+@alias down.KindId down.Store<down.store.Item.Kind, down.Store<down.Id, down.Project>>
+
+@class (exact) down.store.KindIdDateMap<V> { default?: down.store.Item.Kind, [down.store.Item.Kind]?: down.store.map.Id<V> }
+
+
+@brief down.store.
+
+@alias down.store.KindId<V> down.Store<string, down.Store<down.Id, down.store.Item>>
+
+THe data object for workspaces.
+@class (exact) down.store.Stores The data object for stores.
+  @field public store? down.store.KindId<down.Store> stores
+  @field public agenda? down.store.KindId<down.Agenda> agenda
+  @field public tasks? down.store.KindId<down.Task> agenda
+  @field public logs? down.store.KindId<down.Log> agenda
+  @field public stores? down.store.KindId<down.Store> agenda
+  @field public notes? down.store.KindId<down.Note> agenda
+  @field public files? down.store.KindId<down.File> agenda
+  @field public dirs? down.store.KindId<down.Dir> agenda
+  @field public tags? down.store.KindId<down.Tag> agenda
+  @field public flags? down.store.KindId<down.Flag> agenda
+  @field public projects? down.store.KindId<down.Project> proj
+  @field public groups? down.store.KindId<down.Group> proj
+  @field public scopes? down.store.KindId<down.Scope> proj
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                        *U.os()*
+                                    `U.os`()
+Return ~
+`(down.Os)`
+
+------------------------------------------------------------------------------
+                                                              *U.inline_pcall()*
+                        `U.inline_pcall`({func}, {...})
+Works just like pcall, except returns only a single value or nil (useful for ternary operations
+which are not possible with a function like `pcall` that returns two values).
+@generic T
+@param func fun(...: any): T The function to invoke in a protected environment.
+@param ... any The parameters to pass to `func`.
+@return T? # The return value of the executed function or `nil`.
+
+------------------------------------------------------------------------------
+                                                            *U.ts_parse_query()*
+                 `U.ts_parse_query`({language}, {query_string})
+A version agnostic way to call the neovim treesitter query parser
+@param language string # Language to use for the query
+@param query_string string # Query in s-expr syntax
+@return ts.Query # Parsed query
+
+------------------------------------------------------------------------------
+                                                              *U.get_username()*
+                               `U.get_username`()
+An OS agnostic way of querying the current user
+@return string username
+
+------------------------------------------------------------------------------
+                                                         *U.get_language_list()*
+                        `U.get_language_list`({values})
+Returns an array of strings, the array being a list of languages that down can inject.
+Parameters ~
+{values} `(boolean)` If set to true will return an array of strings, if false will return a key-value table.
+Return ~
+`(string[]|table<string, { type: "integration.treesitter"  |"syntax"|"null" }>)`
+
+------------------------------------------------------------------------------
+                                                   *U.get_language_shorthands()*
+                 `U.get_language_shorthands`({reverse_lookup})
+Gets a list of shorthands for a given language.
+@param reverse_lookup boolean Whether to create a reverse lookup for the table.
+@return LanguageList
+
+------------------------------------------------------------------------------
+                                                        *U.is_minimum_version()*
+               `U.is_minimum_version`({major}, {minor}, {patch})
+Checks whether Neovim is running at least at a specific version.
+@param major number The major release of Neovim.
+@param minor number The minor release of Neovim.
+@param patch number The patch number (in case you need it).
+@return boolean # Whether Neovim is running at the same or a higher version than the one given.
+
+------------------------------------------------------------------------------
+                                                      *U.parse_version_string()*
+                   `U.parse_version_string`({version_string})
+Parses a version string like "0.4.2" and provides back a table like { major = <number>, minor = <number>, patch = <number> }
+@param version_string string The input string.
+@return table? # The parsed version string, or `nil` if a failure occurred during parsing.
+
+------------------------------------------------------------------------------
+                                                                     *U.title()*
+                                `U.title`({str})
+Capitalizes the first letter of each down in a given string.
+@param str string The string to capitalize.
+@return string # The capitalized string.
+
+------------------------------------------------------------------------------
+                                                        *U.lazy_string_concat()*
+                         `U.lazy_string_concat`({...})
+Lazily concatenates a string to prevent runtime errors where an object may not exist
+Consider the following example:
+
+    lib.when(str ~= nil, str.." extra text", "")
+
+This would fail, simply because the string concatenation will still be evaluated in order
+to be placed inside the variable. You may use:
+
+    lib.when(str ~= nil, lib.lazy_string_concat(str, " extra text"), "")
+
+To mitigate this issue directly.
+@param ... string An unlimited number of strings.
+@return string # The result of all the strings concatenated.
+
+------------------------------------------------------------------------------
+                                                               *U.number_wrap()*
+                     `U.number_wrap`({value}, {min}, {max})
+Wraps a number so that it fits within a given range.
+@param value number The number to wrap.
+@param min number The lower bound.
+@param max number The higher bound.
+@return number # The wrapped number, guarantees `min <= value <= max`.
+
+------------------------------------------------------------------------------
+                                                                     *U.match()*
+                         `U.match`({value}, {compare})
+Returns the item that matches the first item in statements.
+@param value any The value to compare against.
+@param compare? fun(lhs: any, rhs: any): boolean A custom comparison function.
+@return fun(statements: table<any, any>): any # A function to invoke with a table of potential matches.
+
+------------------------------------------------------------------------------
+                                                                      *U.when()*
+               `U.when`({comparison}, {when_true}, {when_false})
+Wrapped around `match()` that performs an action based on a condition.
+@param comparison boolean The comparison to perform.
+@param when_true function|any The value to return when `comparison` is true.
+@param when_false function|any The value to return when `comparison` is false.
+@return any # The value that either `when_true` or `when_false` returned.
+@see down.core.lib.match
+
+------------------------------------------------------------------------------
+                                                                    *U.notify()*
+                         `U.notify`({msg}, {log_level})
+Custom down notifications. Wrapper around `vim.notify`.
+@param msg string Message to send.
+@param log_level integer? Log level in `vim.log.levels`.
+
+------------------------------------------------------------------------------
+                                                                *U.read_files()*
+                      `U.read_files`({files}, {callback})
+Opens up an array of files and runs a callback for each opened file.
+@param files (string)[] An array of files to open.
+@param callback fun(buffer: integer, filename: string) The callback to invoke for each file.
+
+------------------------------------------------------------------------------
+                                                                      *U.wrap()*
+                      `U.wrap`({function_pointer}, {...})
+Wraps a function in a callback.
+@generic T: function, A
+@param function_pointer T The function to wrap.
+@param ... A The arguments to pass to the wrapped function.
+@return fun(...: A): T # The wrapped function in a callback.
+
+------------------------------------------------------------------------------
+                                                          *U.truncate_by_cell()*
+                    `U.truncate_by_cell`({str}, {col_limit})
+Truncate input string to fit inside the `col_limit` when displayed. Takes non-ascii chars into account.
+@param str string The string to limit.
+@param col_limit integer `str` will be cut so that when displayed, the display length does not exceed this limit.
+@return string # Substring of input str
+
+------------------------------------------------------------------------------
+                                                                    *U.get_os()*
+                                  `U.get_os`()
+Return ~
+`(down.Os)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+@version JIT
+@type stringlib
+
+------------------------------------------------------------------------------
+                                                           *string.iswikilink()*
+                          `string.iswikilink`({self})
+Check if a string is a wikilink, if so, return the link destination.
+@param self string
+@return string|nil
+
+------------------------------------------------------------------------------
+                                                           *string.startswith()*
+                      `string.startswith`({self}, {start})
+@param self string
+@param start string
+@return boolean
+
+------------------------------------------------------------------------------
+                                                             *string.splitsep()*
+                        `string.splitsep`({self}, {sep})
+Split self at `sep` and return the fields
+@param self string
+@param sep? string
+@return tablelib<integer, string>
+
+------------------------------------------------------------------------------
+                                                             *string.endswith()*
+                      `string.endswith`({self}, {ending})
+@param self string
+@param ending string
+@return boolean
+
+------------------------------------------------------------------------------
+                                                                *string.split()*
+                         `string.split`({self}, {patt})
+Split self at `at`th occurrence of `patt`
+@param self string
+@param patt string: The pattern to split on
+@return tablelib<integer, string>
+
+------------------------------------------------------------------------------
+                                                               *string.isbool()*
+                            `string.isbool`({self})
+Returns true if string is 'true', or false if string is 'false'
+Returns nil if string is neither
+@param self string
+@return boolean|nil
+
+------------------------------------------------------------------------------
+                                                           *string.numtolower()*
+                            `string.numtolower`({n})
+@param n number
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                           *Log*
+                                     `Log`
+Class ~
+{down.Log}
+
+------------------------------------------------------------------------------
+                                                                     *Log.new()*
+                         `Log.new`({cfg}, {standalone})
+@param cfg down.log.Config
+@param standalone boolean
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                           *Pos*
+                                     `Pos`
+
+@class down.Pos
+
+------------------------------------------------------------------------------
+                                                                      *Pos.le()*
+                             `Pos.le`({self}, {p})
+Parameters ~
+{self} `(down.Pos)`
+{p} `(down.Pos)`
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
+                                                                      *Pos.ge()*
+                             `Pos.ge`({self}, {p})
+Parameters ~
+{self} `(down.Pos)`
+{p} `(down.Pos)`
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
+                                                                      *Pos.eq()*
+                             `Pos.eq`({self}, {p})
+Parameters ~
+{self} `(down.Pos)`
+{p} `(down.Pos)`
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
+                                                                      *Pos.lt()*
+                             `Pos.lt`({self}, {p})
+Parameters ~
+{self} `(down.Pos)`
+{p} `(down.Pos)`
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
+                                                                      *Pos.gt()*
+                             `Pos.gt`({self}, {p})
+Parameters ~
+{self} `(down.Pos)`
+{p} `(down.Pos)`
+Return ~
+`(boolean)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                                           *tbl*
+                                     `tbl`
+@class down.table: table, tablelib
+
+@alias down.tbl down.table|tablelib|table
+
+------------------------------------------------------------------------------
+                                                           *tbl.extendinplace()*
+                      `tbl.extendinplace`({self}, {other})
+Extend a table in place
+@param self down.tbl
+@param other down.tbl
+
+------------------------------------------------------------------------------
+                                                                     *tbl.clear*
+                                  `tbl.clear`
+Clear a table
+
+------------------------------------------------------------------------------
+                                                                 *tbl.isempty()*
+                             `tbl.isempty`({self})
+Check if a table is empty
+
+------------------------------------------------------------------------------
+                                                                 *tbl.reverse()*
+                             `tbl.reverse`({self})
+Reverse a table
+@param self table
+@return table
+
+------------------------------------------------------------------------------
+                                                                 *tbl.orempty()*
+                          `tbl.orempty`({self}, {key})
+Get the last element of a table
+@param self table
+@param key any
+@return any
+
+------------------------------------------------------------------------------
+                                                                  *tbl.orlast()*
+                         `tbl.orlast`({self}, {index})
+Get the last element of a table, or the element at a given index.
+@param self table
+@param index number
+@return any
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                 *utils.get_current_workspace()*
+                        `utils.get_current_workspace`()
+the full path to the current workspace
+Return ~
+`(string)` `(optional)`
+
+
+ vim:tw=78:ts=8:noet:ft=help:norl:

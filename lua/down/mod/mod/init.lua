@@ -2,10 +2,10 @@ local log = require("down.util.log")
 local mod = require("down.mod")
 local ins = table.insert
 
----@class down.mod.Mod: down.Mod
-local M = mod.new("mod")
+---@class down.mod.Modod: down.Modod
+local Mod = mod.new("mod")
 
-M.style = {
+Mod.style = {
   table = function(s)
     return "|" .. s .. "|"
   end,
@@ -20,7 +20,7 @@ M.style = {
   end,
 }
 
-M.print = {
+Mod.print = {
   toc = function(tb)
     ins(tb, "## Table of Contents")
     for name, _ in pairs(mod.mods) do
@@ -35,7 +35,7 @@ M.print = {
       ins(tb, "")
       ins(tb, "#### **Dependencies**")
       for i, d in ipairs(m.dependencies) do
-        local ix = M.print.index(i, pre)
+        local ix = Mod.print.index(i, pre)
         ins(tb, ix .. "" .. "[" .. d .. "](#" .. d .. ")")
       end
     end
@@ -44,10 +44,10 @@ M.print = {
     pre = pre or ""
     local s = m.setup()
     if s.loaded then
-      ins(tb, M.print.index(nil, pre, "Loaded", tostring(s.loaded)))
+      ins(tb, Mod.print.index(nil, pre, "Loaded", tostring(s.loaded)))
     end
     if s.dependencies then
-      M.print.deps(m.setup(), tb, pre)
+      Mod.print.deps(m.setup(), tb, pre)
     end
   end,
   index = function(i, pre, title, value)
@@ -70,20 +70,20 @@ M.print = {
   end,
   methods = function(tb, m, name)
     ins(tb, "")
-    ins(tb, "#### **Methods**")
+    ins(tb, "#### **Modethods**")
     ins(tb, "~~~lua")
     local i = 0
     for k, v in pairs(m) do
       i = i + 1
       if type(v) == "function" then
-        local ix = M.print.index(nil, "\t")
+        local ix = Mod.print.index(nil, "\t")
         ins(tb, "function " .. name .. "." .. k .. "()")
       end
     end
     ins(tb, "~~~")
   end,
   command = function(tb, pre, cmd, v, i)
-    local index = M.print.index(i, pre)
+    local index = Mod.print.index(i, pre)
     local enabled = ""
     if v.enabled ~= nil then
       enabled = "**enabled**: " .. "`" .. tostring(v.enabled) .. "`"
@@ -92,11 +92,11 @@ M.print = {
       tb,
       index .. " __" .. cmd .. "__ `" .. (v.name or "") .. "`" .. " " .. enabled
     )
-    M.print.commands(v, tb, cmd, pre .. "\t", i)
+    Mod.print.commands(v, tb, cmd, pre .. "\t", i)
   end,
   commands = function(m, tb, name, pre, i)
     pre = pre or ""
-    ix = M.print.index(nil, pre)
+    ix = Mod.print.index(nil, pre)
     if m.commands then
       if vim.tbl_isempty(m.commands) then
         return
@@ -111,21 +111,21 @@ M.print = {
         if pre == "" then
         else
         end
-        local ix = M.print.index(i, pre)
-        M.print.command(tb, pre, k, v, i)
+        local ix = Mod.print.index(i, pre)
+        Mod.print.command(tb, pre, k, v, i)
       end
     end
   end,
   mod = function(m, tb, i, name)
-    M.print.index(i)
+    Mod.print.index(i)
     ins(tb, "### " .. "" .. " **" .. name .. "**")
     ins(tb, "")
     -- ins(tb, .. '`' .. (name or m.name or '') .. '`')
-    -- M.print.commands(m, tb, m.name, '', i)
-    M.print.toc(tb)
-    M.print.setup(m, tb, m.name)
-    M.print.commands(m, tb, m.name, "")
-    M.print.methods(tb, m, name)
+    -- Mod.print.commands(m, tb, m.name, '', i)
+    Mod.print.toc(tb)
+    Mod.print.setup(m, tb, m.name)
+    Mod.print.commands(m, tb, m.name, "")
+    Mod.print.methods(tb, m, name)
   end,
   title = function(lines)
     ins(lines, "# down.nvim")
@@ -133,8 +133,8 @@ M.print = {
   end,
   mods = function(tb)
     local lines = tb or {}
-    M.print.title(lines)
-    ins(lines, "## Mods")
+    Mod.print.title(lines)
+    ins(lines, "## Modods")
     ins(lines, "")
     local i = 0
     for name, m in pairs(mod.mods) do
@@ -143,11 +143,11 @@ M.print = {
       --   i = 0
       --   local sub = lines[s[1]] or {}
       --   sub[s[2]] = m
-      --   M.print.mod(m, sub, i, name)
+      --   Mod.print.mod(m, sub, i, name)
       --   name = s2
       -- else
       i = i + 1
-      M.print.mod(m, lines, i, name)
+      Mod.print.mod(m, lines, i, name)
       table.insert(lines, "---")
       -- end
     end
@@ -155,13 +155,13 @@ M.print = {
   end,
 }
 
-M.commands = {
+Mod.commands = {
   mod = {
     enabled = true,
     name = "mod",
     args = 1,
     callback = function(e)
-      log.trace("Mod.commands.mod: Callback")
+      log.trace("Modod.commands.mod: Callback")
     end,
     commands = {
       new = {
@@ -169,7 +169,7 @@ M.commands = {
         name = "mod.new",
         enabled = false,
         callback = function()
-          log.trace("Mod.commands.new: Callback")
+          log.trace("Modod.commands.new: Callback")
         end,
       },
       load = {
@@ -191,7 +191,7 @@ M.commands = {
         name = "mod.unload",
         args = 1,
         callback = function(e)
-          log.trace("Mod.commands.unload: Callback")
+          log.trace("Modod.commands.unload: Callback")
         end,
       },
       list = {
@@ -222,7 +222,7 @@ M.commands = {
 
           mods_popup:map("n", "<Esc>", close, {})
           mods_popup:map("n", "q", close, {})
-          local lines = M.print.mods()
+          local lines = Mod.print.mods()
           vim.api.nvim_buf_set_lines(mods_popup.bufnr, 0, -1, true, lines)
           vim.bo[mods_popup.bufnr].modifiable = false
           mods_popup:mount()
@@ -231,13 +231,13 @@ M.commands = {
     },
   },
 }
-M.maps = {
-  { "n", ",dml", "<CMD>Down mod list<CR>", "List mods" },
-  { "n", ",dmL", "<CMD>Down mod load<CR>", "Load mod" },
-  { "n", ",dmu", "<CMD>Down mod unload<CR>", "Unload mod" },
+Mod.maps = {
+  { "n", ",dml", "<CModD>Down mod list<CR>",   "List mods" },
+  { "n", ",dmL", "<CModD>Down mod load<CR>",   "Load mod" },
+  { "n", ",dmu", "<CModD>Down mod unload<CR>", "Unload mod" },
 }
-M.setup = function()
+Mod.setup = function()
   return { loaded = true, dependencies = { "cmd" } }
 end
 
-return M
+return Mod

@@ -1,15 +1,15 @@
 local mod = require 'down.mod'
 local log = require 'down.util.log'
 
----@type down.Mod
-local M = mod.new 'ui'
+---@type down.Uiod
+local Ui = mod.new 'ui'
 
-M.load = function()
-  for _, i in pairs(M.import) do
-    M = vim.tbl_extend('force', M, i)
+Ui.load = function()
+  for _, i in pairs(Ui.import) do
+    Ui = vim.tbl_extend('force', Ui, i)
   end
 end
-M.setup = function()
+Ui.setup = function()
   return {
     namespace = vim.api.nvim_create_namespace 'down.mod.ui',
     dependencies = {},
@@ -18,24 +18,24 @@ M.setup = function()
 end
 
 ---@class down.mod.ui.Config
-M.config = {}
-M.namespace = vim.api.nvim_create_namespace 'down.mod.ui'
+Ui.config = {}
+Ui.namespace = vim.api.nvim_create_namespace 'down.mod.ui'
 --- Returns a table in the form of { width, height } containing the width and height of the current window
 ---@param half boolean #If true returns a position that could be considered the center of the window
-M.get_window_size = function(half)
+Ui.get_window_size = function(half)
   return half
       and {
         math.floor(vim.fn.winwidth(0) / 2),
         math.floor(vim.fn.winheight(0) / 2),
       }
-    or { vim.fn.winwidth(0), vim.fn.winheight(0) }
+      or { vim.fn.winwidth(0), vim.fn.winheight(0) }
 end
 
 --- Returns a modified version of floating window options.
 ---@param modifiers table #This option set has two values - center_x and center_y.
 --                           If they either of them is set to true then the window gets centered on that axis.
 ---@param config table #A table containing regular Neovim options for a floating window
-M.apply_custom_options = function(modifiers, config)
+Ui.apply_custom_options = function(modifiers, config)
   -- base modifier options
   local user_options = {
     center_x = false,
@@ -54,7 +54,7 @@ M.apply_custom_options = function(modifiers, config)
     height = 100,
   })
   -- Get the current window's dimensions except halved
-  local halved_window_size = M.get_window_size(true)
+  local halved_window_size = Ui.get_window_size(true)
   -- If we want to center along the x axis then return a configuration that does so
   if user_options.center_x then
     config.row = config.row + halved_window_size[2] - math.floor(config.height / 2)
@@ -71,7 +71,7 @@ end
 --- Applies a set of options to a buffer
 ---@param buf number the buffer number to apply the options to
 ---@param option_list table a table of option = value pairs
-M.apply_buffer_options = function(buf, option_list)
+Ui.apply_buffer_options = function(buf, option_list)
   for option_name, value in pairs(option_list or {}) do
     vim.api.nvim_set_option_value(option_name, value, { buf = buf })
   end
@@ -82,7 +82,7 @@ end
 ---@param  config table? a table of <option> = <value> keypairs signifying buffer-local options for the buffer contained within the split
 ---@param  height number? the height of the new split
 ---@return number?, number? #Both the buffer ID and window ID
-M.new_split = function(name, config, height)
+Ui.new_split = function(name, config, height)
   vim.validate {
     name = { name, 'string' },
     { config, 'table', true },
@@ -114,12 +114,12 @@ M.new_split = function(name, config, height)
   vim.api.nvim_win_set_option(0, 'relativenumber', false)
   vim.api.nvim_win_set_option(0, 'signcolumn', 'no')
 
-  -- Merge the user provided options with the base options and apply them to the new buffer
-  M.apply_buffer_options(buf, vim.tbl_extend('keep', config or {}, base_options))
+  -- Uierge the user provided options with the base options and apply them to the new buffer
+  Ui.apply_buffer_options(buf, vim.tbl_extend('keep', config or {}, base_options))
 
   local window = vim.api.nvim_get_current_win()
 
-  -- Make sure to clean up the window if the user leaves the popup at any time
+  -- Uiake sure to clean up the window if the user leaves the popup at any time
   vim.api.nvim_create_autocmd({ 'BufDelete', 'WinClosed' }, {
     buffer = buf,
     once = true,
@@ -138,7 +138,7 @@ end
 ---@param buf_config table a table of <option> = <value> keypairs signifying buffer-local options for the buffer contained within the split
 ---@param win_config table table of <option>=<value> keypairs for `nvim_open_win`, must provide `win`
 ---@return number?, number? #The buffer and window numbers of the vertical split
-M.new_vsplit = function(name, enter, buf_config, win_config)
+Ui.new_vsplit = function(name, enter, buf_config, win_config)
   vim.validate {
     name = { name, 'string' },
     enter = { enter, 'boolean', true },
@@ -164,7 +164,7 @@ M.new_vsplit = function(name, enter, buf_config, win_config)
   local window = vim.api.nvim_open_win(buf, enter, win_options)
   vim.api.nvim_set_option_value('number', false, { win = window })
   vim.api.nvim_set_option_value('relativenumber', false, { win = window })
-  M.apply_buffer_options(buf, vim.tbl_extend('keep', buf_config or {}, base_options))
+  Ui.apply_buffer_options(buf, vim.tbl_extend('keep', buf_config or {}, base_options))
   vim.api.nvim_create_autocmd({ 'BufDelete', 'WinClosed' }, {
     buffer = buf,
     once = true,
@@ -181,7 +181,7 @@ end
 ---@param name string #The name of the display
 ---@param split_type string #"vsplitl"|"vsplitr"|"split"|"nosplit" - if suffixed with "l" vertical split will be spawned on the left, else on the right. "split" is a horizontal split.
 ---@param content table #A table of content for the display
-M.new_display = function(name, split_type, content)
+Ui.new_display = function(name, split_type, content)
   if not vim.tbl_contains({ 'nosplit', 'vsplitl', 'vsplitr', 'split' }, split_type) then
     log.error(
       "Unable to create display. Expected one of 'vsplitl', 'vsplitr', 'split' or 'nosplit', got",
@@ -195,11 +195,11 @@ M.new_display = function(name, split_type, content)
     name = 'display/' .. name
 
     if split_type == 'vsplitl' then
-      return M.new_vsplit(name, true, {}, { split = 'left' })
+      return Ui.new_vsplit(name, true, {}, { split = 'left' })
     elseif split_type == 'vsplitr' then
-      return M.new_vsplit(name, true, {}, { split = 'right' })
+      return Ui.new_vsplit(name, true, {}, { split = 'right' })
     elseif split_type == 'split' then
-      return M.new_split(name, {})
+      return Ui.new_split(name, {})
     else
       local buf = vim.api.nvim_create_buf(true, true)
       vim.api.nvim_buf_set_name(buf, name)
@@ -249,8 +249,8 @@ M.new_display = function(name, split_type, content)
     end,
   })
   vim
-    .cmd([[autocmd BufLeave,BufDelete <buffer=%s> set virtualedit=%s | silent! bd! %s]])
-    :format(buf, cached_virtualedit[1] or '', buf)
+      .cmd([[autocmd BufLeave,BufDelete <buffer=%s> set virtualedit=%s | silent! bd! %s]])
+      :format(buf, cached_virtualedit[1] or '', buf)
 
   return { buffer = buf, namespace = namespace }
 end
@@ -262,7 +262,7 @@ end
 ---@param opts table|nil
 ---   - opts.keys (boolean)             if false, will not use the base keys
 ---   - opts.del_on_autocmd (table)    delete buffer on specified autocmd
-M.new_markdown_buffer = function(name, split_type, config, opts)
+Ui.new_markdown_buffer = function(name, split_type, config, opts)
   vim.validate({
     name = { name, 'string' },
     split_type = { split_type, 'string' },
@@ -280,8 +280,8 @@ M.new_markdown_buffer = function(name, split_type, config, opts)
   if not vim.tbl_contains({ 'nosplit', 'vsplitl', 'vsplitr', 'split' }, split_type) then
     log.error(
       "Unable to create display. Expected one of 'vsplitl', 'vsplitr', 'split' or 'nosplit', got"
-        .. split_type
-        .. 'instead.'
+      .. split_type
+      .. 'instead.'
     )
     return
   end
@@ -289,11 +289,11 @@ M.new_markdown_buffer = function(name, split_type, config, opts)
     name = 'down/' .. name .. '.md'
 
     if split_type == 'vsplitl' then
-      return M.new_vsplit(name, true, {}, { split = 'left' })
+      return Ui.new_vsplit(name, true, {}, { split = 'left' })
     elseif split_type == 'vsplitr' then
-      return M.new_vsplit(name, true, {}, { split = 'right' })
+      return Ui.new_vsplit(name, true, {}, { split = 'right' })
     elseif split_type == 'split' then
-      return M.new_split(name, {})
+      return Ui.new_split(name, {})
     else
       local buf = vim.api.nvim_create_buf(true, true)
       vim.api.nvim_buf_set_name(buf, name)
@@ -305,15 +305,15 @@ M.new_markdown_buffer = function(name, split_type, config, opts)
     vim.keymap.set('n', '<Esc>', vim.cmd.bdelete, { buffer = buf, silent = true })
     vim.keymap.set('n', 'q', vim.cmd.bdelete, { buffer = buf, silent = true })
   end
-  M.apply_buffer_options(buf, config or {})
+  Ui.apply_buffer_options(buf, config or {})
   if opts.del_on_autocmd and #opts.del_on_autocmd ~= 0 then
     vim.cmd(
       'autocmd '
-        .. opts.del_on_autocmd:concat ','
-        .. (' <buffer=%s> silent! bd! %s'):format(buf, buf)
+      .. opts.del_on_autocmd:concat ','
+      .. (' <buffer=%s> silent! bd! %s'):format(buf, buf)
     )
   end
   return buf
 end
 
-return M
+return Ui

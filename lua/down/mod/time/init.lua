@@ -1,10 +1,10 @@
 local down = require 'down'
 local mod  = down.mod
 
-local T    = mod.new("time", { 'date' })
+local Time = mod.new("time", { 'date' })
 
 ---@return down.mod.Setup
-T.setup    = function()
+Time.setup = function()
   return {
     loaded = true,
     dependencies = {
@@ -13,6 +13,4 @@ T.setup    = function()
   }
 end
 
-T.
-    r
-return T
+return Time

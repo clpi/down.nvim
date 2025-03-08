@@ -8,7 +8,7 @@ local utils = require "nvim-treesitter.utils"
 local ntp = require "nvim-treesitter.parsers"
 local locals = require "nvim-treesitter.locals"
 local tsu_ok, tsu = pcall(require, "nvim-treesitter.ts_utils")
-local log, lib = util.log, util.lib
+local log= util.log
 local ts = vim.treesitter
 local vt = vim.treesitter
 local q = vt.query
@@ -127,22 +127,22 @@ M.load = function()
   vim.keymap.set(
     "",
     "<Plug>(down.treesitter.next.heading)",
-    lib.wrap(M.goto_next_query_match, M.leading_query)
+    util.wrap(M.goto_next_query_match, M.leading_query)
   )
   vim.keymap.set(
     "",
     "<Plug>(down.treesitter.next.link)",
-    lib.wrap(M.goto_next_query_match, M.link_query)
+    util.wrap(M.goto_next_query_match, M.link_query)
   )
   vim.keymap.set(
     "",
     "<Plug>(down.treesitter.previous.heading)",
-    lib.wrap(M.goto_previous_query_match, M.leading_query)
+    util.wrap(M.goto_previous_query_match, M.leading_query)
   )
   vim.keymap.set(
     "",
     "<Plug>(down.treesitter.previous.link)",
-    lib.wrap(M.goto_previous_query_match, M.link_query)
+    util.wrap(M.goto_previous_query_match, M.link_query)
   )
 end
 
@@ -692,7 +692,7 @@ M.get_node_range = function(node)
     }
   end
 
-  local rs, cs, re, ce = lib.when(type(node) == "table", function()
+  local rs, cs, re, ce = util.when(type(node) == "table", function()
     local brs, bcs, _, _ = node[1]:range()
     local _, _, ere, ece = node[#node]:range()
     return brs, bcs, ere, ece
@@ -793,7 +793,7 @@ M.get_first_node_on_line = function(buf, line, stop_type)
 end
 
 ---get document's metadata
----@param source number | string | PathlibPath
+---@param source number | string | PathutilPath
 ---@param no_trim boolean?
 ---@return table?
 M.get_document_metadata = function(source, no_trim)
@@ -815,7 +815,7 @@ M.get_document_metadata = function(source, no_trim)
 
   local result = {}
   local function parse_data(node, src)
-    return lib.match(node:type())({
+    return util.match(node:type())({
       string = function()
         return trim(M.get_node_text(node, src))
       end,
@@ -935,7 +935,7 @@ end
 ---@param query_string string #The query string
 ---@param callback function #The callback to execute with all values returned by
 ---`Query:iter_captures()`. When callback returns true, this function returns early
----@param source number | string | PathlibPath #buf number, or file path or 0 for current buffer
+---@param source number | string | PathutilPath #buf number, or file path or 0 for current buffer
 ---@param start number? #The start line for the query
 ---@param finish number? #The end line for the query
 M.execute_query = function(query_string, callback, source, start, finish)
@@ -957,7 +957,7 @@ M.execute_query = function(query_string, callback, source, start, finish)
 end
 
 ---Create a down TS parser from the given source
----@param source string | number | PathlibPath file path or buf number or 0 for current buffer
+---@param source string | number | PathutilPath file path or buf number or 0 for current buffer
 ---@return vim.treesitter.LanguageTree? down_parser
 ---@return string | number iter_src the corresponding source that you must pass to
 ---`iter_query()`, either the full file text, or the buffer number

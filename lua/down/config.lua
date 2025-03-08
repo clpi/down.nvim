@@ -1,6 +1,6 @@
 local log = require("down.util.log")
 local mod = require("down.mod")
-local modconf = require("down.util.mod")
+local modconf = require("down.mod.util")
 
 --- The down.nvim configuration
 --- @class down.config.Config

@@ -1,11 +1,11 @@
 local mod = require 'down.mod'
 local log = require 'down.util.log'
 
----@class down.mod.Task: down.Mod
-local M = mod.new('task')
+---@class down.mod.Task: down.Taskod
+local Task = mod.new('task')
 
 ---@class down.mod.task.Task
-M.Task = {
+Task.Task = {
   title = '',
   about = '',
   status = 0,
@@ -20,17 +20,17 @@ M.Task = {
 }
 
 ---@class table<integer, down.mod.task.Task>
-M.tasks = {}
+Task.tasks = {}
 
 ---@class down.mod.task.Config
-M.config = {
+Task.config = {
   store = {
     root = 'data/task',
     agenda = 'data/task/agenda',
   },
 }
 
-M.commands = {
+Task.commands = {
   task = {
     name = 'task',
     args = 0,
@@ -48,7 +48,7 @@ M.commands = {
         max_args = 1,
         callback = function(e)
           log.trace 'task.toggle'
-          M.toggle()
+          Task.toggle()
         end,
       },
       list = {
@@ -106,10 +106,10 @@ M.commands = {
   },
 }
 
-M.load = function() end
+Task.load = function() end
 
 ---@return down.mod.Setup
-M.setup = function()
+Task.setup = function()
   ---@type down.mod.Setup
   return {
     dependencies = {
@@ -123,7 +123,7 @@ M.setup = function()
   }
 end
 
-function M.toggle()
+function Task.toggle()
   local line = vim.api.nvim_get_current_line()
   if line:match('%[ %]') then
     line = line:gsub('%[ %]', '[x]')
@@ -133,7 +133,7 @@ function M.toggle()
   vim.api.nvim_set_current_line(line)
 end
 
--- M.handle = {
+-- Task.handle = {
 --   cmd = {
 --     ['task.list'] = function()
 --       print('task.list')
@@ -156,4 +156,4 @@ end
 --   },
 -- }
 
-return M
+return Task

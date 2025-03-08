@@ -1,5 +1,5 @@
 local Event = require("down.event")
-local modutil = require("down.util.mod")
+local modutil = require("down.mod.util")
 local util = require("down.util")
 local log = util.log
 

@@ -1,0 +1,108 @@
+--- @meta
+---
+--- @alias down.mod.ui.icon.Provider.Type
+--- | "file"
+--- | "function"
+--- | "method"
+--- | "enum"
+--- | "value"
+--- | "extension"
+--- | "class"
+--- | "namespace"
+--- | "symbol"
+--- | "enummember"
+--- | "struct"
+--- | "variable"
+--- | "module"
+--- | "directory"
+--- | "field"
+--- | "parameter"
+--- | "type"
+--- | "constructor"
+--- | "constant"
+--- | "interface"
+--- | "property"
+--- | "event"
+--- | "operator"
+--- | "default"
+--- | "identifier"
+--- | "macro"
+--- | "unit"
+--- | "keyword"
+--- | "string"
+--- | "number"
+--- | "boolean"
+--- | "array"
+--- | "object"
+--- | "key"
+--- | "snippet"
+--- | "color"
+--- | "reference"
+---
+--- @alias down.mod.ui.icon.Provider.Highlight.Name
+--- | "Identifier"
+--- | "Class"
+--- | "Value"
+--- | "Directory"
+--- | "Typedef"
+--- | "Error"
+--- | "Symbol"
+--- | "File"
+--- | "Module"
+--- | "Struct"
+--- | "Snippet"
+--- | "Color"
+--- | "Reference"
+--- | "Operator"
+--- | "Text"
+--- | "Field"
+--- | "Property"
+--- | "Event"
+--- | "Macro"
+--- | "Keyword"
+--- | "Definition"
+--- | "Comment"
+--- | "Unit"
+--- | "Enum"
+--- | "Method"
+--- | "Enum"
+--- | "Function"
+--- | "Constant"
+--- | "Constructor"
+--- | "Variable"
+--- | "Type"
+---
+--- @class (exact) down.mod.ui.icon.Provider.Highlight.Info
+---   @field public fg string The foreground color
+---   @field public bg string The background color
+---   @field public style string The style
+---   @field public sp string The special color
+---
+--- @alias down.mod.ui.icon.Provider.Hl table<down.mod.ui.icon.Provider.Type, down.mod.ui.icon.Provider.Highlight.Name>
+---
+--- @alias down.mod.ui.icon.Provider.Category.Icons down.mod.ui.icon.Provider.Icon|down.mod.ui.icon.Builtin.Icon[]
+
+---@alias down.mod.ui.icon.Provider.Icons table<down.mod.ui.icon.Provider.Category, down.mod.ui.icon.Provider.Category.Icons>|down.mod.ui.icon.Builtin.Icons
+
+---@alias down.mod.ui.icon.Provider.Name
+---| "mini.icons"
+---| "nvim-web-devicons"
+---| "down"
+---
+---@alias down.mod.ui.icon.Provider.Category
+---| "file"
+---| "extension"
+---| "lsp"
+---| "directory"
+---
+--- @class (exact) down.mod.ui.icon.Provider.Icon # The icon
+---   @field public icon string The icon
+---   @field public hl string The highlight group
+---   @field public default boolean If the icon is default
+---   @field public category down.mod.ui.icon.Provider.Category The category
+---   @field public provider down.mod.ui.icon.Provider.Name The provider name
+---   @field public name string The name of the icon
+
+--- @class (exact) down.mod.ui.icon.Provider.Result # The result of the provider
+---   @field public icons table? Icons (`require("nvim-web-devicons")` or `require("mini.icons")`)
+---   @field public provider down.mod.ui.icon.Provider.Name The provider name
