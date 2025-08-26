@@ -39,7 +39,7 @@ jobs:
       - name: Build with mdBook
         run: cd book && mdbook build
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./book/book
 
