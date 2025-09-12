@@ -754,7 +754,7 @@ Note.setup = function()
       "cmd",
       "template",
       "workspace",
-      "tool.treesitter",
+      "integration.treesitter",
     },
   }
 end

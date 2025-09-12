@@ -18,7 +18,7 @@ Icon.setup = function()
   return {
     loaded = true,
     dependencies = {
-      "tool.treesitter",
+      "integration.treesitter",
     },
   }
 end

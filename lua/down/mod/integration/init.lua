@@ -4,15 +4,15 @@ local log = util.log
 
 ---TODO: imelement
 ---@class down.mod.Tool: down.Mod
-local E = mod.new("tool")
+local E = mod.new("integration")
 
---TODO: implement config to initialize sub tools depending on user confiE
+--TODO: implement config to initialize sub integrations depending on user confiE
 
----@class down.mod.tool.Config
+---@class down.mod.integration.Config
 E.config = {
-  ---@brief List of tools to disable (relative to the tool dir)
+  ---@brief List of integrations to disable (relative to the integration dir)
   disabled = {},
-  ---@brief List of tools to enable (relative to the tool dir)
+  ---@brief List of integrations to enable (relative to the integration dir)
   enabled = {
     "telescope",
   },
@@ -25,7 +25,7 @@ E.get = function(ext) end
 ---TODO: implement
 ---Returns either a table of the loaded dependencies or nil of one is unsuccessful
 ---@return table<string, any>|nil: the loaded dependency package
----@param ext string: the tool module to check
+---@param ext string: the integration module to check
 E.deps = function(ext)
   return nil
 end
@@ -36,9 +36,9 @@ E.has = function(ext)
   return pcall(require, ext)
 end
 
---- Generic setup function for tool submodules
---- @param ext string: the tool to setup
---- @param req table<string>: the modules dep by the tool module
+--- Generic setup function for integration submodules
+--- @param ext string: the integration to setup
+--- @param req table<string>: the modules dep by the integration module
 --- @return down.mod.Setup
 E.generic_setup = function(ext, req)
   local ok, e = E.has(ext)

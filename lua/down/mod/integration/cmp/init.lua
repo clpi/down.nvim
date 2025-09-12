@@ -5,8 +5,8 @@ local plenok, plenary = pcall(require, 'plenary.scandir').scan_dir
 local cmpok, cmp = pcall(require, 'cmp')
 local scan = plenary.scandir.scan_dir
 
----@class down.mod.tool.Cmp: down.Mod
-local M = mod.new 'tool.cmp'
+---@class down.mod.integration.Cmp: down.Mod
+local M = mod.new 'integration.cmp'
 
 M.clean = function(s)
   if not s then
@@ -16,7 +16,7 @@ M.clean = function(s)
   return s:gsub('%s%s+', ' ')
 end
 
----@class down.mod.tool.cmp.Data
+---@class down.mod.integration.cmp.Data
 M.files = function()
   local items = {}
   local root = M.dep['workspace'].get_current_workspace()[2]
@@ -53,7 +53,7 @@ M.tags = function()
   local root = M.dep['workspace'].get_current_workspace()[2]
 end
 
----@class down.mod.tool.cmp.Config
+---@class down.mod.integration.cmp.Config
 M.config = {}
 
 ---@return down.mod.Setup
@@ -61,12 +61,12 @@ M.setup = function()
   if plenok and cmpok then
     return {
       loaded = true,
-      dependencies = { 'workspace', 'tag', 'data', 'tool.treesitter' },
+      dependencies = { 'workspace', 'tag', 'data', 'integration.treesitter' },
     }
   elseif plenok then
     return {
       loaded = true,
-      dependencies = { 'workspace', 'tag', 'data', 'tool.treesitter' },
+      dependencies = { 'workspace', 'tag', 'data', 'integration.treesitter' },
     }
   else
     return { loaded = false }

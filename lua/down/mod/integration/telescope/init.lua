@@ -1,8 +1,8 @@
 local log = require("down.util.log")
 local mod = require("down.mod")
 
----@class down.mod.tool.Telescope: down.Mod
-local M = mod.new("tool.telescope")
+---@class down.mod.integration.Telescope: down.Mod
+local M = mod.new("integration.telescope")
 local tok, t = pcall(require, "telescope")
 
 ---@return down.mod.Setup
@@ -13,7 +13,7 @@ M.setup = function()
   }
 end
 
----@class down.mod.tool.telescope.Config: down.Mod.Config
+---@class down.mod.integration.telescope.Config: down.Mod.Config
 M.config = {
   enabled = {
     "files",
@@ -31,7 +31,7 @@ M.config = {
     -- "backlinks.header_backlinks",
   },
 }
----@class down.mod.tool.telescope.Config: down.mod.Config
+---@class down.mod.integration.telescope.Config: down.mod.Config
 M.config = {
   enabled = {
     ["backlinks"] = true,

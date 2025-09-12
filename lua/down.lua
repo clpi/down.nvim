@@ -4,7 +4,7 @@
 ---@repository https://github.com/clpi/down.nvim.git
 ---@homepage https://down.cli.st
 ---@license MIT
----@tags markdown, org-mode, note-taking, knowledge-management, developer-tools, productivity
+---@tags markdown, org-mode, note-taking, knowledge-management, developer-integrations, productivity
 ---
 ---@brief The Neovim plugin for the *down* _markdown_ developer-focused
 ---@brief note-taking and knowledge management environment, offering the comfort familiarity, and compatibility of a traditional markdown note-taking environment with the power of org-mode.

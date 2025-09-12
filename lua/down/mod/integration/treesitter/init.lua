@@ -14,10 +14,10 @@ local vt = vim.treesitter
 local q = vt.query
 local hi = vt.highlight
 
----@class down.mod.tool.Treesitter: down.Mod
-local Treesitter = mod.new "tool.treesitter"
+---@class down.mod.integration.Treesitter: down.Mod
+local Treesitter = mod.new "integration.treesitter"
 
----@class down.mod.tool.treesitter.Data
+---@class down.mod.integration.treesitter.Data
 Treesitter.ts_utils = nil
 Treesitter.heading = [[
     [
@@ -1073,7 +1073,7 @@ end
 
 Treesitter.handle = {
   cmd = {
-    ['tool.treesitter'] = function()
+    ['integration.treesitter'] = function()
 
     end
   },

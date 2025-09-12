@@ -16,7 +16,7 @@ Link.setup = function()
     dependencies = {
       'cmd', --- For commands
       'data.history', --- For history storage
-      'tool.treesitter', --- For treesitter node parsing
+      'integration.treesitter', --- For treesitter node parsing
       'workspace', --- For checking filetype and index file names of current workspace
     },
   }
@@ -184,7 +184,7 @@ end
 Link.ref = function(node)
   local link_label = Link.text(node)
   for _, captures, _ in
-    Link.dep['tool.treesitter'].query([[
+    Link.dep['integration.treesitter'].query([[
     (link_reference_definition
       (link_label) @label (#eq? @label "]] .. link_label .. [[")
       (link_destination) @link_destination

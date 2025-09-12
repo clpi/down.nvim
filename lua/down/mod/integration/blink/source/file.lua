@@ -1,4 +1,4 @@
----@class down.mod.tool.blink.source.FileOptions
+---@class down.mod.integration.blink.source.FileOptions
 ---@field pre_min_len? number: min
 ---@field public cmd? fun(ctx: blink.cmp.Context, pre: string): string[]
 ---@field public pre? fun(ctx: blink.cmp.Context): string[]
@@ -7,9 +7,9 @@ local vim = require("vim")
 local Fs = {}
 
 ---@return blink.cmp.Source
----@param opt down.mod.tool.blink.source.FileOptions
+---@param opt down.mod.integration.blink.source.FileOptions
 function Fs:new(opt)
-  ---@type down.mod.tool.blink.source.FileOptions
+  ---@type down.mod.integration.blink.source.FileOptions
   opt = opt or {}
   return setmetatable({
     pre_min_len = opt.pre_min_len or 3,

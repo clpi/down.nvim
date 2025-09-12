@@ -72,7 +72,7 @@ Template.setup = function()
     dependencies = {
       'cmd',
       'workspace',
-      'tool.treesitter',
+      'integration.treesitter',
     },
   }
 end

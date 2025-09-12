@@ -37,9 +37,9 @@ U.ids = {
   "note",
   "cmd",
   "link",
-  "tool.telescope",
+  "integration.telescope",
   "data.history",
-  "tool",
+  "integration",
   "mod",
 }
 

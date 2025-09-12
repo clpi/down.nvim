@@ -64,7 +64,7 @@
 ---   edit?: down.mod.edit.Config,
 ---   config?: down.mod.config.Config,
 ---   cmd?: down.mod.cmd.Config,
----   tool?: down.mod.tool.Config,
+---   integration?: down.mod.integration.Config,
 ---   workspace?: down.mod.worksspace.Config,
 ---   note?: down.mod.note.Config,
 ---   ui?: down.mod.ui.Config,

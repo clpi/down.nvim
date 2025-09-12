@@ -8,7 +8,7 @@ Parse.setup = function()
     loaded = true,
     dependencies = {
       "data",
-      "tool.treesitter",
+      "integration.treesitter",
     },
   }
 end

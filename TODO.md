@@ -14,7 +14,7 @@
 
 ## General
 
-- [ ] remove `tool.telescope` and `tool.trouble` mods
+- [ ] remove `integration.telescope` and `integration.trouble` mods
 - [ ] Re-implement the `data` metatable wrapper for modules to allow for persistent data
       synchronization for all modules.
 - [ ] Fix the `link` key maps for links, make markdown file specific

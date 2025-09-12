@@ -71,15 +71,15 @@ Welcome -- to the `down.nvim` book. I hope this helps!
   - [Contributing to Discussions](./contributing/discussions.md)
   - [Sponsorship](./contributing/sponsorship.md)
 
-- [Tools](./tools/index.md)
+- [Tools](./integrations/index.md)
 
-  - [Neovim](./tools/neovim.md)
-  - [Visual Studio Code](./tools/vscode.md)
-  - [Vim](./tools/vim.md)
-  - [Mobile](./tools/mobile.md)
-  - [Desktop](./tools/desktop.md)
-  - [Cli](./tools/cli.md)
-  - [Emacs](./tools/emacs.md)
+  - [Neovim](./integrations/neovim.md)
+  - [Visual Studio Code](./integrations/vscode.md)
+  - [Vim](./integrations/vim.md)
+  - [Mobile](./integrations/mobile.md)
+  - [Desktop](./integrations/desktop.md)
+  - [Cli](./integrations/cli.md)
+  - [Emacs](./integrations/emacs.md)
 
 - [Contributing](./contributing/intro.md)
 - [Roadmap](./roadmap.md)

@@ -451,7 +451,7 @@ Mark.range = {
       row_end_0bex =
           math.min(row_end_0bex + 1, vim.api.nvim_buf_line_count(bufid))
 
-      local tsm = require("down.mod.tool.treesitter")
+      local tsm = require("down.mod.integration.treesitter")
       local document_root = tsm.get_document_root(bufid)
       assert(document_root)
 

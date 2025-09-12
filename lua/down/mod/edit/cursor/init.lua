@@ -12,7 +12,7 @@ local Cursor = mod.new("edit.cursor")
 function Cursor.setup()
   return {
     dependencies = {
-      "tool.treesitter",
+      "integration.treesitter",
       "workspace",
     },
     loaded = tuok,

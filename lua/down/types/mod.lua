@@ -77,7 +77,7 @@
 ---   | down.mod.template.Template
 ---   | down.mod.log.Log
 ---   | down.mod.cmd.Cmd
----   | down.mod.tool.Tool
+---   | down.mod.integration.Tool
 ---   | down.mod.workspace.Workspace
 ---   | down.mod.note.Note
 ---   | down.mod.ui.Ui
@@ -97,7 +97,7 @@
 ---   | down.mod.data.Data.Data
 ---   | down.mod.edit.Data
 ---   | down.mod.cmd.Data
----   | down.mod.tool.Data
+---   | down.mod.integration.Data
 ---   | down.mod.workspace.Data
 ---   | down.mod.note.Data
 ---   | down.mod.ui.Data
@@ -124,7 +124,7 @@
 ---   | down.mod.data.Config
 ---   | down.mod.edit.Config
 ---   | down.mod.cmd.Config
----   | down.mod.tool.Config
+---   | down.mod.integration.Config
 ---   | down.mod.workspace.Config
 ---   | down.mod.note.Config
 ---   | down.mod.ui.Config
@@ -150,7 +150,7 @@
 ---  | "log"
 ---  | "mod"
 ---  | "data.store"
----  | 'tool.telescope'
+---  | 'integration.telescope'
 ---  | 'find.fzflua'
 ---  | 'find.builtin'
 ---  | 'find.snacks'
@@ -159,7 +159,7 @@
 ---  | "data"
 ---  | "edit"
 ---  | "cmd"
----  | "tool"
+---  | "integration"
 ---  | "workspace"
 ---  | 'edit.inline'
 ---  | "note"
@@ -182,7 +182,7 @@
 ---  | "edit.cursor"
 ---  | "edit.parse"
 ---  | "data.history"
----  | "tool.treesitter"
+---  | "integration.treesitter"
 ---  | "task.agenda"
 ---  | "ui.calendar.week"
 ---  | "data.bookmark"
