@@ -1,6 +1,6 @@
 local mod = require("down.mod")
 local util = require("down.util")
-local log = util.log
+local log = log
 
 ---TODO: imelement
 ---@class down.mod.Tool: down.Mod

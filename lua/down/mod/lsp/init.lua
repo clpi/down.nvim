@@ -1,5 +1,5 @@
 local config = require("down.config")
-local log = require("down.util.log")
+local log = require("down.log")
 local lsputil = require("down.mod.lsp.util")
 local mod = require("down.mod")
 local settings = require("down.mod.lsp.settings")

@@ -1,4 +1,4 @@
-local log = require("down.util.log")
+local log = require("down.log")
 
 ---@class down.Event
 local Event = {

@@ -1,5 +1,5 @@
 local mod = require 'down.mod'
-local log = require 'down.util.log'
+local log = require 'down.log'
 
 ---@class down.mod.Task: down.Taskod
 local Task = mod.new('task')

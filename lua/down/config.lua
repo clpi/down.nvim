@@ -1,4 +1,4 @@
-local log = require("down.util.log")
+local log = require("down.log")
 local mod = require("down.mod")
 local modconf = require("down.mod.util")
 
@@ -27,6 +27,30 @@ Config.toggles = {
   "bench",
 }
 
+--- Default keymaps for down.nvim, specified in user's config
+--- or to be loaded via a toggle
+Config.keys = {
+  { "<space>di", "<CMD>Down index<CR>", desc = "Down index" },
+  { "<space>dy", "<CMD>Down yesterday<CR>", desc = "Down yesterday" },
+  { "<space>dt", "<CMD>Down today<CR>", desc = "Down today" },
+  { "<space>dm", "<CMD>Down tomorrow<CR>", desc = "Down tomorrow" },
+  { "<space>dw", "<CMD>Down workspace<CR>", desc = "Down workspace" },
+  { "<space>dc", "<CMD>Down calendar<CR>", desc = "Down calendar" },
+  { "<space>df", "<CMD>Down find<CR>", desc = "Down find" },
+  { "<space>dn", "<CMD>Down note<CR>", desc = "Down note" },
+  { "<space>dp", "<CMD>Down note template<CR>", desc = "Down note template" },
+  { "<space>dd", "<CMD>Down<CR>", desc = "Down" },
+}
+
+--- Default dependencies for down.nvim, specified in user's config
+Config.dependencies = {
+  "nvim-lua/plenary.nvim",
+  "nvim-treesitter/nvim-treesitter",
+}
+
+--- Default command for down.nvim, specified in user's config
+Config.command = { "Down" }
+
 function Config:check_hook(...)
   if self.user.hook and type(self.user.hook) == "function" then
     return self.user.hook(...)
@@ -37,11 +61,11 @@ end
 ---@param v? boolean
 function Config:check_toggle(k, v)
   if
-      k
-      and type(k) == "string"
-      and v
-      and type(v) == "boolean"
-      and vim.tbl_contains(self.toggles, k)
+    k
+    and type(k) == "string"
+    and v
+    and type(v) == "boolean"
+    and vim.tbl_contains(self.toggles, k)
   then
     self[k] = v
   end
@@ -52,9 +76,11 @@ end
 ---@param ... any
 ---@return down.Config
 function Config:load(user, ...)
-  if self.started and self.started == false then
-    return self
-  elseif not type(user) == "table" then
+  if
+    (self.started and self.started == false)
+    or (not type(user) == "table")
+    or (type(user) == "nil")
+  then
     return self
   elseif user.defaults and user.defaults == false then
     self.user = user
@@ -139,12 +165,12 @@ end
 ---@return boolean
 function Config.check_mod_test(mod)
   return mod ~= nil
-      and mod.id ~= nil
-      and modconf.check_id(mod.id)
-      and type(mod) == "table"
-      and mod.tests ~= nil
-      and type(mod.tests) == "table"
-      and not vim.tbl_isempty(mod.tests)
+    and mod.id ~= nil
+    and modconf.check_id(mod.id)
+    and type(mod) == "table"
+    and mod.tests ~= nil
+    and type(mod.tests) == "table"
+    and not vim.tbl_isempty(mod.tests)
 end
 
 ---@param mods? down.Mod.Mod[]
@@ -161,20 +187,20 @@ end
 function Config.test(mod)
   vim.print("Testing " .. tostring(vim.inspect(mod.id)))
   return vim
-      .iter(pairs(mod.tests))
-      :filter(function(tn, t)
-        return tn and type(t) == "function"
-      end)
-      :all(function(tn, tt)
-        if not type(tt) == "function" then
-          return false
-        end
-        local res = tt(mod) or false ---@type boolean
-        vim.print(
-          "Testing mod " .. mod.id .. " test: " .. tn .. ": " .. tostring(res)
-        )
-        return res
-      end)
+    .iter(pairs(mod.tests))
+    :filter(function(tn, t)
+      return tn and type(t) == "function"
+    end)
+    :all(function(tn, tt)
+      if not type(tt) == "function" then
+        return false
+      end
+      local res = tt(mod) or false ---@type boolean
+      vim.print(
+        "Testing mod " .. mod.id .. " test: " .. tn .. ": " .. tostring(res)
+      )
+      return res
+    end)
 end
 
 return Config

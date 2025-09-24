@@ -1,5 +1,5 @@
 local config = require("down.config")
-local log = require("down.util.log")
+local log = require("down.log")
 local mod = require("down.mod")
 local api, fn, fs, uv = vim.api, vim.fn, vim.fs, (vim.uv or vim.loop)
 local stdp, join = fn.stdpath, fs.joinpath

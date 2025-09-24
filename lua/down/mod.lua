@@ -1,7 +1,7 @@
 local Event = require("down.event")
 local modutil = require("down.mod.util")
 local util = require("down.util")
-local log = util.log
+local log = log
 
 --- The Mod class is the core of the down plugin system. It is responsible for loading, unloading, and managing the lifecycle of all modules.
 ---@class down.mod.Root: down.Mod

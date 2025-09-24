@@ -1,5 +1,5 @@
 local mod = require 'down.mod'
-local log = require 'down.util.log'
+local log = require 'down.log'
 
 ---@type down.Mod
 local Capture = mod.new 'note.capture'

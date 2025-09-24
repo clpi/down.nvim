@@ -140,7 +140,7 @@ Mark.on = {
           -- do nothing
         else
           if mod_open_folds ~= "auto" then
-            require("down.util.log").warn(
+            require("down.log").warn(
               '"mod_open_folds" must be "auto", "always", or "never"'
             )
           end
@@ -385,7 +385,7 @@ function Mark.get_parsed_query_lazy(p)
       return
     end
     if type(config) ~= "table" then
-      require("down.util.log").warn(
+      require("down.log").warn(
         ("unsupported icon config: %s = %s"):format(
           table.concat(keys, "."),
           config

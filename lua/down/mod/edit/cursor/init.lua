@@ -1,7 +1,7 @@
 local mod = require("down.mod")
 local tbl = require("down.util.table")
 local util = require("down.util")
-local log = util.log
+local log = log
 local ts = vim.treesitter
 local tuok, tu = pcall(require, "nvim-treesitter.ts_utils")
 

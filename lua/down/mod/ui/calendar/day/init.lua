@@ -1,5 +1,5 @@
 local mod = require 'down.mod'
-local log = require 'down.util.log'
+local log = require 'down.log'
 
 ---@class down.mod.ui.calendar.Day: down.Mod
 local Day = mod.new 'ui.calendar.day'

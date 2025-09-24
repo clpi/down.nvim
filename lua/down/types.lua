@@ -1,0 +1,711 @@
+--- @meta    down.ids.config
+--- @brief   Provides core data types
+--- @version <5.2,JIT
+---
+--- @brief down.config
+---
+--- The local config for setting up workspaces.
+--- @class (exact) down.config.Local workspace config local
+---   @field public dir? down.Uri"./.down/" by default
+---   @field public init? down.config.Init, optional init
+---   metadata?: { [string]?: any },
+---
+--- Configuration for base directories globally.
+--- @class (exact) down.config.Dirs dirs
+---   @field public home down.Dir default "~/.down/"
+---   @field public config down.Dir default "~/.config/down/"
+---   @field public cache down.Dir  default "~/.cache/down/"
+---   @field public temp down.Dir default "~/.temp/down/"
+---   @field public runtime down.Dir string default "~/.down/runtime/"
+---   @field public log down.Dir string default "~/.down/log/"
+---
+--- Configuration for global settings.
+--- @class (exact) down.config.Global: down.Workspaces Down global configuration
+---   @field public user down.User used
+---   @field public dirs down.config.Dirs dirs
+---   @field public workspaces down.Workspace> workspace list
+---   @field public mod table<string, down.Mod> mod list
+---   @field public config down.Config config
+---   @field public [string]? down.Mod modules
+---
+--- @brief down.config.local
+---
+--- @brief down.config.global
+---
+--- @brief down.handlefig.init
+---
+--- The important store value object
+--- @class (exact) down.config.Init Init
+---   @field git? down.config.init.Git Git
+---   @field sync? down.config.init.Sync sync
+---   @field markdown? down.config.init.Markdown sync
+---   @field command? down.config.init.Command command
+---   @field [string]? down.config.init.Command
+---
+--- The important store value object
+--- @class (exact) down.config.init.Markdown Git init
+---   @field public enabled boolean Enable
+---
+--- The important store value object
+--- @class (exact) down.config.init.Git Git init
+---   @field public enabled boolean Enable
+---
+--- The important store value object
+--- @class (exact) down.config.init.Command command init
+---   @field public enabled? boolean Enable
+---   @field public command? string Enable
+---   @field public args? string[] Enable
+---
+--- The important store value object
+--- @class (exact) down.config.init.Sync Sync init
+---   @field public enabled boolean Enable
+---
+--- @alias down.config.Toggle
+--- | "dev"
+--- | "debug"
+--- | "bench"
+--- | "test"
+--- | "defaults
+---
+--- @alias down.log.Level
+--- | "trace"
+--- | "debug"
+--- | "info"
+--- | "warn"
+--- | "error"
+--- | "fatal"
+
+--- @class (exact) down.log.Config
+--- @field plugin string                                           Name of the plugin. Prepended to log messages.
+--- @field outfile string
+--- @field use_console boolean                                     Whether to print the output to Neovim while running.
+--- @field highlights boolean                                      Whether highlighting should be used in console (using `:echohl`).
+--- @field use_file boolean                                        Whether to write output to a file.
+--- @field level down.log.Level                                          Any messages above this level will be logged.
+--- @field modes ({ name: down.log.Level, hl: string, level: number })[] Level config.
+--- @field float_precision number                                  Can limit the number of decimals displayed for floats.
+
+--- @class (exact) down.Log
+---   @field levels table<string, number>
+---   @field number_level table<number, string>
+---   @field config down.log.Config
+---
+--- @meta down.ids.date
+---
+--- The time part of the datetime.
+--- @class (exact) down.Time Time
+---   @field public hour? integer|string Hours
+---   @field public minute? integer|string Minutes
+---   @field public second? integer|string Seconds
+---   @field public fmt fun(t: down.Time, tf: string): string Format the time part of the datetime.
+---   @field public time fun(t: down.Time): integer Get the time part of the datetime.
+---   @field public params fun(t: down.Time): osdateparam Get the time part of the datetime.
+---
+--- The datetime data structure.
+--- @class (exact) down.Datetime
+---   @field public date? down.Date The date part of the datetime.
+---   @field public time? down.Time The time part of the datetime.
+---   @field public params fun(t: down.Datetime): osdateparam Get the time part of the datetime.
+---   @field public fmt fun(t: down.Datetime, f: string): string Format the time part of the datetime.
+---
+--- The date part of the datetime.
+--- @class (exact) down.Date
+---   @field public day integer|string Hours
+---   @field public week integer|string Minutes
+---   @field public month integer|string Seconds
+---   @field public year integer|string Seconds
+---   @field public fmt fun(t: down.Date, tf: string|nil): string Format the time part of the datetime.
+---   @field public date fun(t: down.Date): integer Get the time part of the datetime.
+---   @field public params fun(t: down.Date, d: down.Time|nil): osdateparam Get the time part of the datetime.
+--- @meta down.ids.workspcae
+--- The context of an in-file object.
+--- @class (exact) down.Log: { data?: { [string]: string } }
+---
+--- The context of an in-file object.
+--- @class (exact) down.Template: {
+---   id: string,
+---   uri: down.Uri,
+---   context: down.Context,
+---   body: string,
+---   kind: string } Link
+---
+--- The context of an in-file object.
+--- @class (exact) down.Snippet: {
+---   id: string,
+---   uri: down.Uri,
+---   context: down.Context,
+---   body: string,
+---   kind: string } Link
+---
+--- The context of an in-file object.
+--- @class (exact) down.Link: {
+---   id: string,
+---   uri: down.Uri,
+---   context: down.Context,
+---   target: down.Uri,
+---   body: string,
+---   kind: string } Link
+---
+--- The context of an in-file object.
+--- @class (exact) down.Anchor: {
+---   id: string,
+---   uri: down.Uri,
+---   context: down.Context,
+---   body: string,
+---   kind: string } Link
+---
+--- The context of an in-file object.
+--- @class (exact) down.Note: {
+---   id: string,
+---   uri: down.Uri,
+---   context: down.Context,
+---   body: string,
+---   kind: string } Link
+---
+--- The context of an in-file object.
+--- @class (exact) down.Agenda: {
+---   id: string,
+---   uri: down.Uri,
+---   body: string,
+---   groups: down.Group[],
+---   tasks: down.Task[],
+---   scope: down.Scope[],
+---   kind: string } Link
+---
+--- The tag object.
+--- @class down.Tag: { id: string, context: down.Context, flags: down.Flag[] } tags
+---
+--- @class down.TagsField: { tags: down.Tag[] } Has tags
+---
+--- @alias down.Tags down.Tag[] Has tags
+---
+--- @class (exact) Node<I, E, N>: { index: I, edges: E[], weight: N }
+---
+--- @class (exact) Edge<K1, K2, E>: { [K1]: { [K2]: E } }
+---
+--- The category object.
+--- @class down.Category: { group?: string }
+---
+--- The project object.
+--- @class (exact) down.Group: { group?: string }
+---   @field public name string
+---   @field public data table<any, any>
+---   @field public agenda? down.Data<down.Agenda>
+---   @field public info? down.Info
+---   @field public tasks? down.Data<down.Task>
+---
+--- The project object.
+--- @class (exact) down.Project
+---   @field public id down.Uri
+---   @field public info? down.Info
+---   @field public data table<any, any>
+---   @field public agenda? down.Data<down.Agenda>
+---   @field public tasks? down.Data<down.Task>
+---
+--- The scope of an entity.
+--- @alias down.Flag {
+---   flag: string,
+---   info: down.Info,
+---   data: table<any, any>,
+--- }
+---
+---
+--- The important store value object
+--- @class (exact) down.Log<S>: { id: string, uri: down.Uri, config?: down.config.Local }
+---
+--- The user object.
+--- @class (exact) down.User User
+---   @field public id down.Id uri
+---   @field public home down.Uri home
+---   @field public email? string uri
+---   @field public username? string uri
+---
+--- @class (exact) down.Entity<V>: down.Base, {
+---   tags?: down.Tag[],
+---   info?: down.HasInfo,
+---   context: down.Context,
+--- }
+---
+--- The scope of an entity.
+--- @class (exact) down.Task
+---   @field public name string
+---   @field public info down.Info
+---   @field public context down.Context
+---   @field public store? down.Id
+---   @field public status down.task.Status
+---   @field public priority down.task.Priority
+---
+---@enum down.ids.enum
+---
+--- The scope of an entity.
+--- @alias down.Mode
+--- | "n"
+--- | "no"
+--- | "nov"
+--- | "noV"
+--- | "noCTRL-V"
+--- | "CTRL-V"
+--- | "niI"
+--- | "niR"
+--- | "niV"
+--- | "nt"
+--- | "Terminal"
+--- | "ntT"
+--- | "v"
+--- | "vs"
+--- | "V"
+--- | "Vs"
+--- | "CTRL-V"
+--- | "CTRL-Vs"
+--- | "s"
+--- | "S"
+--- | "CTRL-S"
+--- | "i"
+--- | "ic"
+--- | "ix"
+--- | "R"
+--- | "Rc"
+--- | "Rx"
+--- | "Rv"
+--- | "Rvc"
+--- | "Rvx"
+--- | "c"
+--- | "cr"
+--- | "cv"
+--- | "cvr"
+--- | "r"
+--- | "rm"
+--- | "r?"
+--- | "!"
+--- | "t"
+
+--- The scope of an entity.
+--- @alias down.Status 'queued' status of a task
+---   | 'waiting'   Waiting
+---   | 'finished'  Finished
+---   | 'cancelled' Cancelled
+---   | 'pending'   Pending, todo
+---   | 'blocked'   Blocked
+---
+--- The scope of an entity.
+--- @alias down.Scope
+---  | "priority"
+---  | "category"
+---  | "group"
+---  | "flag"
+---  | "user" for entities in the same profile
+---  | "tag"         for shared tag entities
+---  | "workspace"   for all files in workspace
+---  | "project"     for entities in the same project
+---  | "global"      for all entities across workspaces and profiles
+---  | "local"       for this file only
+---  | "dir"         for this and other files in the same dir
+---  | "children"    for this file, all in same dir, and all children of dirs
+---  | "dynamic"     for entities in the same dynamic scope
+---  | "other"       for entities in other scopes
+---
+---
+--- Operating system
+--- @alias down.Os
+--- | "windows"
+--- | "wsl"
+--- | "wsl2"
+--- | "mac"
+--- | "linux"
+--- | "bsd"
+---
+--- @alias down.dirs.Down
+---   | { name: "home", uri: "~/.down" }
+---   | { name: "config", uri: "~/.config/down" }
+---   | { name: "data", uri: "~/.local/share/down"}
+---   | { name: "cache", uri: "~/.local/share/down"}
+---   | { name: "temp", uri: "/tmp/down"}
+---   | { name: "log", uri: "~/.down/log"}
+---   | { name: "lsp", uri: "~/.down/lsp"}
+---   | { name: "workspace", uri: "~/.down/workspace"}
+---
+--- The status of a task.
+---@alias down.task.Status "done"
+--- | "todo"
+--- | "cancelled"
+--- | "waiting"
+--- | "blocked"
+--- | "doing"
+---
+--- The priority of a task.
+--- @alias down.task.Priority "misc"
+--- | "lowest"
+--- | "low"
+--- | "medium"
+--- | "high"
+--- | "highest"
+---
+--- Ranking
+--- @alias down.Ranking integer 0
+---   | 1
+---   | 2
+---   | 3
+---   | 4
+---   | 5
+--- @class (exact) down.mod.Events: {
+---   [string]: down.Event
+--- }
+---
+--- @class (exact) down.mod.Subscribed: {
+---   [string]: {
+---     [string]: boolean
+---   }
+--- }
+--- @meta down.ids
+--- @brief Provides core data types
+--- @version <5.2,JIT
+---
+---
+--- The important store value object
+--- @class (exact) down.old.Store<V>: { id: down.store.id, uri: down.Uri, data?: down.store.Data<V> } store
+---
+--- [string]: down.Store<V>
+--- @class (exact) down.old.store.Map<V>: { [down.store.Key]?: down.Store<V> } Map { log1 = { i}}
+---
+--- The important store value object
+--- @class (exact) down.old.store.Kind: { [down.store.ItemKind]?: down.store.Map<down.store.Key> }
+---
+---
+---
+---
+--- down.Mods
+--- @class (exact) down.mod.config.Cfg: table
+---   @field [string]? { [string]?: any }
+---   @field enabled? boolean
+---
+--- TODO: merge data field to [string]? { [string]?: down.Event }
+--- TODO:   down.mod.Events.defined ->
+--- TODO:     #field [string]? { [string]?: down.Event }
+---
+--- @class (exact) down.event.Subscribed
+---   @field public [string]? { [string]: boolean }
+
+---
+--- @class (exact) down.mod.Config: { [string]?: any }
+--- @field public enabled? boolean
+---   @field public [string]? any
+
+--- TODO: merge data field to [string]?: down.mod.Data
+--- TODO:   down.Mod. ->
+--- TODO:     #field [string]? down.config.UserMod
+--- TODO:   down.Mod.config ->
+--- TODO:     #field config? down.mod.Config
+
+---
+--- @class (exact) down.config.Ft
+---   @field md boolean
+---   @field mdx boolean
+---   @field markdown boolean
+---   @field down boolean
+---
+--- TODO: make down.config.User? table
+--- TODO:   down.config.config.User.mod.config ->
+--- TODO:     #field [string]? down.config.UserMod
+---
+--- @class (exact) down.config.User
+---   @field [string]? down.Mod.Config
+---   @field hook? fun(args?: string) Hook to optionally run on load
+---   @field dev? boolean Whether to start in dev mode
+---
+--- TODO: make down.config.UserMod? table
+--- TODO:   down.config.UserMod.config ->
+--- TODO:     #field [string]? down.Mod
+---
+--- @class (exact) down.config.UserConfig: down.config.BaseConfig, {
+---   lsp?: down.mod.lsp.Config,
+---   data?: down.mod..Config,
+---   edit?: down.mod.edit.Config,
+---   config?: down.mod.config.Config,
+---   cmd?: down.mod.cmd.Config,
+---   integration?: down.mod.integration.Config,
+---   workspace?: down.mod.worksspace.Config,
+---   note?: down.mod.note.Config,
+---   ui?: down.mod.ui.Config,
+---   config?: down.mod.config.Config,
+--- }
+
+--- @alias down.Pathsep "\\" | "/"
+---
+--[[
+--- @class  down.Config
+---   @field log? down.log.Config
+---   @field defaults? boolean|string[]
+---   @field dev? boolean  Whether to start in dev mode
+---   @field debug? boolean Whether to start in debug mode
+---   @field bench? boolean Whether to start in benchmark mode
+---   @field test? boolean Whether to start in test mode
+---   @field load? boolean Whether to load the user config
+---   @field user down.mod.Config The user config to load in
+---   @field hook? fun()   A hook that is run when down is started
+---   @field started boolean                                   Set to `true` when down is fully initialized.
+---   @field version string                                    The version of down that is currently active. Automatically updated by CI on every release.
+---   @field setup fun(self: down.Config, user: down.config.User, default: string[], ...: any): boolean Loads user config
+---   @field homedir fun(...: string): string
+---   @field vimdir fun(...: string): string
+---   @field file fun(file: string | nil): string
+---   @field fromfile fun(f: string | nil): down.config.User
+--]]
+
+--- Stores the config for the entirety of down.
+--- This includes not only the user config (passed to `setup()`), but also internal
+--- variables that describe something specific about the user's hardware.
+--- @see down.Setup
+---
+---
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+--- @meta down.ids.context
+---
+--- The position of a character aaagin a file.
+--- @class (exact) down.Position: { line?: number, char?: number } position of a character in a file
+---
+--- The position of a character aaagin a file.
+--- @class (exact) down.Range: { start: down.Position,start: down.Position } position of a character in a file
+
+--- The context of an in-file object.
+--- @class (exact) down.Context context of in-file object
+---   @field public position? down.Position location
+---   @field public buf? number
+---   @field public win? number
+---   @field public file? down.Id  root node in file scope
+---   @field public dir? down.Id  root node in file scope
+---   @field public scope? down.Scope in file scope
+---
+--- The scope of an entity.
+--- @class (exact) down.Info
+---   @field public id down.Id
+---   @field public uri down.Uri
+---   @field public context? down.Context
+---   @field public metadata? { [string]: any }
+---   @field public tags? { [string]: down.Tag }
+---
+---@meta down.ids.mod
+---
+--- @alias down.mod.Handler fun(event: down.Event)
+---
+--- @alias down.Opts { [string]?: string } | function
+---
+--- @alias down.VimMode
+--- | 'n'
+--- | 'i'
+--- | 'v'
+--- | 'x'
+--- | 'c'
+---
+--- @class down.Map: {
+---   [1]: down.VimMode | down.VimMode[],
+---   [2]: string,
+---   [3]: string | fun(),
+---   [4]?: string,
+---   [5]?: down.MapOpts,
+---   }
+---
+--- @class down.MapOpts: {
+---   mode?: down.VimMode | down.VimMode[],
+---   key?: string,
+---   callback?: string | fun(),
+---   desc?: string,
+---   noremap?: boolean,
+---   nowait?: boolean
+--- }
+---
+--- @alias down.Maps down.Map[]|fun()
+--- @alias down.Handler fun(event: down.Event, ...: any)
+--- @alias down.Handlers {
+---   [string]?: down.Handler|down.Handlers,
+---   __call?: down.Handler,
+--- }
+--- @class down.Mod
+---   @field public config? down.mod.Config The config for the mod.
+---   @field public import? table<string, down.Mod> Imported submod of the given mod. Contrary to `dep`, which only exposes the public API of a mod, imported mod can be accessed in their entirety.
+---   @field public commands?  down.Command[] that adds all the commands for the mod.
+---   @field public maps? down.Maps
+---   @field public opts? down.Opts Function that adds all the options for the mod.
+---   @field public load? fun() Function that is invoked once the mod is considered "stable", i.e. after all dependencies are loaded. Perform your main loading routine here.
+---   @field public bench? fun() Function that is invoked when the mod is being benchmarked.
+---   @field public id string The name of the mod.
+---   @field public namespace string The name of the mod.
+---   @field public data down.Data.Data
+---   @field public after? fun() Function that is invoked after all mod are loaded. Useful if you want the down environment to be fully set up before performing some task.
+---   @field public dep? { [down.Mod.Id]: down.Mod.Mod } Contains the public tables of all mod that were dep via the `dependencies` array provided in the `setup()` function of this mod.
+---   @field public setup? fun(): down.mod.Setup Function that is invoked before any other loading occurs. Should perform preliminary startup tasks.
+---   @field public replaced? boolean If `true`, this means the mod is a replacement for a base mod. This flag is set automatically whenever `setup().replaces` is set to a value.
+---   @field public handle? down.Handlers callback that is invoked any time an event the mod has subscribed to has fired.
+---   @field public tests? table<string, fun()> Function that is invoked when the mod is being tested.
+---   @field public events? down.mod.Events
+---   @field public [any]? any
+---
+--- @class (exact) down.mod.Setup
+--- @field loaded? boolean
+--- @field dependencies? down.Mod.Id[]
+--- @field replaces? string
+--- @field merge? boolean
+---
+--- @class (exact) down.mod.Events: { [string]: down.Event }
+---
+--- The entire mod configuration
+--- @alias down.Mod.Mod
+---   | down.mod.lsp.Lsp
+---   | down.mod.code.Code
+---   | down.mod.time.Time
+---   | down.mod.export.Export
+---   | down.mod.tag.Tag
+---   | down.mod.parse.Parse
+---   | down.mod.edit.Edit
+---   | down.mod.data.Data
+---   | down.mod.link.Link
+---   | down.mod.task.Task
+---   | down.mod.template.Template
+---   | down.mod.log.Log
+---   | down.mod.cmd.Cmd
+---   | down.mod.integration.Tool
+---   | down.mod.workspace.Workspace
+---   | down.mod.note.Note
+---   | down.mod.ui.Ui
+---   | down.mod.data.bookmark.Bookmark
+---   | down.mod.data.Store
+---   | down.mod.data.history.History
+---   | down.mod.task.agenda.Agenda
+---   | down.mod.ui.calendar.Calendar
+---   | down.mod.ui.calendar.day.Day
+---   | down.mod.ui.calendar.month.Month
+---   | down.mod.ui.calendar.week.Week
+---   | down.mod.keymap.Keymap
+---
+--- @alias down.Mod.Data
+---   | down.mod.keymap.Data
+---   | down.mod.lsp.Data
+---   | down.mod.data.Data.Data
+---   | down.mod.edit.Data
+---   | down.mod.cmd.Data
+---   | down.mod.integration.Data
+---   | down.mod.workspace.Data
+---   | down.mod.note.Data
+---   | down.mod.ui.Data
+---   | down.mod.parse.Data
+---   | down.mod.code.Data
+---   | down.mod.link.Data
+---   | down.mod.task.Data
+---   | down.mod.tag.Data
+---   | down.mod.template.Data
+---   | down.mod.export.Data
+---   | down.mod.log.Data
+---   | down.mod.task.agenda.Data
+---   | down.mod.data.bookmark.Data
+---   | down.mod.data.store.Data
+---   | down.mod.data.history.Data
+---   | down.mod.ui.calendar.Config
+---   | down.mod.ui.calendar.day.Data
+---   | down.mod.ui.calendar.month.Data
+---   | down.mod.ui.calendar.week.Data
+---
+--- @alias down.Mod.Config
+---   | down.mod.keymap.Config
+---   | down.mod.lsp.Config
+---   | down.mod.data.Config
+---   | down.mod.edit.Config
+---   | down.mod.cmd.Config
+---   | down.mod.integration.Config
+---   | down.mod.workspace.Config
+---   | down.mod.note.Config
+---   | down.mod.ui.Config
+---   | down.mod.parse.Config
+---   | down.mod.code.Config
+---   | down.mod.link.Config
+---   | down.mod.task.Config
+---   | down.mod.tag.Config
+---   | down.mod.template.Config
+---   | down.mod.export.Config
+---   | down.mod.log.Config
+---   | down.mod.task.agenda.Config
+---   | down.mod.data.bookmark.Config
+---   | down.mod.data.store.Config
+---   | down.mod.data.history.Config
+---   | down.mod.ui.calendar.Config
+---   | down.mod.ui.calendar.day.Config
+---   | down.mod.ui.calendar.month.Config
+---   | down.mod.ui.calendar.week.Config
+---
+---  @alias down.Mod.Id
+---  | "find.telescope",
+---  | "log"
+---  | "mod"
+---  | "data.store"
+---  | 'integration.telescope'
+---  | 'find.fzflua'
+---  | 'find.builtin'
+---  | 'find.snacks'
+---  | 'find.mini'
+---  | 'find'
+---  | "data"
+---  | "edit"
+---  | "cmd"
+---  | "integration"
+---  | "workspace"
+---  | 'edit.inline'
+---  | "note"
+---  | "ui"
+---  | "keymap"
+---  | "lsp"
+---  | "tag"
+---  | "time"
+---  | "code"
+---  | "link"
+---  | "template"
+---  | "task"
+---  | "export"
+---  | "ui.calendar"
+---  | "ui.calendar.day"
+---  | "ui.calendar.month"
+---  | "ui.popup"
+---  | "ui.calendar.year"
+---  | "edit.indent"
+---  | "edit.cursor"
+---  | "edit.parse"
+---  | "data.history"
+---  | "integration.treesitter"
+---  | "task.agenda"
+---  | "ui.calendar.week"
+---  | "data.bookmark"
+---  | "task.agenda"
+---  | "parse"
+---  | "ui.win"
+---  | "ui.icon"
+---  | "ui.hl"
+---  | "edit.indent"
+---
+---
+---  The user configuration passed into down.setup
+---  @class (exact) down.mod.Config: {
+---    [down.Mod.Id]?: down.Mod.Config,
+---    dev?: boolean,
+---    test?: boolean|string[],
+---    bench?: boolean|string[],
+---    load?: boolean|string[],
+---    defaults?: boolean,
+---    debug?: boolean,
+---    hook?: fun(...: any)
+---  }
+---
+--- The base configuration
+--- @class (exact) down.config.BaseConfig: {
+---   [string]?: any,
+---   dev?: boolean,
+--- }
+---
+--- @class (exact) down.Command
+--- @field name? string
+--- @field enabled? boolean
+--- @field args? number
+--- @field max_args? number
+--- @field condition? string
+--- @field complete? table<string, string[]>
+--- @field callback? fun(e?: down.Event, ...: any)
+--- @field min_args? number
+--- @field commands? { [string]?:down.Command}
+
+--- @alias down.Commands {[string]?: down.Command } | function

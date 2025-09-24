@@ -1,4 +1,3 @@
----@package down.nvim
 ---@brief v0.1.2-alpha
 ---@author Chris Pecunies <clp@clp.is>
 ---@repository https://github.com/clpi/down.nvim.git
@@ -11,7 +10,7 @@
 
 --- The main entry point for the down plugin
 ---@class down.Down
-Down = {
+local Down = {
   --- The configuration for the plugin
   config = require("down.config"),
   --- The module logic for the plugin
@@ -21,59 +20,59 @@ Down = {
   --- The utility logic for the plugin
   util = require("down.util"),
   --- The log logic for the plugin
-  log = require("down.util.log"),
+  log = require("down.log"),
 }
 
 --- Load the user configuration, and load into config
 --- defined modules specifieed and workspaces
---- @param user down.config.User user config to load
+--- @param user_config down.config.User user config to load
 --- @param ... string The arguments to pass into an optional user hook
-Down.setup = function(user, ...)
-  Down.util.log.trace("Setting up down")
-  Down.config:setup(user, ...)
+function Down:setup(user_config, ...)
+  Down.log.trace("Setting up down")
+  Down.config:setup(user_config, ...)
   Down:start()
 end
 
 --- *Start* the ^down.nvim^ plugin
 --- Load the workspace and user modules
 function Down:start()
-  self.util.log.trace("Setting up down")
-  self.mod.load_mod(
+  Down.log.trace("Setting up down")
+  Down.mod.load_mod(
     "workspace",
-    self.config.user.workspace or self.config.user.workspaces
+    Down.config.user.workspace or Down.config.user.workspaces
   )
-  for name, usermod in pairs(self.config.user) do
-    if self.mod.check_id(name) then
-      self.mod.load_mod(name, usermod)
+  for name, usermod in pairs(Down.config.user) do
+    if Down.mod.check_id(name) then
+      Down.mod.load_mod(name, usermod)
     end
   end
-  self:after()
+  Down:after()
 end
 
 --- After the plugin has started
 function Down:after()
-  self.config:after()
-  for _, l in pairs(self.mod.mods) do
-    self.event.load_callback(l)
+  Down.config:after()
+  for _, l in pairs(Down.mod.mods) do
+    Down.event.load_callback(l)
     l.after()
   end
-  self:broadcast("started")
+  Down:broadcast("started")
 end
 
 --- Broadcast the message `e` or the 'started' event to all modules
 ---@param e string
 ---@param ... any
 function Down:broadcast(e, ...)
-  local ev = self.event.define("down", e or "started") ---@type down.Event
-  self.event.broadcast_to(ev, Down.mod.mods)
+  local ev = Down.event.define("down", e or "started") ---@type down.Event
+  Down.event.broadcast_to(ev, Down.mod.mods)
 end
 
 --- Test all modules loaded
-function Down.test()
+function Down:test()
   Down.config:test()
   for m, d in pairs(Down.mod.mods) do
-    Down.util.log.trace("Testing mod: " .. m)
-    Down.util.log.trace("Result: " .. d.test())
+    Down.log.trace("Testing mod: " .. m)
+    Down.log.trace("Result: " .. d.test())
   end
 end
 
@@ -81,13 +80,10 @@ return setmetatable(Down, {
   __call = function(down, user, ...)
     Down.setup(user, ...)
   end,
-  -- __call = function(down, user, ...)
-  --   down.setup(user, ...)
-  -- end,
-  -- __index = function(self, key)
+  -- __index = function(Down, key)
   --   return down.mod.mods[key]
   -- end,
-  -- __newindex = function(self, key, val)
+  -- __newindex = function(Down, key, val)
   --   down.mod.mods[key] = val
   -- end,
 })

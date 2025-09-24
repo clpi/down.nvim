@@ -1,6 +1,6 @@
 local down = require 'down'
 local mod = require 'down.mod'
-local log = require 'down.util.log'
+local log = require 'down.log'
 local utils = require 'down.util'
 
 ---@type down.Editod

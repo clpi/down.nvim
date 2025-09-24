@@ -1,6 +1,6 @@
 local down = require("down")
 local util = down.util
-local log = util.log
+local log = log
 local mod = down.mod
 local monthutil = require("down.mod.ui.calendar.month.util")
 

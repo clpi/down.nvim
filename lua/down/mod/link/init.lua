@@ -2,7 +2,7 @@ local config = require 'down.config'
 local mod = require 'down.mod'
 local util = require 'down.util'
 local tsu_ok, tsu = pcall(require, 'nvim-treesitter.ts_utils')
-local log = util.log
+local log = log
 local ts = vim.treesitter
 local tsq = vim.treesitter.query
 

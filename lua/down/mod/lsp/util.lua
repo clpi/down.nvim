@@ -1,6 +1,6 @@
 local fn, api, fs = vim.fn, vim.ai, vim.fs
 local stdpath, join = fn.stdpath, fs.joinpath
-local log = require("down.util.log")
+local log = require("down.log")
 
 ---@class down.mod.lsp.Util
 local U = {}

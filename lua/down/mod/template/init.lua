@@ -1,6 +1,6 @@
 local config = require 'down.config'
 local util = require 'down.util'
-local log = require 'down.util.log'
+local log = require 'down.log'
 local mod = require 'down.mod'
 local sep = util.sep
 

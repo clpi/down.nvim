@@ -1,5 +1,5 @@
 local down = require("down")
-local log = require("down.util.log")
+local log = require("down.log")
 local mod = require("down.mod")
 local util = require("down.util")
 local api, bo, fn = vim.api, vim.bo, vim.fn

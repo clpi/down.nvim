@@ -3,7 +3,7 @@ local down = require("down")
 local mod = require("down.mod")
 local noteutil = require("down.mod.note.util")
 local util = require("down.util")
-local sep, log = util.sep, util.log
+local sep, log = util.sep, log
 
 ---@class down.mod.note.Note: down.Mod
 local Note = mod.new("note")

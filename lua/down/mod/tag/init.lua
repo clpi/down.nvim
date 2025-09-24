@@ -1,5 +1,5 @@
 local mod = require('down.mod')
-local log = require('down.util.log')
+local log = require('down.log')
 local Tag = require('down.mod.tag.tag')
 
 ---@class down.mod.tag.Tag: down.Mod

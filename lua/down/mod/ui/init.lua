@@ -1,5 +1,5 @@
 local mod = require 'down.mod'
-local log = require 'down.util.log'
+local log = require 'down.log'
 
 ---@class down.mod.ui.Ui: down.Mod
 local Ui = mod.new 'ui'

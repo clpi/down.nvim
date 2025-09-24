@@ -1,6 +1,8 @@
 ---@class down.Util
 local U = {}
 
+log = require("down.log")
+
 local c, f, a, ts = vim.cmd, vim.fn, vim.api, vim.treesitter
 
 ---@return down.Os
@@ -483,7 +485,6 @@ function U.get_os()
   error("[down]: Unable to determine the currently active operating system!")
 end
 
-U.log = require("down.util.log")
 U.string = require("down.util.string")
 
 return U

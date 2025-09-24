@@ -52,22 +52,27 @@ the _familiar_, organized future for neovim and beyond!
 -- Place in lazy.nvim spec
 {
     "clpi/down.nvim",
-    opts         = {
+    command = { "Down" },
+    keys = {
+        
+    }
+    lazy = false,
+    opts = {
       workspace = {
         default = "notes",
         workspaces = {
           notes = "~/notes",
-          personal = "~/home"
+          wiki = "~/wiki",
         }
       }
     },
     dependencies = {
       "nvim-treesitter/nvim-treesitter",
       "nvim-lua/plenary.nvim",
-      "MunifTanjim/nui.nvim",
-      "pysan3/pathlib.nvim",
-      "nvim-neotest/nvim-nio",
+
+        -- And an optional picker, if you want that functionality
       "nvim-telescope/telescope.nvim", -- optional
+      "folke/snacks.nvim",             -- optional
     },
 }
 ```

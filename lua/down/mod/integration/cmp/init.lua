@@ -1,4 +1,4 @@
-local log = require 'down.util.log'
+local log = require 'down.log'
 local mod = require 'down.mod'
 
 local plenok, plenary = pcall(require, 'plenary.scandir').scan_dir
