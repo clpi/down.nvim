@@ -31,9 +31,12 @@ Config.toggles = {
 --- or to be loaded via a toggle
 Config.keys = {
   { "<space>di", "<CMD>Down index<CR>", desc = "Down index" },
-  { "<space>dy", "<CMD>Down yesterday<CR>", desc = "Down yesterday" },
-  { "<space>dt", "<CMD>Down today<CR>", desc = "Down today" },
-  { "<space>dm", "<CMD>Down tomorrow<CR>", desc = "Down tomorrow" },
+  { "<space>dny", "<CMD>Down note yesterday<CR>", desc = "Down yesterday" },
+  { "<space>dnt", "<CMD>Down note today<CR>", desc = "Down today" },
+  { "<space>dnT", "<CMD>Down note tomorrow<CR>", desc = "Down tomorrow" },
+  { "<space>dnm", "<CMD>Down note month<CR>", desc = "Down month" },
+  { "<space>dny", "<CMD>Down note year<CR>", desc = "Down year" },
+  { "<space>dnw", "<CMD>Down note week<CR>", desc = "Down week" },
   { "<space>dw", "<CMD>Down workspace<CR>", desc = "Down workspace" },
   { "<space>dc", "<CMD>Down calendar<CR>", desc = "Down calendar" },
   { "<space>df", "<CMD>Down find<CR>", desc = "Down find" },
@@ -44,8 +47,14 @@ Config.keys = {
 
 --- Default dependencies for down.nvim, specified in user's config
 Config.dependencies = {
-  "nvim-lua/plenary.nvim",
-  "nvim-treesitter/nvim-treesitter",
+  required = {
+    "nvim-lua/plenary.nvim",
+    "nvim-treesitter/nvim-treesitter",
+  },
+  optional = {
+    "nvim-telescope/telescope.nvim",
+    "folke/snacks.nvim",
+  },
 }
 
 --- Default command for down.nvim, specified in user's config

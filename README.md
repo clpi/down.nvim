@@ -53,8 +53,20 @@ the _familiar_, organized future for neovim and beyond!
 {
     "clpi/down.nvim",
     command = { "Down" },
-    keys = {
-        
+    keys = { 
+        { "<space>di", "<CMD>Down index<CR>", desc = "Down index" },
+        { "<space>dny", "<CMD>Down note yesterday<CR>", desc = "Down yesterday" },
+        { "<space>dnt", "<CMD>Down note today<CR>", desc = "Down today" },
+        { "<space>dnT", "<CMD>Down note tomorrow<CR>", desc = "Down tomorrow" },
+        { "<space>dnm", "<CMD>Down note month<CR>", desc = "Down month" },
+        { "<space>dny", "<CMD>Down note year<CR>", desc = "Down year" },
+        { "<space>dnw", "<CMD>Down note week<CR>", desc = "Down week" },
+        { "<space>dw", "<CMD>Down workspace<CR>", desc = "Down workspace" },
+        { "<space>dc", "<CMD>Down calendar<CR>", desc = "Down calendar" },
+        { "<space>df", "<CMD>Down find<CR>", desc = "Down find" },
+        { "<space>dn", "<CMD>Down note<CR>", desc = "Down note" },
+        { "<space>dp", "<CMD>Down note template<CR>", desc = "Down note template" },
+        { "<space>dd", "<CMD>Down<CR>", desc = "Down" },
     }
     lazy = false,
     opts = {
@@ -72,7 +84,7 @@ the _familiar_, organized future for neovim and beyond!
 
         -- And an optional picker, if you want that functionality
       "nvim-telescope/telescope.nvim", -- optional
-      "folke/snacks.nvim",             -- optional
+      -- "folke/snacks.nvim",             -- optional
     },
 }
 ```

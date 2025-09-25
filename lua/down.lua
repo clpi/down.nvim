@@ -27,7 +27,7 @@ local Down = {
 --- defined modules specifieed and workspaces
 --- @param user_config down.config.User user config to load
 --- @param ... string The arguments to pass into an optional user hook
-function Down:setup(user_config, ...)
+Down.setup = function(user_config, ...)
   Down.log.trace("Setting up down")
   Down.config:setup(user_config, ...)
   Down:start()
@@ -36,35 +36,36 @@ end
 --- *Start* the ^down.nvim^ plugin
 --- Load the workspace and user modules
 function Down:start()
-  Down.log.trace("Setting up down")
-  Down.mod.load_mod(
+  self.log.trace("Starting down")
+  self.mod.load_mod(
     "workspace",
-    Down.config.user.workspace or Down.config.user.workspaces
+    self.config.user.workspace or self.config.user.workspaces
   )
-  for name, usermod in pairs(Down.config.user) do
-    if Down.mod.check_id(name) then
-      Down.mod.load_mod(name, usermod)
+  for name, usermod in pairs(self.config.user) do
+    if self.mod.check_id(name) then
+      self.mod.load_mod(name, usermod)
     end
   end
-  Down:after()
+  self:after()
 end
 
 --- After the plugin has started
 function Down:after()
-  Down.config:after()
-  for _, l in pairs(Down.mod.mods) do
-    Down.event.load_callback(l)
+  self.config:after()
+  for _, l in pairs(self.mod.mods) do
+    self.event.load_callback(l)
     l.after()
   end
-  Down:broadcast("started")
+  self:broadcast("started")
 end
 
 --- Broadcast the message `e` or the 'started' event to all modules
 ---@param e string
 ---@param ... any
 function Down:broadcast(e, ...)
-  local ev = Down.event.define("down", e or "started") ---@type down.Event
-  Down.event.broadcast_to(ev, Down.mod.mods)
+  ---@type down.Event
+  local ev = self.event.define("down", e or "started")
+  self.event.broadcast_to(ev, Down.mod.mods)
 end
 
 --- Test all modules loaded
