@@ -40,14 +40,12 @@ U.ids = {
   "integration.telescope",
   "data.history",
   "integration",
-  "mod",
 }
-
 
 ---@return boolean
 U.check_id = function(mod_id)
   return vim.tbl_contains(U.ids, mod_id)
-      and not (mod_id == "workspace" or mod_id == "workspaces")
+    and not (mod_id == "workspace" or mod_id == "workspaces")
 end
 
 ---@return boolean
@@ -63,9 +61,9 @@ end
 ---@return boolean
 U.check_not_default = function(def, defv)
   return U.check_id(def)
-      and not U.check_default_id(def)
-      and defv
-      and type(defv) == "table"
+    and not U.check_default_id(def)
+    and defv
+    and type(defv) == "table"
 end
 
 return U

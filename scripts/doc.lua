@@ -6,7 +6,6 @@ local hasvim, vim = pcall(require, "vim")
 local mods = {
   "cmd",
   "export",
-  "mod",
   "data",
   "ui",
   -- "ui.calendar",
@@ -71,7 +70,6 @@ local function main()
     "lua/down/mod.lua",
     "lua/down/event/init.lua",
     "lua/down/mod/ui/init.lua",
-    "lua/down/mod/mod/init.lua",
     "lua/down/mod/cmd/init.lua",
     "lua/down/mod/workspace/init.lua",
     "lua/down/mod/note/init.lua",

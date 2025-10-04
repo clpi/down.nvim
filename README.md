@@ -81,7 +81,6 @@ the _familiar_, organized future for neovim and beyond!
     dependencies = {
       "nvim-treesitter/nvim-treesitter",
       "nvim-lua/plenary.nvim",
-
         -- And an optional picker, if you want that functionality
       "nvim-telescope/telescope.nvim", -- optional
       -- "folke/snacks.nvim",             -- optional
@@ -107,15 +106,13 @@ the _familiar_, organized future for neovim and beyond!
 Plug "nvim-telescope/telescope.nvim" " optional
 Plug "nvim-treesitter/treesitter.nvim"
 Plug "nvim-lua/plenary.nvim",
-Plug "MunifTanjim/nui.nvim",
-Plug "pysan3/pathlib.nvim"
 Plug "clpi/down.nvim", {
     \ "branch" : "master",
     \ "do"     : ':lua require([[down]]).setup({
     \     workspace = {
+    \         default = [[wiki]],
     \         workspaces = {
     \           wiki = [[~/wiki]],
-    \           default = [[~/down]],
     \           notes = [[~/notes]]
     \         }
     \     }
@@ -135,10 +132,8 @@ Plug "clpi/down.nvim", {
 > Not yet tested
 
 ```vim
-Plugin "pysan3/pathlib.nvim"
 Plugin 'nvim-telescope/telescope.nvim'
 Plugin "nvim-lua/plenary.nvim",
-Plugin "MunifTanjim/nui.nvim",
 Plugin 'clpi/down.nvim'
 ```
 
@@ -158,8 +153,6 @@ Plugin 'clpi/down.nvim'
 
 ```vim
 call dein#add("nvim-lua/plenary.nvim")
-call dein#add("MunifTanjim/nui.nvim")
-call dein#add('pysan3/pathlib.nvim')
 call dein#add('nvim-telescope/telescope.nvim')
 call dein#add('clpi/down.nvim')
 ```
@@ -180,20 +173,18 @@ call dein#add('clpi/down.nvim')
 
 ```lua
 use {
-  "clp/down.nvim",
+  "clpi/down.nvim",
   requires = {
-        "nvim-telescope/telescope.nvim",
-        "nvim-lua/plenary.nvim",
-        "MunifTanjim/nui.nvim",
-        "pysan3/pathlib.nvim"
+    "nvim-telescope/telescope.nvim",
+    "nvim-lua/plenary.nvim",
   },
   tag = "*",
   branch = 'master',
   config = function()
       require("down").setup({
         workspace = {
+            default = "notes",
             workspaces = {
-              default = "~/down",
               home = "~/notes",
               notes = "~/notes"
             }
@@ -218,9 +209,25 @@ use {
 > Not yet tested
 
 ```lua
-{
-  "clp/down.nvim",
-}
+local add = require("mini.deps").add
+
+add({
+  source = "clpi/down.nvim",
+  depends = {
+    "nvim-telescope/telescope.nvim",
+    "nvim-lua/plenary.nvim",
+  },
+})
+
+require("down").setup({
+  workspace = {
+    default = "notes",
+    workspaces = {
+      home = "~/notes",
+      notes = "~/notes"
+    }
+  }
+})
 ```
 
 </details>
@@ -253,7 +260,6 @@ require("down").setup({ ---@type down.mod.Config
   workspace = {
     default = 'home',
     workspaces = {
-      default = "~/down",
       home = "~/notes",
       notes = "~/notes"
     }
