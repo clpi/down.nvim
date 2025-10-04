@@ -48,7 +48,6 @@ Config.keys = {
 --- Default dependencies for down.nvim, specified in user's config
 Config.dependencies = {
   required = {
-    "nvim-lua/plenary.nvim",
     "nvim-treesitter/nvim-treesitter",
   },
   optional = {

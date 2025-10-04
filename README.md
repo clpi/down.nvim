@@ -80,7 +80,6 @@ the _familiar_, organized future for neovim and beyond!
     },
     dependencies = {
       "nvim-treesitter/nvim-treesitter",
-      "nvim-lua/plenary.nvim",
         -- And an optional picker, if you want that functionality
       "nvim-telescope/telescope.nvim", -- optional
       -- "folke/snacks.nvim",             -- optional
@@ -105,7 +104,6 @@ the _familiar_, organized future for neovim and beyond!
 ```vim
 Plug "nvim-telescope/telescope.nvim" " optional
 Plug "nvim-treesitter/treesitter.nvim"
-Plug "nvim-lua/plenary.nvim",
 Plug "clpi/down.nvim", {
     \ "branch" : "master",
     \ "do"     : ':lua require([[down]]).setup({
@@ -133,7 +131,6 @@ Plug "clpi/down.nvim", {
 
 ```vim
 Plugin 'nvim-telescope/telescope.nvim'
-Plugin "nvim-lua/plenary.nvim",
 Plugin 'clpi/down.nvim'
 ```
 
@@ -152,7 +149,6 @@ Plugin 'clpi/down.nvim'
 > Not yet tested
 
 ```vim
-call dein#add("nvim-lua/plenary.nvim")
 call dein#add('nvim-telescope/telescope.nvim')
 call dein#add('clpi/down.nvim')
 ```
@@ -176,7 +172,6 @@ use {
   "clpi/down.nvim",
   requires = {
     "nvim-telescope/telescope.nvim",
-    "nvim-lua/plenary.nvim",
   },
   tag = "*",
   branch = 'master',
@@ -215,7 +210,6 @@ add({
   source = "clpi/down.nvim",
   depends = {
     "nvim-telescope/telescope.nvim",
-    "nvim-lua/plenary.nvim",
   },
 })
 

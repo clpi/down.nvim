@@ -31,11 +31,15 @@ end
 
 --- Load the lsp and clone the repo
 Lsp.load = function()
-  if vim.fn.exepath("down.lsp") == "" then
-    lsputil.install({ update = true })
+  log.info("Loading LSP module - in-process mode")
+
+  -- Load the markdown LSP module for in-process LSP features
+  local markdown_lsp = mod.load_mod("lsp.markdown")
+  if markdown_lsp then
+    log.info("Loaded in-process markdown LSP module")
+  else
+    log.error("Failed to load markdown LSP module")
   end
-  -- print("loading")
-  Lsp.autocmd()
 end
 -- vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter", "BufNewFile" }, {
 -- })
@@ -57,6 +61,7 @@ Lsp.setup = function()
     dependencies = {
       "cmd",
       "workspace",
+      "lsp.markdown", -- Automatically load markdown LSP
     },
   }
 end
@@ -213,34 +218,66 @@ function Lsp.augroup()
 end
 
 function Lsp.start()
+  -- Only start if in a markdown file
+  if not Lsp.is_md() then
+    return
+  end
+
+  -- Check if we're in a workspace
+  local current_file = vim.api.nvim_buf_get_name(0)
+  if current_file == "" then
+    return
+  end
+
+  local workspace_mod = mod.get_mod("workspace")
+  if not workspace_mod then
+    log.warn("Workspace module not loaded, cannot start LSP")
+    return
+  end
+
+  local in_workspace = false
+  for _, ws_path in pairs(workspace_mod.workspaces()) do
+    if vim.startswith(current_file, vim.fs.normalize(vim.fn.expand(ws_path))) then
+      in_workspace = true
+      break
+    end
+  end
+
+  if not in_workspace then
+    log.trace("File not in workspace, not starting LSP")
+    return
+  end
+
+  log.info("Starting down.lsp LSP server for " .. current_file)
+
   vim.lsp.start({
     name = "downls",
     on_error = function(ei, es)
       if config.dev or config.debug then
-        vim.print("init", ei, es)
-        vim.print(Lsp)
+        vim.print("down.lsp error:", ei, es)
       end
     end,
     on_init = function(client, result)
-      if config.dev and config.debug then
-        vim.print("init", client, result)
+      if config.dev or config.debug then
+        vim.print("down.lsp initialized", client, result)
       end
+      log.info("down.lsp server started successfully")
     end,
-    on_exit = function(client, result)
-      if config.dev and config.debug then
-        vim.print("exit", client, result)
+    on_exit = function(code, signal)
+      if config.dev or config.debug then
+        vim.print("down.lsp exited", code, signal)
       end
     end,
     cmd = { "down.lsp", "lsp" },
-    before_init = function(client, cfg)
-      if config.dev and config.debug then
-        vim.print("before_init", client, cfg)
+    before_init = function(params, config_table)
+      if config.dev or config.debug then
+        vim.print("down.lsp before_init", params, config_table)
       end
     end,
     root_dir = ws.current_path(),
     on_attach = Lsp.on_attach,
     workspace_folders = ws.as_lsp_workspaces(),
-    settings = Lsp.config.settings,
+    settings = settings,
   })
 end
 

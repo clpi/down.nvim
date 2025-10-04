@@ -1,9 +1,7 @@
 local log = require 'down.log'
 local mod = require 'down.mod'
 
-local plenok, plenary = pcall(require, 'plenary.scandir').scan_dir
 local cmpok, cmp = pcall(require, 'cmp')
-local scan = plenary.scandir.scan_dir
 
 ---@class down.mod.integration.Cmp: down.Mod
 local M = mod.new 'integration.cmp'
@@ -16,34 +14,52 @@ M.clean = function(s)
   return s:gsub('%s%s+', ' ')
 end
 
+--- Scan directory recursively for files
+---@param dir string
+---@param pattern? string
+---@return string[]
+local function scan_dir(dir, pattern)
+  local files = {}
+  pattern = pattern or "**/*"
+
+  local scan_results = vim.fn.globpath(dir, pattern, true, true)
+  for _, file in ipairs(scan_results) do
+    if vim.fn.isdirectory(file) == 0 then
+      table.insert(files, file)
+    end
+  end
+
+  return files
+end
+
 ---@class down.mod.integration.cmp.Data
 M.files = function()
   local items = {}
   local root = M.dep['workspace'].get_current_workspace()[2]
   local ext = mod.mod_config 'workspace'.ext or '.md'
-  for f, path in pairs(scan(root)) do
-    if vim.endswith(path, ext) then
-      local item = {
-        path = path,
-        label = path:match('([^/^\\]+)' .. ext .. '$'),
-        kind = cmp.lsp.CompletionItemKind.File,
-      }
-      item.insertText = '[' .. item.label .. '](' .. item.path .. ')'
-      local binary = assert(io.open(item.path, 'rb'))
-      local kb = binary:read(1024)
-      item.documentation = {
-        kind = cmp.lsp.MarkupKind.Markdown,
-        value = kb,
-      }
-      binary:close()
-      local body = {}
-      if kb then
-        for b in kb:gmatch('[^\r\n1]+') do
-          table.insert(body, b)
-        end
+
+  local files = scan_dir(root, '**/*' .. ext)
+  for _, path in ipairs(files) do
+    local item = {
+      path = path,
+      label = path:match('([^/^\\]+)' .. ext .. '$'),
+      kind = cmp.lsp.CompletionItemKind.File,
+    }
+    item.insertText = '[' .. item.label .. '](' .. item.path .. ')'
+    local binary = assert(io.open(item.path, 'rb'))
+    local kb = binary:read(1024)
+    item.documentation = {
+      kind = cmp.lsp.MarkupKind.Markdown,
+      value = kb,
+    }
+    binary:close()
+    local body = {}
+    if kb then
+      for b in kb:gmatch('[^\r\n1]+') do
+        table.insert(body, b)
       end
-      table.insert(items, item)
     end
+    table.insert(items, item)
   end
   return items
 end
@@ -58,12 +74,7 @@ M.config = {}
 
 ---@return down.mod.Setup
 M.setup = function()
-  if plenok and cmpok then
-    return {
-      loaded = true,
-      dependencies = { 'workspace', 'tag', 'data', 'integration.treesitter' },
-    }
-  elseif plenok then
+  if cmpok then
     return {
       loaded = true,
       dependencies = { 'workspace', 'tag', 'data', 'integration.treesitter' },

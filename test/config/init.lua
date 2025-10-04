@@ -1,19 +1,19 @@
-local lazypath = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({
-    'git',
-    'clone',
-    '--filter=blob:none',
-    '--branch=stable',
-    'https://github.com/folke/lazy.nvim.git',
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "--branch=stable",
+    "https://github.com/folke/lazy.nvim.git",
     lazypath,
   })
 end
 vim.opt.runtimepath = vim.opt.runtimepath:append(lazypath)
-vim.opt.runtimepath = vim.opt.runtimepath:append('.')
-vim.wo.foldmethod = 'expr'
+vim.opt.runtimepath = vim.opt.runtimepath:append(".")
+vim.wo.foldmethod = "expr"
 vim.wo.foldenable = false
-vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 vim.opt.rtp:prepend(lazypath)
 vim.opt.termguicolors = true
 vim.opt.nu = true
@@ -29,14 +29,14 @@ vim.opt.expandtab = true
 vim.opt.smartindent = true
 vim.o.swapfile = false
 vim.opt.conceallevel = 2
-vim.opt.winbar = [[word.lua]]
+vim.opt.winbar = [[down.nvim]]
 vim.opt.signcolumn = [[yes:2]]
 vim.bo.swapfile = false
 vim.opt.hlsearch = true
 vim.opt.incsearch = true
 vim.o.splitbelow = true
 vim.o.splitright = true
-vim.opt.inccommand = 'nosplit'
+vim.opt.inccommand = "nosplit"
 
 vim.opt.updatetime = 100
 vim.opt.termguicolors = true
@@ -44,22 +44,22 @@ vim.opt.termguicolors = true
 vim.opt.scrolloff = 8
 
 -- vim.o.completeopt = { "menu", "menuone", "noselect", "popup" }
-vim.g.mapleader = ' '
-vim.g.maplocalleader = ','
+vim.g.mapleader = " "
+vim.g.maplocalleader = ","
 
-vim.keymap.set('i', 'kj', '<Esc>')
+vim.keymap.set("i", "kj", "<Esc>")
 
-vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv")
-vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv")
+vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
+vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 
-vim.keymap.set({ 'n', 'v' }, '<leader>y', [["+y]])
-vim.keymap.set('n', '<leader>Y', [["+Y]])
+vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]])
+vim.keymap.set("n", "<leader>Y", [["+Y]])
 
-vim.keymap.set('x', '<leader>p', [["_dP]])
+vim.keymap.set("x", "<leader>p", [["_dP]])
 
-vim.keymap.set('n', 'Q', '<nop>')
+vim.keymap.set("n", "Q", "<nop>")
 
-vim.keymap.set('n', '<leader>f', vim.lsp.buf.format)
+vim.keymap.set("n", "<leader>f", vim.lsp.buf.format)
 
 vim.opt.cursorline = true
 
@@ -67,15 +67,15 @@ vim.opt.cursorline = true
 vim.opt.wrap = true
 vim.opt.number = true
 vim.opt.relativenumber = true
-vim.opt.statuscolumn = '%s%=%{v:relnum?v:relnum:v:lnum} '
+vim.opt.statuscolumn = "%s%=%{v:relnum?v:relnum:v:lnum} "
 
 -- Mode is already in status line plugin
 vim.opt.showmode = true
 vim.opt.number = true
 vim.opt.conceallevel = 2
 vim.opt.concealcursor = [[nv]]
-vim.opt.winbar = 'word.lua'
-vim.opt.signcolumn = 'yes:2'
+vim.opt.winbar = "down.nvim"
+vim.opt.signcolumn = "yes:2"
 vim.cmd([[
 nno L <CMD>bn<CR>
 nno H <CMD>bp<CR>
@@ -83,76 +83,74 @@ nno ; :
 ]])
 vim.o.updatetime = 100
 
-require('lazy').setup({
-  'JoosepAlviste/nvim-ts-context-commentstring',
+require("lazy").setup({
+  "JoosepAlviste/nvim-ts-context-commentstring",
   {
-    'folke/tokyonight.nvim',
+    "folke/tokyonight.nvim",
     config = function()
       ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup({ style = 'night' })
-      vim.cmd.colorscheme('tokyonight')
+      require("tokyonight").setup({ style = "night" })
+      vim.cmd.colorscheme("tokyonight")
     end,
   },
   {
-    'nvim-lualine/lualine.nvim',
-    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    "nvim-lualine/lualine.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
-      require('lualine').setup({
+      require("lualine").setup({
         sections = {
-          lualine_a = { 'mode' },
-          lualine_b = { { 'filename', path = 0 } },
+          lualine_a = { "mode" },
+          lualine_b = { { "filename", path = 0 } },
           lualine_c = {},
           lualine_x = {},
           lualine_y = {},
-          lualine_z = { 'location' },
+          lualine_z = { "location" },
         },
       })
     end,
   },
 
   {
-    'nvim-telescope/telescope.nvim',
+    "nvim-telescope/telescope.nvim",
     opts = {},
   },
-  { 'nvim-lua/plenary.nvim' },
-  'JoosepAlviste/nvim-ts-context-commentstring',
+  "JoosepAlviste/nvim-ts-context-commentstring",
   {
-    'clpi/word.lua',
+    dir = "~/clp/down.nvim",
     lazy = false,
     version = false,
 
     dependencies = {
-      { 'nvim-telescope/telescope.nvim' },
-      { 'nvim-lua/plenary.nvim' },
-      { 'nvim-treesitter/nvim-treesitter' },
+      { "nvim-telescope/telescope.nvim" },
+      { "nvim-treesitter/nvim-treesitter" },
     },
     opts = {
       workspace = {
-        default = 'clp',
+        default = "wiki",
         workspaces = {
-          default = '~/notes',
-          wiki = '~/wiki',
-          book = '~/w/book/src/',
-          clp = '~/clp',
+          notes = "~/notes",
+          wiki = "~/wiki",
+          book = "~/w/book/src/",
+          clp = "~/clp",
         },
       },
     },
     {
-      'echasnovski/mini.doc',
+      "echasnovski/mini.doc",
       version = false,
       config = function()
-        require('mini.doc').setup({})
+        require("mini.doc").setup({})
       end,
     },
     {
-      'saghen/blink.cmp',
+      "saghen/blink.cmp",
       enabled = true,
       lazy = false, -- lazy loading handled internally
       -- optional: provides snippets for the snippet source
-      dependencies = 'rafamadriz/friendly-snippets',
+      dependencies = "rafamadriz/friendly-snippets",
 
       -- use a release tag to download pre-built binaries
-      version = 'v0.*',
+      version = "v0.*",
       -- OR build from source, requires nightly: https://rust-lang.github.io/rustup/concepts/channels.html#working-with-nightly-rust
       -- build = 'cargo build --release',
       -- If you use nix, you can build from source using latest nightly rust with:
@@ -162,17 +160,17 @@ require('lazy').setup({
       ---@type blink.cmp.Config
       opts = {
         keymap = {
-          ['<C-Space>'] = { 'show', 'show_documentation', 'hide_documentation' },
-          ['<Up>'] = { 'select_prev', 'fallback' },
-          ['<Down>'] = { 'select_next', 'fallback' },
-          ['<C-N>'] = { 'select_next', 'show' },
-          ['<C-P>'] = { 'select_prev', 'show' },
-          ['<C-J>'] = { 'select_next', 'fallback' },
-          ['<C-K>'] = { 'select_prev', 'fallback' },
-          ['<C-U>'] = { 'scroll_documentation_up', 'fallback' },
-          ['<C-D>'] = { 'scroll_documentation_down', 'fallback' },
-          ['<C-e>'] = { 'hide', 'fallback' },
-          ['<CR>'] = { 'accept', 'fallback' },
+          ["<C-Space>"] = { "show", "show_documentation", "hide_documentation" },
+          ["<Up>"] = { "select_prev", "fallback" },
+          ["<Down>"] = { "select_next", "fallback" },
+          ["<C-N>"] = { "select_next", "show" },
+          ["<C-P>"] = { "select_prev", "show" },
+          ["<C-J>"] = { "select_next", "fallback" },
+          ["<C-K>"] = { "select_prev", "fallback" },
+          ["<C-U>"] = { "scroll_documentation_up", "fallback" },
+          ["<C-D>"] = { "scroll_documentation_down", "fallback" },
+          ["<C-e>"] = { "hide", "fallback" },
+          ["<CR>"] = { "accept", "fallback" },
           --   ["<Tab>"] = {
           --     function(cmp)
           --       if cmp.windows.autocomplete.win:is_open() then
@@ -198,7 +196,7 @@ require('lazy').setup({
         },
         sources = {
           completion = {
-            enabled_providers = { 'lsp', 'path', 'snippets', 'buffer' },
+            enabled_providers = { "lsp", "path", "snippets", "buffer" },
           },
           -- lazydev = {
           --
@@ -208,8 +206,8 @@ require('lazy').setup({
 
           providers = {
             lsp = {
-              name = 'LSP',
-              module = 'blink.cmp.sources.lsp',
+              name = "LSP",
+              module = "blink.cmp.sources.lsp",
               -- fallback_for = { "lazydev" },
 
               --- *All* of the providers have the following options available
@@ -225,27 +223,27 @@ require('lazy').setup({
               override = nil, -- override the source's functions
             },
             path = {
-              name = 'Path',
-              module = 'blink.cmp.sources.path',
+              name = "Path",
+              module = "blink.cmp.sources.path",
               score_offset = 3,
               opts = {
                 trailing_slash = false,
                 label_trailing_slash = true,
                 get_cwd = function(context)
-                  return vim.fn.expand(('#%d:p:h'):format(context.bufnr))
+                  return vim.fn.expand(("#%d:p:h"):format(context.bufnr))
                 end,
                 show_hidden_files_by_default = false,
               },
             },
             snippets = {
-              name = 'Snippets',
+              name = "Snippets",
               enabled = false,
-              module = 'blink.cmp.sources.snippets',
+              module = "blink.cmp.sources.snippets",
               score_offset = -3,
               opts = {
                 friendly_snippets = true,
-                search_paths = { vim.fn.stdpath('config') .. '/snippets' },
-                global_snippets = { 'all' },
+                search_paths = { vim.fn.stdpath("config") .. "/snippets" },
+                global_snippets = { "all" },
                 extended_filetypes = {},
                 ignored_filetypes = {},
               },
@@ -255,16 +253,16 @@ require('lazy').setup({
             },
             buffer = {
               enabled = false,
-              name = 'Buffer',
-              module = 'blink.cmp.sources.buffer',
-              fallback_for = { 'lsp' },
+              name = "Buffer",
+              module = "blink.cmp.sources.buffer",
+              fallback_for = { "lsp" },
             },
           },
         },
         signature_help = {
           enabled = true,
         },
-        nerd_font_variant = 'normal',
+        nerd_font_variant = "normal",
         highlight = {
           -- sets the fallback highlight groups to nvim-cmp's highlight groups
           -- useful for when your theme doesn't support blink.cmp
@@ -281,17 +279,17 @@ require('lazy').setup({
         trigger = { signature_help = { enabled = true } },
       },
       opts_extend = {
-        'sources.completion.enabled_providers',
+        "sources.completion.enabled_providers",
       },
       specs = {
         {
-          'folke/lazydev.nvim',
+          "folke/lazydev.nvim",
           optional = true,
           specs = {
             {
-              'Saghen/blink.cmp',
+              "Saghen/blink.cmp",
               opts = function(_, opts)
-                if pcall(require, 'lazydev.integrations.blink') then
+                if pcall(require, "lazydev.integrations.blink") then
                   -- return require("astrocore").extend_tbl(opts, {
                   -- sources = {
                   -- add lazydev to your completion providers

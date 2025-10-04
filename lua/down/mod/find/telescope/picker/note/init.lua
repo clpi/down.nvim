@@ -1,10 +1,20 @@
-local Path = require("plenary.path")
 local action_state = require("telescope.actions.state")
 local actions = require("telescope.actions")
 local finders = require("telescope.finders")
 local pickers = require("telescope.pickers")
 local previewers = require("telescope.previewers")
 local sorters = require("telescope.sorters")
+
+--- Make path relative to base
+---@param path string
+---@param base string
+---@return string
+local function make_relative(path, base)
+  if vim.startswith(path, base) then
+    return path:sub(#base + 2) -- +2 to skip the trailing slash
+  end
+  return path
+end
 
 local function open_note_in_workspace()
   local workspace_path = vim.fn.expand("~/workspace/notes") -- Adjust the path to your notes directory
@@ -18,7 +28,7 @@ local function open_note_in_workspace()
           entry_maker = function(entry)
             return {
               value = entry,
-              display = Path:new(entry):make_relative(workspace_path),
+              display = make_relative(entry, workspace_path),
               ordinal = entry,
             }
           end,

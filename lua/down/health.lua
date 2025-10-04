@@ -36,8 +36,6 @@ end
 H.deps = {
   required = {
     ["nvim-treesitter"] = "nvim-treesitter/nvim-treesitter",
-    ["plenary.nvim"] = "nvim-lua/plenary.nvim",
-    ["nui.nvim"] = "MunifTanjim/nui.nvim",
   },
   optional = {
     ["fzf.lua"] = "",

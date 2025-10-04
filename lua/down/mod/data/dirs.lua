@@ -1,9 +1,5 @@
 local Dirs = {}
 
-local path = require('plenary.path')
-local ctx = require 'plenary.context_manager'
-local async = require 'plenary.async_lib'
-
 Dirs.vim = {
   data = vim.fn.stdpath('data'),
   config = vim.fn.stdpath('config'),
@@ -19,18 +15,38 @@ Dirs.down = {
   end,
 }
 
+--- Check if path exists
+---@param path string
+---@return boolean
+local function path_exists(path)
+  return vim.fn.filereadable(path) == 1 or vim.fn.isdirectory(path) == 1
+end
+
+--- Check if path is a directory
+---@param path string
+---@return boolean
+local function is_dir(path)
+  return vim.fn.isdirectory(path) == 1
+end
+
+--- Touch a file (create if doesn't exist)
+---@param path string
+local function touch_file(path)
+  if vim.fn.filereadable(path) == 0 then
+    vim.fn.writefile({}, path)
+  end
+end
+
 Dirs.get_mkfile = function(file)
-  local f = path:new(file)
-  if not f:exists() or f:is_dir() then
-    file:touch()
+  if not path_exists(file) or is_dir(file) then
+    touch_file(file)
   end
   return file
 end
 
 Dirs.get_mkdir = function(dir)
-  local d = path:new(dir)
-  if not d:exists() or d:is_file() then
-    dir:mkdir()
+  if not path_exists(dir) or vim.fn.isdirectory(dir) == 0 then
+    vim.fn.mkdir(dir, 'p')
   end
   return dir
 end

@@ -70,8 +70,6 @@ end
 dependencies = {
   'lua == 5.4',
   'nvim-nio ~> 1.7',
-  'plenary.nvim == 0.1.4',
-  'nui.nvim == 0.3.0',
 }
 
 test_dependencies = {
