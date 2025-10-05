@@ -650,7 +650,6 @@
 ---  | "note"
 ---  | "ui"
 ---  | "keymap"
----  | "lsp"
 ---  | "tag"
 ---  | "time"
 ---  | "code"

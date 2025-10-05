@@ -1,4 +1,3 @@
-local lsp = require("down.mod.lsp")
 local ws = require("down.mod.workspace")
 
 local actions = require("telescope.actions")

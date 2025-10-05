@@ -30,7 +30,6 @@ local mods = {
   -- "data.bookmark",
   "edit",
   "find",
-  "lsp",
 }
 
 --- Remove the first 2 lines from the generated documentation
