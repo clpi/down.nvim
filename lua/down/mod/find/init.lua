@@ -53,31 +53,32 @@ Find.commands = {
     name = "find",
     enabled = true,
     callback = function(e)
+      -- Default: find files in current workspace
       Find.picker("file")()
     end,
     commands = {
+      tag = {
+        callback = function(e)
+          Find.picker("tag")({ scope = "workspace" })
+        end,
+        enabled = true,
+        name = "find.tag",
+        args = 0,
+      },
       tags = {
         callback = function(e)
-          Find.picker("tag")()
+          Find.picker("tag")({ scope = "workspace" })
         end,
-        enabled = false,
-        name = "find.links",
+        enabled = true,
+        name = "find.tags",
         args = 0,
       },
-      project = {
+      link = {
         callback = function(e)
-          Find.picker("project")()
+          Find.picker("link")()
         end,
-        enabled = false,
-        name = "find.links",
-        args = 0,
-      },
-      notes = {
-        callback = function(e)
-          Find.picker("note")()
-        end,
-        enabled = false,
-        name = "find.links",
+        enabled = true,
+        name = "find.link",
         args = 0,
       },
       links = {
@@ -88,12 +89,28 @@ Find.commands = {
         name = "find.links",
         args = 0,
       },
-      tasks = {
+      task = {
         callback = function(e)
-          Find.picker("task")()
+          Find.picker("task")({ scope = "workspace" })
         end,
         enabled = true,
-        name = "find.tags",
+        name = "find.task",
+        args = 0,
+      },
+      tasks = {
+        callback = function(e)
+          Find.picker("task")({ scope = "workspace" })
+        end,
+        enabled = true,
+        name = "find.tasks",
+        args = 0,
+      },
+      file = {
+        callback = function(e)
+          Find.picker("file")()
+        end,
+        enabled = true,
+        name = "find.file",
         args = 0,
       },
       files = {
@@ -106,10 +123,35 @@ Find.commands = {
       },
       workspace = {
         callback = function(e)
+          -- Workspace switcher
           Find.picker("workspace")()
         end,
         enabled = true,
         name = "find.workspace",
+        args = 0,
+      },
+      note = {
+        callback = function(e)
+          Find.picker("note")()
+        end,
+        enabled = true,
+        name = "find.note",
+        args = 0,
+      },
+      notes = {
+        callback = function(e)
+          Find.picker("note")()
+        end,
+        enabled = true,
+        name = "find.notes",
+        args = 0,
+      },
+      template = {
+        callback = function(e)
+          Find.picker("template")()
+        end,
+        enabled = true,
+        name = "find.template",
         args = 0,
       },
     },

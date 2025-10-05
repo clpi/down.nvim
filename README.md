@@ -92,6 +92,24 @@ the _familiar_, organized future for neovim and beyond!
 ---
 
 <details>
+    <summary>
+      Builtin
+    </summary>
+
+```lua
+
+-- Add to your `init.lua`
+vim.pack.add({
+    { src = "https://github.com/clpi/down.nvim" }
+})
+
+```
+
+</details>
+
+---
+
+<details>
 
   <summary>
 <a href="https://github.com/junegunn/vim-plug">plug.vim</a>

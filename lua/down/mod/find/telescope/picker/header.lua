@@ -3,60 +3,43 @@ local actions = require("telescope.actions")
 local finders = require("telescope.finders")
 local pickers = require("telescope.pickers")
 local previewers = require("telescope.previewers")
-local telescope = require("telescope")
 local conf = require("telescope.config").values
 local entry_display = require("telescope.pickers.entry_display")
 
-local function parse_links(bufnr)
-  local links = {}
+--- Parse markdown headers from buffer
+---@param bufnr number
+---@return table
+local function parse_headers(bufnr)
+  local headers = {}
   local lines = vim.api.nvim_buf_get_lines(bufnr or 0, 0, -1, false)
 
   for lnum, line in ipairs(lines) do
-    -- Parse wikilinks [[link]]
-    for link in line:gmatch("%[%[([^%]]+)%]%]") do
-      table.insert(links, {
-        link = link,
-        line = lnum,
-        col = line:find("%[%[" .. vim.pesc(link)),
-        type = "wikilink",
-        text = line,
-      })
-    end
-
-    -- Parse markdown links [text](link)
-    for text, link in line:gmatch("%[([^%]]+)%]%(([^%)]+)%)") do
-      table.insert(links, {
-        link = link,
+    -- Parse markdown headers: # Header
+    local level, text = line:match("^(#+)%s+(.+)")
+    if level and text then
+      table.insert(headers, {
         text = text,
         line = lnum,
-        col = line:find("%[" .. vim.pesc(text)),
-        type = "markdown",
-        text_line = line,
-      })
-    end
-
-    -- Parse autolinks <link>
-    for link in line:gmatch("<([^>]+)>") do
-      table.insert(links, {
-        link = link,
-        line = lnum,
-        col = line:find("<" .. vim.pesc(link)),
-        type = "autolink",
-        text = line,
+        col = 1,
+        level = #level,
+        indent = string.rep("  ", #level - 1),
+        full_line = line,
       })
     end
   end
 
-  return links
+  return headers
 end
 
-local function markdown_links_picker(opts)
+--- Header picker for current buffer
+---@param opts table
+return function(opts)
   opts = opts or {}
   local bufnr = vim.api.nvim_get_current_buf()
-  local links = parse_links(bufnr)
+  local headers = parse_headers(bufnr)
 
-  if #links == 0 then
-    vim.notify("No links found in current buffer", vim.log.levels.INFO)
+  if #headers == 0 then
+    vim.notify("No headers found in current buffer", vim.log.levels.INFO)
     return
   end
 
@@ -64,7 +47,6 @@ local function markdown_links_picker(opts)
     separator = " ",
     items = {
       { width = 10 },
-      { width = 8 },
       { remaining = true },
     },
   })
@@ -72,25 +54,25 @@ local function markdown_links_picker(opts)
   local make_display = function(entry)
     return displayer({
       { entry.line .. ":" .. entry.col, "TelescopeResultsLineNr" },
-      { entry.type, "TelescopeResultsIdentifier" },
-      { entry.link, "TelescopeResultsString" },
+      { entry.indent .. entry.text, "TelescopeResultsIdentifier" },
     })
   end
 
   pickers
     .new(opts, {
-      prompt_title = "Links in Buffer",
+      prompt_title = "Headers",
       finder = finders.new_table({
-        results = links,
+        results = headers,
         entry_maker = function(entry)
           return {
             value = entry,
             display = make_display,
-            ordinal = entry.link .. " " .. entry.text,
-            link = entry.link,
+            ordinal = entry.text,
             line = entry.line,
             col = entry.col,
-            type = entry.type,
+            text = entry.text,
+            indent = entry.indent,
+            lnum = entry.line,
           }
         end,
       }),
@@ -98,7 +80,7 @@ local function markdown_links_picker(opts)
       previewer = previewers.new_buffer_previewer({
         define_preview = function(self, entry, status)
           local preview_bufnr = self.state.bufnr
-          vim.api.nvim_buf_set_lines(preview_bufnr, 0, -1, false, { entry.value.text })
+          vim.api.nvim_buf_set_lines(preview_bufnr, 0, -1, false, { entry.value.full_line })
           vim.api.nvim_buf_add_highlight(preview_bufnr, -1, "Search", 0, 0, -1)
         end,
       }),
@@ -116,5 +98,3 @@ local function markdown_links_picker(opts)
     })
     :find()
 end
-
-return markdown_links_picker

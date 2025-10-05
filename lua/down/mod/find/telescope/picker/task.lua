@@ -3,98 +3,91 @@ local actions = require("telescope.actions")
 local finders = require("telescope.finders")
 local pickers = require("telescope.pickers")
 local previewers = require("telescope.previewers")
-local sorters = require("telescope.sorters")
 local conf = require("telescope.config").values
 local entry_display = require("telescope.pickers.entry_display")
 
-local function parse_tags(bufnr)
-  local tags = {}
+--- Parse tasks from buffer
+---@param bufnr number
+---@return table
+local function parse_tasks(bufnr)
+  local tasks = {}
   local lines = vim.api.nvim_buf_get_lines(bufnr or 0, 0, -1, false)
   local filepath = vim.api.nvim_buf_get_name(bufnr or 0)
 
   for lnum, line in ipairs(lines) do
-    -- Parse tags: #tag or #tag-with-dashes
-    for tag in line:gmatch("#([%w%-_]+)") do
-      table.insert(tags, {
-        tag = "#" .. tag,
+    -- Parse markdown tasks: - [ ] or - [x]
+    local status, task_text = line:match("^%s*[-*]%s*%[([%sx])%]%s*(.+)")
+    if status and task_text then
+      local is_done = status:lower() == "x"
+      table.insert(tasks, {
+        text = task_text,
         line = lnum,
-        col = line:find("#" .. vim.pesc(tag)),
-        text = line:match("^%s*(.-)%s*$"), -- trim whitespace
+        col = 1,
+        done = is_done,
+        status = is_done and "done" or "pending",
         file = filepath,
+        full_line = line,
       })
     end
   end
 
-  return tags
+  return tasks
 end
 
-local function parse_workspace_tags()
+--- Parse tasks from all workspace files
+---@return table
+local function parse_workspace_tasks()
   local mod = require("down.mod")
-  local workspace_mod = mod.get_mod("workspace")
+  local ws_mod = mod.get_mod("workspace")
 
-  if not workspace_mod then
+  if not ws_mod then
     return {}
   end
 
-  local ws_path = workspace_mod.get_current_workspace_path()
+  local ws_path = ws_mod.get_current_workspace_path()
   if not ws_path then
     return {}
   end
 
-  -- Find all markdown files in workspace
   local files = vim.fn.globpath(ws_path, "**/*.md", false, true)
-  local all_tags = {}
-  local tag_index = {} -- Track unique tags with their occurrences
+  local all_tasks = {}
 
   for _, file in ipairs(files) do
     local bufnr = vim.fn.bufadd(file)
     vim.fn.bufload(bufnr)
-    local tags = parse_tags(bufnr)
+    local tasks = parse_tasks(bufnr)
 
-    for _, tag_info in ipairs(tags) do
-      -- Add to all tags list
-      table.insert(all_tags, tag_info)
-
-      -- Track unique tags
-      if not tag_index[tag_info.tag] then
-        tag_index[tag_info.tag] = {
-          tag = tag_info.tag,
-          count = 0,
-          files = {},
-        }
-      end
-      tag_index[tag_info.tag].count = tag_index[tag_info.tag].count + 1
-      if not vim.tbl_contains(tag_index[tag_info.tag].files, file) then
-        table.insert(tag_index[tag_info.tag].files, file)
-      end
+    for _, task in ipairs(tasks) do
+      table.insert(all_tasks, task)
     end
   end
 
-  return all_tags, tag_index
+  return all_tasks
 end
 
-local function tag_picker(opts)
+--- Task picker
+---@param opts table
+return function(opts)
   opts = opts or {}
-  opts.scope = opts.scope or "buffer" -- buffer, workspace, or all
+  opts.scope = opts.scope or "workspace" -- buffer or workspace
 
-  local tags = {}
-  local tag_index = nil
+  local tasks = {}
 
   if opts.scope == "buffer" then
-    tags = parse_tags(0)
+    tasks = parse_tasks(0)
   elseif opts.scope == "workspace" then
-    tags, tag_index = parse_workspace_tags()
+    tasks = parse_workspace_tasks()
   end
 
-  if #tags == 0 then
-    vim.notify("No tags found", vim.log.levels.INFO)
+  if #tasks == 0 then
+    vim.notify("No tasks found", vim.log.levels.INFO)
     return
   end
 
   local displayer = entry_display.create({
     separator = " ",
     items = {
-      { width = 20 },
+      { width = 8 },
       { width = 10 },
       { remaining = true },
     },
@@ -102,24 +95,24 @@ local function tag_picker(opts)
 
   local make_display = function(entry)
     local filename = vim.fn.fnamemodify(entry.file, ":t")
+    local status_icon = entry.done and "✓" or "○"
     return displayer({
-      { entry.tag, "TelescopeResultsIdentifier" },
+      { status_icon .. " " .. entry.status, entry.done and "TelescopeResultsComment" or "TelescopeResultsIdentifier" },
       { entry.line .. ":" .. entry.col, "TelescopeResultsLineNr" },
-      { filename .. " - " .. entry.text, "TelescopeResultsComment" },
+      { filename .. " - " .. entry.text, "TelescopeResultsString" },
     })
   end
 
   pickers
     .new(opts, {
-      prompt_title = "Tags (" .. opts.scope .. ")",
+      prompt_title = "Tasks (" .. opts.scope .. ")",
       finder = finders.new_table({
-        results = tags,
+        results = tasks,
         entry_maker = function(entry)
           return {
             value = entry,
             display = make_display,
-            ordinal = entry.tag .. " " .. entry.text,
-            tag = entry.tag,
+            ordinal = entry.text,
             line = entry.line,
             col = entry.col,
             file = entry.file,
@@ -146,5 +139,3 @@ local function tag_picker(opts)
     })
     :find()
 end
-
-return tag_picker

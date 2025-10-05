@@ -22,7 +22,6 @@ Link.setup = function()
   }
 end
 
---- TODO: <tab> and <s-tab> for next and previous links
 Link.maps = {
   {
     'n',
@@ -33,21 +32,21 @@ Link.maps = {
   {
     'n',
     '<CR>',
-    '<ESC>:<C-U>lua require("down.mod.link").follow.link()<CR>',
-    { desc = 'Follow link', silent = true, noremap = false, nowait = true },
+    '<ESC>:<C-U>lua require("down.mod.link").follow.link_or_create()<CR>',
+    { desc = 'Follow/Create link', silent = true, noremap = false, nowait = true },
   },
-  -- {
-  --   'n',
-  --   '<S-TAB>',
-  --   '<ESC>:<C-U>lua require("down.mod.link").goto.prev()<CR>',
-  --   { desc = 'Previous link', silent = true, noremap = false, nowait = true },
-  -- },
-  -- {
-  --   'n',
-  --   '<TAB>',
-  --   '<ESC>:<C-U>lua require("down.mod.link").goto.next()<CR>',
-  --   { desc = 'Next link', silent = true, noremap = false, nowait = true },
-  -- },
+  {
+    'n',
+    '<S-TAB>',
+    '<ESC>:<C-U>lua require("down.mod.link").goto.prev()<CR>',
+    { desc = 'Previous link', silent = true, noremap = false, nowait = true },
+  },
+  {
+    'n',
+    '<TAB>',
+    '<ESC>:<C-U>lua require("down.mod.link").goto.next()<CR>',
+    { desc = 'Next link', silent = true, noremap = false, nowait = true },
+  },
 }
 Link.load = function() end
 
@@ -335,23 +334,190 @@ Link.follow.link = function()
   end
 end
 
+--- Get word under cursor
+---@return string, number, number
+Link.get_word_under_cursor = function()
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.api.nvim_win_get_cursor(0)[2] + 1
+
+  -- If cursor is on whitespace, return empty
+  if line:sub(col, col):match('%s') then
+    return '', 0, 0
+  end
+
+  -- Find word boundaries - support alphanumeric, underscore, hyphen, dot, and slash for paths
+  local word_start = col
+  local word_end = col
+
+  -- Move backwards to find word start
+  while word_start > 1 do
+    local char = line:sub(word_start - 1, word_start - 1)
+    if char:match('[%w_%-/.]') then
+      word_start = word_start - 1
+    else
+      break
+    end
+  end
+
+  -- Move forwards to find word end
+  while word_end <= #line do
+    local char = line:sub(word_end, word_end)
+    if char:match('[%w_%-/.]') then
+      word_end = word_end + 1
+    else
+      break
+    end
+  end
+
+  local word = line:sub(word_start, word_end - 1)
+  return word, word_start, word_end
+end
+
+--- Convert word under cursor to a wikilink
+---@param word string
+---@param word_start number
+---@param word_end number
+Link.linkify_word = function(word, word_start, word_end)
+  if not word or word == '' then
+    return false
+  end
+
+  local line = vim.api.nvim_get_current_line()
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+
+  -- Check if we're already inside a wikilink
+  local before_cursor = line:sub(1, word_start - 1)
+  local after_cursor = line:sub(word_end)
+
+  -- Don't linkify if already inside [[...]]
+  if before_cursor:match('%[%[[^%]]*$') or after_cursor:match('^[^%[]*%]%]') then
+    return false
+  end
+
+  -- Create wikilink
+  local before = line:sub(1, word_start - 1)
+  local after = line:sub(word_end)
+  local new_line = before .. '[[' .. word .. ']]' .. after
+
+  vim.api.nvim_set_current_line(new_line)
+
+  -- Move cursor to inside the link (after the opening [[)
+  vim.api.nvim_win_set_cursor(0, { row, word_start + 1 })
+
+  return true
+end
+
+--- Check if we're actually on a link (not just text)
+---@return boolean
+Link.is_on_link = function()
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.api.nvim_win_get_cursor(0)[2] + 1
+
+  -- Check for wikilink [[...]]
+  local before = line:sub(1, col)
+  local after = line:sub(col)
+
+  -- We're in a wikilink if we have [[ before and ]] after without closing/opening in between
+  local in_wikilink = before:match('%[%[[^%]]*$') and after:match('^[^%[]*%]%]')
+  if in_wikilink then
+    return true
+  end
+
+  -- Check for markdown link [text](url)
+  -- We're in a markdown link if we have [text]( before and ) after
+  local in_md_link = before:match('%[[^%]]*%]%([^%)]*$') and after:match('^[^%(]*%)')
+  if in_md_link then
+    return true
+  end
+
+  -- Check for autolink <url>
+  local in_autolink = before:match('<[^>]*$') and after:match('^[^<]*>')
+  if in_autolink then
+    return true
+  end
+
+  return false
+end
+
+--- Main function: Follow link if on link, linkify word if on word
+Link.follow.link_or_create = function()
+  -- First check if we're actually on a link using simple text matching
+  local is_on_link = Link.is_on_link()
+
+  if is_on_link then
+    -- We're on a link, try to follow it
+    local ld = Link.destination()
+    if ld then
+      local res, lty = Link.resolve(ld)
+      if lty == 'file' then
+        Link.dep['data.history'].add.file(vim.fn.expand('%:p'))
+        Link.follow.file(res)
+      elseif lty == 'heading' then
+        Link.follow.heading(res)
+      elseif lty == 'web' then
+        vim.ui.open(res)
+      end
+      return
+    end
+  end
+
+  -- Not on a link, get word under cursor and linkify it
+  local word, word_start, word_end = Link.get_word_under_cursor()
+
+  if not word or word == '' then
+    return
+  end
+
+  -- Just linkify the word, don't navigate
+  local success = Link.linkify_word(word, word_start, word_end)
+
+  if not success then
+    -- Already in a link or failed to linkify
+    return
+  end
+end
+
 Link.commands = {
   link = {
     name = "link",
-    enabled = false,
+    enabled = true,
     min_args = 0,
     max_args = 1,
     condition = "markdown",
     callback = function(e)
-      log.trace("Link.commands.link: Callback", e.body[1])
+      Link.follow.link_or_create()
     end,
     commands = {
+      linkify = {
+        name = "link.linkify",
+        enabled = true,
+        args = 0,
+        min_args = 0,
+        max_args = 1,
+        condition = "markdown",
+        callback = function(e)
+          local word, word_start, word_end = Link.get_word_under_cursor()
+          if word and word ~= '' then
+            Link.linkify_word(word, word_start, word_end)
+          end
+        end,
+      },
+      follow = {
+        name = "link.follow",
+        enabled = true,
+        args = 0,
+        min_args = 0,
+        max_args = 1,
+        condition = "markdown",
+        callback = function(e)
+          Link.follow.link_or_create()
+        end,
+      },
       backlink = {
-        enabled = false,
+        enabled = true,
         name = "backlink",
         args = 0,
         min_args = 0,
-        enabled = true,
         max_args = 1,
         condition = "markdown",
         callback = function(e)
@@ -360,7 +526,7 @@ Link.commands = {
         commands = {
           list = {
             name = "backlink.list",
-            enabled = false,
+            enabled = true,
             args = 0,
             condition = "markdown",
             callback = function()
@@ -376,7 +542,7 @@ Link.commands = {
       },
       next = {
         name = "link.next",
-        enabled = false,
+        enabled = true,
         min_args = 0,
         max_args = 1,
         condition = "markdown",
@@ -384,7 +550,7 @@ Link.commands = {
         callback = Link.goto.next,
       },
       previous = {
-        enabled = false,
+        enabled = true,
         name = "link.previous",
         min_args = 0,
         max_args = 1,
@@ -396,7 +562,7 @@ Link.commands = {
         name = "link.select",
         min_args = 0,
         max_args = 1,
-        enabled = false,
+        enabled = true,
         condition = "markdown",
         commands = {},
         callback = Link.select,
