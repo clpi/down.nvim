@@ -14,7 +14,7 @@ Agenda.Agenda = {
   tasks = {},
 }
 
----@class table<down.mod..task.agenda.Agenda>
+---@class table<down.mod.task.agenda.Agenda>
 Agenda.agendas = {}
 
 ---@class down.mod..task.agenda.Config

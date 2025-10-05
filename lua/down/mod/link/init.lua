@@ -112,21 +112,25 @@ end
 
 Link.cursor = function()
   local node = tsu.get_node_at_cursor()
+  if not node then return end
   return node, node:type()
 end
 
 Link.parent = function(node)
   local parent = node:parent()
+  if not parent then return end
   return parent, parent:type()
 end
 
 Link.node = {
 prev = function(node)
   local next = tsu.get_prev_node(node)
+  if not next then return end
   return next, next:type()
 end,
 next = function(node)
   local next = tsu.get_next_node(node)
+  if not next then return end
   return next, next:type()
 end
 }
