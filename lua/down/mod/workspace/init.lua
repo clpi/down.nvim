@@ -5,7 +5,7 @@ local util = require("down.mod.workspace.util")
 local utils = require("down.util")
 
 local fn, fs, it, uv, dbg =
-    vim.fn, vim.fs, vim.iter, (vim.uv or vim.loop), vim.print
+  vim.fn, vim.fs, vim.iter, (vim.uv or vim.loop), vim.print
 
 ---@class down.Workspace: string
 ---@class down.Workspaces: { [string]?: string }
@@ -114,30 +114,8 @@ Workspace.setup = function()
 end
 
 Workspace.maps = {
-  {
-    "n",
-    ",D",
-    function()
-      dbg(Workspace.data)
-    end,
-    "hi",
-  },
-  {
-    "n",
-    ",dfw",
-    "<CWorkspaceD>Telescope down workspace<CR>",
-    "Telescope down workspaces",
-  },
-  { "n", ",d.", "<CWorkspaceD>Down workspace cwd<CR>", "Down workspace in cw" },
-  { "n", ",di", "<CWorkspaceD>Down index<CR>",         "Down index" },
-  { "n", ",dw", "<CWorkspaceD>Down workspace<CR>",     "Down workspaces" },
-  {
-    "n",
-    ",dfw",
-    "<CWorkspaceD>Telescope down workspace<CR>",
-    "Telescope down workspaces",
-  },
-  { "n", ",d.", "<CWorkspaceD>Down workspace cwd<CR>", "Down workspace in cw" },
+  { "n", ",di", "<cmd>Down index<CR>", "Down index" },
+  { "n", ",dw", "<cmd>Down workspace<CR>", "Down workspaces" },
 }
 
 --- Returns an iterator for the workspaces
@@ -153,14 +131,19 @@ end
 Workspace.as_lsp_workspace = function(name, path)
   return {
     name = name or Workspace.data.active,
-    uri = vim.uri_from_fname(path or Workspace.path(name or Workspace.data.active)),
+    uri = vim.uri_from_fname(
+      path or Workspace.path(name or Workspace.data.active)
+    ),
   }
 end
 
 --- Returns the workspace folders as lsp
 --- @return lsp.WorkspaceFolder[]
 Workspace.as_lsp_workspaces = function()
-  return vim.iter(Workspace.data.workspaces):map(Workspace.as_lsp_workspace):totable()
+  return vim
+    .iter(Workspace.data.workspaces)
+    :map(Workspace.as_lsp_workspace)
+    :totable()
 end
 
 --- Loads the workspace module
@@ -168,11 +151,17 @@ Workspace.load = function()
   vim.iter(Workspace.config.workspaces):each(function(k, v)
     Workspace.config.workspaces[k] = fs.normalize(fn.resolve(fn.expand(v)))
   end)
-  Workspace.data.workspaces = Workspace.config.workspaces or Workspace.data.workspaces or {}
+  Workspace.data.workspaces = Workspace.config.workspaces
+    or Workspace.data.workspaces
+    or {}
   Workspace.data.history = Workspace.data.history or {}
-  Workspace.data.default = Workspace.config.default or Workspace.data.default or "default"
+  Workspace.data.default = Workspace.config.default
+    or Workspace.data.default
+    or "default"
   Workspace.data.previous = Workspace.data.previous or "default"
-  Workspace.data.active = Workspace.data.active or Workspace.data.default or "default"
+  Workspace.data.active = Workspace.data.active
+    or Workspace.data.default
+    or "default"
   vim.api.nvim_create_autocmd("BufEnter", {
     pattern = "*",
     callback = function()
@@ -187,7 +176,10 @@ end
 --- Returns the index file for a workspace
 ---@class down.mod.workspace.Data
 Workspace.index = function(p)
-  return vim.fs.joinpath(p or Workspace.current_path(), Workspace.config.index .. Workspace.config.ext)
+  return vim.fs.joinpath(
+    p or Workspace.current_path(),
+    Workspace.config.index .. Workspace.config.ext
+  )
 end
 
 --- Returns the current workspace name
@@ -260,7 +252,8 @@ Workspace.add_workspace = function(wsname, wspath)
   wspath = Workspace.path(wspath)
   Workspace.data.workspaces[wsname] = Workspace.path(wspath)
   mod.broadcast(
-    mod.new_event(Workspace, "workspace.events.wsadded", { wsname, wspath }) or {}
+    mod.new_event(Workspace, "workspace.events.wsadded", { wsname, wspath })
+      or {}
   )
   Workspace.sync()
   return true
@@ -288,26 +281,26 @@ end
 --- @param fn? fun(item: number|string, idx: number|string)|nil
 Workspace.select = function(prompt, fmt, fn)
   local format = fmt
-      or function(item)
-        local current = Workspace.current()
-        if item == current then
-          return "• " .. item
-        end
-        return item
+    or function(item)
+      local current = Workspace.current()
+      if item == current then
+        return "• " .. item
       end
+      return item
+    end
   local func = fn
-      or function(item, idx)
-        local current = Workspace.current()
-        if not item then
-          return
-        elseif item == current then
-          vim.notify("Already in workspace " .. current)
-        else
-          vim.notify("Workspace set to " .. item)
-          Workspace.set_workspace(item)
-        end
-        Workspace.open(item)
+    or function(item, idx)
+      local current = Workspace.current()
+      if not item then
+        return
+      elseif item == current then
+        vim.notify("Already in workspace " .. current)
+      else
+        vim.notify("Workspace set to " .. item)
+        Workspace.set_workspace(item)
       end
+      Workspace.open(item)
+    end
   return vim.ui.select(Workspace.names(), {
     prompt = prompt or "Select workspace",
     format_items = format,
@@ -374,8 +367,8 @@ Workspace.set_last_workspace = function()
   if not wspath then
     log.trace(
       "Unable to switch to workspace '"
-      .. prev
-      .. "'. The workspace does not exist."
+        .. prev
+        .. "'. The workspace does not exist."
     )
     return
   end
@@ -508,26 +501,26 @@ end
 --- @param fn? fun(item: number|string, idx: number|string)|nil
 Workspace.select_file = function(prompt, fmt, fn)
   local format = fmt
-      or function(item)
-        local current = vim.fn.expand("%:p")
-        if item == current then
-          return "• " .. item
-        end
-        return item
+    or function(item)
+      local current = vim.fn.expand("%:p")
+      if item == current then
+        return "• " .. item
       end
+      return item
+    end
   local func = fn
-      or function(item, idx)
-        local current = vim.fn.expand("%:p")
-        if not item then
-          return
-        elseif item == current then
-          vim.notify("Already editing " .. current)
-        else
-          vim.notify("Editing " .. item)
-          Workspace.edit(item)
-        end
+    or function(item, idx)
+      local current = vim.fn.expand("%:p")
+      if not item then
+        return
+      elseif item == current then
+        vim.notify("Already editing " .. current)
+      else
+        vim.notify("Editing " .. item)
         Workspace.edit(item)
       end
+      Workspace.edit(item)
+    end
   return vim.ui.select(Workspace.markdown(Workspace.current()) or {}, {
     prompt = prompt or "Select markdown file in workspace",
     format_items = format,
@@ -563,11 +556,11 @@ end
 
 Workspace.fmt = function()
   return vim
-      .iter(Workspace.workspaces())
-      :map(function(k, v)
-        return k .. " -> " .. v
-      end)
-      :totable()
+    .iter(Workspace.workspaces())
+    :map(function(k, v)
+      return k .. " -> " .. v
+    end)
+    :totable()
 end
 
 ---@class down.mod.workspace.Commands: { [string]: down.Command }

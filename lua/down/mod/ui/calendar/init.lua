@@ -61,12 +61,12 @@ Calendar.open_window = function(options)
   local MIN_HEICalendarHT = 14
 
   local buffer, window = Calendar.dep['ui'].new_split(
-    'ui.calendar-' .. tostring(os.clock()):gsub('%.', '-'),
+    'Calendar ' .. tostring(os.clock()):gsub('%.', '-'),
     {},
     options.height or MIN_HEICalendarHT + (options.padding or 0)
   )
 
-  vim.bo.filetype = 'calendar'
+  vim.bo.filetype = 'down-calendar'
   vim.api.nvim_create_autocmd({ 'WinClosed', 'BufDelete' }, {
     buffer = buffer,
     callback = function()
