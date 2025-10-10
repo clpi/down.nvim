@@ -8,6 +8,7 @@
     "after_each",
     "clear",
     "assert",
+    "vim",
     "print"
   ],
   "diagnostics.disable": [

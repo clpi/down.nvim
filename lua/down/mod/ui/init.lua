@@ -111,7 +111,7 @@ Ui.new_split = function(name, config, height)
   vim.api.nvim_win_set_option(0, 'list', false)
   vim.api.nvim_win_set_option(0, 'colorcolumn', '')
   vim.api.nvim_win_set_option(0, 'number', false)
-  vim.api.nvim_win_set_option(0, 'relativenumber', false)
+  -- vim.api.nvim_win_set_option(0, 'relativenumber', false)
   vim.api.nvim_win_set_option(0, 'signcolumn', 'no')
 
   -- Uierge the user provided options with the base options and apply them to the new buffer
@@ -162,8 +162,8 @@ Ui.new_vsplit = function(name, enter, buf_config, win_config)
   }
   win_options = vim.tbl_deep_extend('keep', win_options, win_config)
   local window = vim.api.nvim_open_win(buf, enter, win_options)
-  vim.api.nvim_set_option_value('number', false, { win = window })
-  vim.api.nvim_set_option_value('relativenumber', false, { win = window })
+  -- vim.api.nvim_set_option_value('number', false, { win = window })
+  -- vim.api.nvim_set_option_value('relativenumber', false, { win = window })
   Ui.apply_buffer_options(buf, vim.tbl_extend('keep', buf_config or {}, base_options))
   vim.api.nvim_create_autocmd({ 'BufDelete', 'WinClosed' }, {
     buffer = buf,
