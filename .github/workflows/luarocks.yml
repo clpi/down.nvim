@@ -9,7 +9,7 @@ jobs:
   luarocks-upload:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Required to count the commits
       - name: Get Version
