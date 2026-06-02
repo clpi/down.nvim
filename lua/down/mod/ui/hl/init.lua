@@ -1,6 +1,6 @@
-local down = require("down")
-local util = down.util
-local log, mod = down.log, down.mod
+local util = require("down.util")
+local log = require("down.log")
+local mod = require("down.mod")
 
 --- @class down.mod.ui.hl.Hl: down.Mod
 local Hl = mod.new("ui.hl")

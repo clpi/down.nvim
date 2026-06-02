@@ -32,33 +32,35 @@ U.ids = {
   "ui.calendar.month",
   "cmd",
   "link",
+  "lsp",
+  "mcp",
   "integration.telescope",
   "data.history",
+  "data.knowledge",
   "integration",
 }
 
 ---@return boolean
-U.check_id = function(mod_id)
-  return vim.tbl_contains(U.ids, mod_id)
-    and not (mod_id == "workspace" or mod_id == "workspaces")
+U.check_id = function (mod_id)
+  return vim.tbl_contains (U.ids, mod_id) and mod_id ~= "workspaces"
 end
 
 ---@return boolean
-U.check_default_id = function(mod_id)
-  return vim.tbl_contains(vim.tbl_keys(U.defaults), mod_id)
+U.check_default_id = function (mod_id)
+  return vim.tbl_contains (vim.tbl_keys (U.defaults), mod_id)
 end
 
 ---@return { [down.Mod.Id]?: down.Mod.Config }
-U.merge_default = function(def)
-  return vim.tbl_extend("force", U.defaults, def)
+U.merge_default = function (def)
+  return vim.tbl_extend ("force", U.defaults, def)
 end
 
 ---@return boolean
-U.check_not_default = function(def, defv)
-  return U.check_id(def)
-    and not U.check_default_id(def)
+U.check_not_default = function (def, defv)
+  return U.check_id (def)
+    and not U.check_default_id (def)
     and defv
-    and type(defv) == "table"
+    and type (defv) == "table"
 end
 
 return U

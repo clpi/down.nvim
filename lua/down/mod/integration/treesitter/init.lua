@@ -1,18 +1,15 @@
-local down = require "down"
 local config = require "down.config"
 local mod = require "down.mod"
 local util = require "down.util"
-local install = require "nvim-treesitter.install"
-local shell = require "nvim-treesitter.shell_command_selectors"
-local utils = require "nvim-treesitter.utils"
-local ntp = require "nvim-treesitter.parsers"
-local locals = require "nvim-treesitter.locals"
-local tsu_ok, tsu = pcall(require, "nvim-treesitter.ts_utils")
-local log = log
+local log = require("down.log")
 local ts = vim.treesitter
-local vt = vim.treesitter
-local q = vt.query
-local hi = vt.highlight
+
+-- Lazy-load treesitter dependencies
+local function get_ts_dep(name)
+  local ok, m = pcall(require, name)
+  if ok then return m end
+  return nil
+end
 
 ---@class down.mod.integration.Treesitter: down.Mod
 local Treesitter = mod.new "integration.treesitter"
@@ -70,20 +67,19 @@ Treesitter.heading_query = [[
              ]]
 
 Treesitter.setup = function()
-  return { loaded = tsu_ok }
+  local has_ts = get_ts_dep("nvim-treesitter.ts_utils") ~= nil
+  return { loaded = has_ts }
 end
 
 Treesitter.load = function()
-  -- mod.await("cmd", function(downcmd)
-  --   downcmd.add_commands_from_table({
-  --     treesitter = {
-  --       args = 0,
-  --       name = "treesitter",
-  --     },
-  --   })
-  -- end)
-
-  assert(tsu_ok, "Unable to load nvim-treesitter.ts_utils")
+  local tsu = get_ts_dep("nvim-treesitter.ts_utils")
+  if not tsu then
+    log.warn("nvim-treesitter not available, treesitter integration disabled")
+    return
+  end
+  Treesitter.ts_utils = tsu
+  local ntp = get_ts_dep("nvim-treesitter.parsers")
+  local install = get_ts_dep("nvim-treesitter.install")
 
   if Treesitter.config.configure_parsers then
     -- luacheck: push ignore

@@ -1,5 +1,6 @@
-local down = require("down")
-local log, mod, utils = down.log, down.mod, down.utils
+local log = require("down.log")
+local mod = require("down.mod")
+local utils = require("down.util")
 
 --- @class down.mod.ui.icon.Icon: down.Mod
 local Icon = mod.new("ui.icon", {
