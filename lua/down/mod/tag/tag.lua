@@ -23,8 +23,8 @@ function Tag.new(tag, uri, ln, col)
     uri = uri or vim.fn.expand("%:p"),
     time = os.time(),
     pos = {
-      ln = ln or vim.fn.nvim_win_get_cursor(0)[1],
-      col = col or vim.fn.nvim_win_get_cursor(0)[2],
+      ln = ln or vim.api.nvim_win_get_cursor(0)[1],
+      col = col or vim.api.nvim_win_get_cursor(0)[2],
     }
   }
 end

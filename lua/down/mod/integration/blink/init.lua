@@ -30,8 +30,8 @@ M.setup = function()
 end
 
 ---@class down.integration.blink.Data
-M.source = require("down.mod.integration.blink.source")
-M.format = require("down.mod.integration.blink.format")
+M.source = nil
+M.format = nil
 
 --- Create a blink.cmp source for slash commands
 ---@return blink.cmp.Source
@@ -182,6 +182,16 @@ end
 M.load = function()
   if not has_blink then
     return
+  end
+
+  -- Lazy-load source and format modules only when blink is available
+  local src_ok, src = pcall(require, "down.mod.integration.blink.source")
+  if src_ok then
+    M.source = src
+  end
+  local fmt_ok, fmt = pcall(require, "down.mod.integration.blink.format")
+  if fmt_ok then
+    M.format = fmt
   end
 
   -- Sources are exposed for users to register in their blink.cmp config:

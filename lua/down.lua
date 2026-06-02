@@ -62,10 +62,16 @@ function Down:start ()
   for _, name in ipairs (Down.default_mods) do
     if not self.mod.is_loaded (name) then
       local mod_config = self.config.user[name]
+      local ok, err
       if type (mod_config) == "table" then
-        self.mod.load_mod (name, mod_config)
+        ok, err = pcall (self.mod.load_mod, name, mod_config)
       elseif mod_config ~= false then
-        self.mod.load_mod (name)
+        ok, err = pcall (self.mod.load_mod, name)
+      else
+        ok = true
+      end
+      if not ok then
+        self.log.warn ("Failed to load default module '" .. name .. "': " .. tostring (err))
       end
     end
   end
@@ -73,10 +79,16 @@ function Down:start ()
   -- Load user-specified modules
   for name, usermod in pairs (self.config.user) do
     if self.mod.check_id (name) and not self.mod.is_loaded (name) then
+      local ok, err
       if type (usermod) == "table" then
-        self.mod.load_mod (name, usermod)
+        ok, err = pcall (self.mod.load_mod, name, usermod)
       elseif usermod ~= false then
-        self.mod.load_mod (name)
+        ok, err = pcall (self.mod.load_mod, name)
+      else
+        ok = true
+      end
+      if not ok then
+        self.log.warn ("Failed to load module '" .. name .. "': " .. tostring (err))
       end
     end
   end
@@ -94,7 +106,10 @@ function Down:load_integrations ()
   if has_cmp and not self.mod.is_loaded ("integration.cmp") then
     local cmp_config = self.config.user["integration.cmp"]
     if cmp_config ~= false then
-      self.mod.load_mod ("integration.cmp", type (cmp_config) == "table" and cmp_config or {})
+      local ok, err = pcall (self.mod.load_mod, "integration.cmp", type (cmp_config) == "table" and cmp_config or {})
+      if not ok then
+        self.log.warn ("Failed to load integration.cmp: " .. tostring (err))
+      end
     end
   end
 
@@ -103,7 +118,10 @@ function Down:load_integrations ()
   if has_blink and not self.mod.is_loaded ("integration.blink") then
     local blink_config = self.config.user["integration.blink"]
     if blink_config ~= false then
-      self.mod.load_mod ("integration.blink", type (blink_config) == "table" and blink_config or {})
+      local ok, err = pcall (self.mod.load_mod, "integration.blink", type (blink_config) == "table" and blink_config or {})
+      if not ok then
+        self.log.warn ("Failed to load integration.blink: " .. tostring (err))
+      end
     end
   end
 
@@ -112,7 +130,10 @@ function Down:load_integrations ()
   if has_telescope and not self.mod.is_loaded ("integration.telescope") then
     local tel_config = self.config.user["integration.telescope"]
     if tel_config ~= false then
-      self.mod.load_mod ("integration.telescope", type (tel_config) == "table" and tel_config or {})
+      local ok, err = pcall (self.mod.load_mod, "integration.telescope", type (tel_config) == "table" and tel_config or {})
+      if not ok then
+        self.log.warn ("Failed to load integration.telescope: " .. tostring (err))
+      end
     end
   end
 end

@@ -1,6 +1,5 @@
 local mod = require('down.mod')
 local log = require('down.log')
-local Tag = require('down.mod.tag.tag')
 
 ---@class down.mod.tag.Tag: down.Mod
 local Tag = mod.new 'tag'
@@ -105,16 +104,19 @@ Tag.tags = {
 Tag.parse_ln = function(ln)
   local tags = {}
   for tag in ln:gmatch '#%S+' do
-    tags:insert(tag)
+    table.insert(tags, tag)
   end
   return tags
 end
 
 Tag.parse_current_ln = function()
-  local ln = vim.api.nvim_buf_get_lines(0, pos[1] - 1, pos[1], false)
+  local pos = vim.api.nvim_win_get_cursor(0)
+  local ln = vim.api.nvim_buf_get_lines(0, pos[1] - 1, pos[1], false)[1]
   local path = vim.fn.expand('%:p')
-  local ws = Tag.dep['workspace'].get_current_workspace()
+  local ws_mod = require('down.mod').get_mod('workspace')
+  local ws = ws_mod and ws_mod.current() or 'default'
   local tags = {}
+  if not ln then return tags end
   for tag in ln:gmatch '#%S+' do
     table.insert(tags, { ---@type down.Tag.Instance
       tag = tag,
@@ -122,7 +124,7 @@ Tag.parse_current_ln = function()
       path = path,
       line = ln,
       position = {
-        line = vim.api.nvim_get_current_line(),
+        line = pos[1],
         char = 0,
       },
     })
@@ -132,18 +134,26 @@ end
 
 Tag.parse_current_doc = function()
   local tags = {}
+  local ws_mod = require('down.mod').get_mod('workspace')
+  local ws = ws_mod and ws_mod.current() or 'default'
+  local path = vim.fn.expand('%:p')
   for i, ln in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
-    for tag in ln:gmatch '#%S+' do
-      table.insert(tags, { ---@type down.Tag.Instance
-        tag = tag,
-        workspace = Tag.dep['workspace'].get_current_workspace(),
-        path = vim.fn.expand('%:p'),
-        line = ln,
-        position = {
-          line = i,
-          col = 0,
-        },
-      })
+    -- Skip heading lines
+    if not ln:match('^%s*#+%s') then
+      for tag in ln:gmatch '#(%S+)' do
+        if tag:match('^%w') then
+          table.insert(tags, { ---@type down.Tag.Instance
+            tag = '#' .. tag,
+            workspace = ws,
+            path = path,
+            line = ln,
+            position = {
+              line = i,
+              col = 0,
+            },
+          })
+        end
+      end
     end
   end
   return tags
@@ -151,18 +161,34 @@ end
 
 Tag.parse_current_workspace = function()
   local tags = {}
-  for i, ln in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
-    for tag in ln:gmatch '#%S+' do
-      table.insert(tags, { ---@type down.Tag.Instance
-        tag = tag,
-        workspace = Tag.dep['workspace'].get_current_workspace(),
-        path = vim.fn.expand('%:p'),
-        line = ln,
-        position = {
-          line = i,
-          col = 0,
-        },
-      })
+  local ws_mod = require('down.mod').get_mod('workspace')
+  if not ws_mod then return tags end
+  local ws_name = ws_mod.current() or 'default'
+  local ws_path = ws_mod.get(ws_name)
+  if not ws_path then return tags end
+
+  local files = vim.fn.globpath(ws_path, '**/*.md', true, true)
+  for _, filepath in ipairs(files) do
+    local f = io.open(filepath, 'r')
+    if f then
+      local i = 0
+      for ln in f:lines() do
+        i = i + 1
+        if not ln:match('^%s*#+%s') then
+          for tag in ln:gmatch '#(%S+)' do
+            if tag:match('^%w') then
+              table.insert(tags, {
+                tag = '#' .. tag,
+                workspace = ws_name,
+                path = filepath,
+                line = ln,
+                position = { line = i, col = 0 },
+              })
+            end
+          end
+        end
+      end
+      f:close()
     end
   end
   return tags

@@ -24,7 +24,7 @@ Completion.config = {
 Completion.setup = function()
   return {
     loaded = true,
-    dependencies = { "workspace", "tag", "cmd" },
+    dependencies = { "workspace", "cmd" },
   }
 end
 
@@ -32,15 +32,37 @@ end
 Completion.sources = {}
 
 Completion.load = function()
-  Completion.sources.slash = require("down.mod.lsp.completion.slash")
-  Completion.sources.mention = require("down.mod.lsp.completion.mention")
-  Completion.sources.tag = require("down.mod.lsp.completion.tag")
+  local ok, err
+
+  ok, err = pcall(require, "down.mod.lsp.completion.slash")
+  if ok then
+    Completion.sources.slash = err
+  else
+    log.warn("down.nvim: failed to load slash completion: " .. tostring(err))
+  end
+
+  ok, err = pcall(require, "down.mod.lsp.completion.mention")
+  if ok then
+    Completion.sources.mention = err
+  else
+    log.warn("down.nvim: failed to load mention completion: " .. tostring(err))
+  end
+
+  ok, err = pcall(require, "down.mod.lsp.completion.tag")
+  if ok then
+    Completion.sources.tag = err
+  else
+    log.warn("down.nvim: failed to load tag completion: " .. tostring(err))
+  end
+
+  -- Register global omnifunc accessor
+  _G._down_completion_omnifunc = Completion.omnifunc
 
   -- Set up omnifunc for markdown buffers as fallback
   vim.api.nvim_create_autocmd("FileType", {
     pattern = { "markdown", "md", "down" },
     callback = function(ev)
-      vim.bo[ev.buf].omnifunc = "v:lua.require'down.mod.lsp.completion'.omnifunc"
+      vim.bo[ev.buf].omnifunc = "v:lua._down_completion_omnifunc"
     end,
     desc = "Set down.nvim omnifunc for completions",
   })

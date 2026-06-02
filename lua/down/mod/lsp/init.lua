@@ -1,6 +1,9 @@
 local log = require("down.log")
 local mod = require("down.mod")
 
+--- Compatibility helper for vim.lsp.get_clients (added in 0.10)
+local get_lsp_clients = vim.lsp.get_clients or vim.lsp.get_active_clients or function() return {} end
+
 ---@class down.mod.lsp.Lsp: down.Mod
 local Lsp = mod.new("lsp")
 
@@ -113,8 +116,9 @@ end
 --- Detect the platform for download
 ---@return string?
 Lsp.platform = function()
-  local os_name = vim.loop.os_uname().sysname
-  local arch = vim.loop.os_uname().machine
+  local uv = vim.uv or vim.loop
+  local os_name = uv.os_uname().sysname
+  local arch = uv.os_uname().machine
   if os_name == "Linux" then
     if arch == "x86_64" then
       return "linux-amd64"
@@ -376,7 +380,7 @@ end
 --- Get active LSP client for down-lsp
 ---@return vim.lsp.Client|nil
 Lsp.get_client = function()
-  local clients = vim.lsp.get_clients({ name = "down-lsp" })
+  local clients = get_lsp_clients({ name = "down-lsp" })
   return clients and clients[1] or nil
 end
 
@@ -467,7 +471,7 @@ end
 
 --- Restart all down-lsp clients
 Lsp.restart = function()
-  local clients = vim.lsp.get_clients({ name = "down-lsp" })
+  local clients = get_lsp_clients({ name = "down-lsp" })
   for _, client in ipairs(clients) do
     client.stop()
   end
@@ -526,7 +530,7 @@ Lsp.commands = {
         name = "lsp.stop",
         args = 0,
         callback = function()
-          local clients = vim.lsp.get_clients({ name = "down-lsp" })
+          local clients = get_lsp_clients({ name = "down-lsp" })
           for _, client in ipairs(clients) do
             client.stop()
           end

@@ -197,10 +197,14 @@ Workspace.load = function ()
   -- Initialize git sync for all workspaces
   if Workspace.config.git and Workspace.config.git.enabled then
     vim.schedule (function ()
-      local Git = require ("down.mod.workspace.git")
+      local ok, Git = pcall (require, "down.mod.workspace.git")
+      if not ok then
+        log.warn ("down.nvim: failed to load git module: " .. tostring (Git))
+        return
+      end
       for _, ws_path in pairs (Workspace.data.workspaces) do
         if vim.fn.isdirectory (ws_path) == 1 then
-          Git.setup_workspace (ws_path, Workspace.config.git)
+          pcall (Git.setup_workspace, ws_path, Workspace.config.git)
         end
       end
     end)
