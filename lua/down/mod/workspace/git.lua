@@ -209,10 +209,12 @@ Git.init_repo = function(ws_path, config, cb)
           ".down/cache/",
           "",
         }, "\n")
-        local f = io.open(gitignore_path, "w")
+        local f, err = io.open(gitignore_path, "w")
         if f then
           f:write(gitignore)
           f:close()
+        else
+          vim.notify("[down.nvim] Failed to create .gitignore: " .. (err or "unknown error"), vim.log.levels.WARN)
         end
       end
 
