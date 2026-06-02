@@ -107,6 +107,22 @@ Workspace.config = {
   ext = ".md",
   -- if `false`, will use vim's default `vim.ui.input` instead.
   use_popup = true,
+  --- Git sync configuration
+  git = {
+    enabled = true,
+    auto_commit = true,
+    auto_push = false,
+    auto_pull = true,
+    commit_message = "docs: update %file% (%date% %time%)",
+    batch_commit_message = "docs: sync workspace %workspace% (%date%)",
+    debounce_ms = 5000,
+    branch = nil,
+    remote = "origin",
+    notify = true,
+    sync_interval = 0,
+    exclude = {},
+    auto_init = false,
+  },
 }
 
 ---@return down.mod.Setup
@@ -120,6 +136,8 @@ end
 Workspace.maps = {
   { "n", ",di", "<cmd>Down index<CR>", "Down index" },
   { "n", ",dw", "<cmd>Down workspace<CR>", "Down workspaces" },
+  { "n", ",dg", "<cmd>Down git status<CR>", "Git status" },
+  { "n", ",dG", "<cmd>Down git sync<CR>", "Git sync" },
 }
 
 --- Returns an iterator for the workspaces
@@ -175,6 +193,18 @@ Workspace.load = function ()
     end,
   })
   Workspace.sync ()
+
+  -- Initialize git sync for all workspaces
+  if Workspace.config.git and Workspace.config.git.enabled then
+    vim.schedule (function ()
+      local Git = require ("down.mod.workspace.git")
+      for _, ws_path in pairs (Workspace.data.workspaces) do
+        if vim.fn.isdirectory (ws_path) == 1 then
+          Git.setup_workspace (ws_path, Workspace.config.git)
+        end
+      end
+    end)
+  end
 end
 
 --- Returns the index file for a workspace
@@ -602,6 +632,77 @@ Workspace.commands = {
     end,
     complete = {
       Workspace.markdown (Workspace.current ()),
+    },
+  },
+  git = {
+    min_args = 0,
+    max_args = 1,
+    enabled = true,
+    name = "workspace.git",
+    callback = function (e)
+      local Git = require ("down.mod.workspace.git")
+      local ws_path = Workspace.current_path ()
+      Git.status (ws_path, function (status)
+        vim.notify ("[down.nvim] " .. Git.format_status (status), vim.log.levels.INFO)
+      end)
+    end,
+    commands = {
+      sync = {
+        name = "workspace.git.sync",
+        args = 0,
+        callback = function ()
+          local Git = require ("down.mod.workspace.git")
+          local ws_path = Workspace.current_path ()
+          Git.sync (ws_path, Workspace.config.git)
+        end,
+      },
+      commit = {
+        name = "workspace.git.commit",
+        args = 0,
+        callback = function ()
+          local Git = require ("down.mod.workspace.git")
+          local ws_path = Workspace.current_path ()
+          Git.commit (ws_path, Workspace.config.git)
+        end,
+      },
+      push = {
+        name = "workspace.git.push",
+        args = 0,
+        callback = function ()
+          local Git = require ("down.mod.workspace.git")
+          local ws_path = Workspace.current_path ()
+          Git.push (ws_path, Workspace.config.git)
+        end,
+      },
+      pull = {
+        name = "workspace.git.pull",
+        args = 0,
+        callback = function ()
+          local Git = require ("down.mod.workspace.git")
+          local ws_path = Workspace.current_path ()
+          Git.pull (ws_path, Workspace.config.git)
+        end,
+      },
+      status = {
+        name = "workspace.git.status",
+        args = 0,
+        callback = function ()
+          local Git = require ("down.mod.workspace.git")
+          local ws_path = Workspace.current_path ()
+          Git.status (ws_path, function (status)
+            vim.notify ("[down.nvim] " .. Git.format_status (status), vim.log.levels.INFO)
+          end)
+        end,
+      },
+      init = {
+        name = "workspace.git.init",
+        args = 0,
+        callback = function ()
+          local Git = require ("down.mod.workspace.git")
+          local ws_path = Workspace.current_path ()
+          Git.init_repo (ws_path, Workspace.config.git)
+        end,
+      },
     },
   },
 }
