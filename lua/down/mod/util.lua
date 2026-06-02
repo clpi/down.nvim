@@ -6,6 +6,9 @@ U.defaults = {
   cmd = {},
   link = {},
   find = {},
+  lsp = {},
+  tag = {},
+  workspace = {},
 }
 
 ---@type down.Mod.Id[]
@@ -33,11 +36,15 @@ U.ids = {
   "cmd",
   "link",
   "lsp",
+  "lsp.completion",
   "mcp",
+  "integration",
   "integration.telescope",
+  "integration.cmp",
+  "integration.blink",
+  "integration.treesitter",
   "data.history",
   "data.knowledge",
-  "integration",
 }
 
 ---@return boolean

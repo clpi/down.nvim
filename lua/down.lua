@@ -31,6 +31,8 @@ Down.default_mods = {
   "note",
   "find",
   "lsp",
+  "lsp.completion",
+  "tag",
   "mcp",
   "data.knowledge",
 }
@@ -79,7 +81,40 @@ function Down:start ()
     end
   end
 
+  -- Auto-load completion integrations based on available plugins
+  self:load_integrations ()
+
   self:after ()
+end
+
+--- Automatically load integration modules for installed completion frameworks
+function Down:load_integrations ()
+  -- nvim-cmp integration
+  local has_cmp = pcall (require, "cmp")
+  if has_cmp and not self.mod.is_loaded ("integration.cmp") then
+    local cmp_config = self.config.user["integration.cmp"]
+    if cmp_config ~= false then
+      self.mod.load_mod ("integration.cmp", type (cmp_config) == "table" and cmp_config or {})
+    end
+  end
+
+  -- blink.cmp integration
+  local has_blink = pcall (require, "blink.cmp")
+  if has_blink and not self.mod.is_loaded ("integration.blink") then
+    local blink_config = self.config.user["integration.blink"]
+    if blink_config ~= false then
+      self.mod.load_mod ("integration.blink", type (blink_config) == "table" and blink_config or {})
+    end
+  end
+
+  -- Telescope integration
+  local has_telescope = pcall (require, "telescope")
+  if has_telescope and not self.mod.is_loaded ("integration.telescope") then
+    local tel_config = self.config.user["integration.telescope"]
+    if tel_config ~= false then
+      self.mod.load_mod ("integration.telescope", type (tel_config) == "table" and tel_config or {})
+    end
+  end
 end
 
 --- After the plugin has started
