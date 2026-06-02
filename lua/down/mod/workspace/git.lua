@@ -457,8 +457,10 @@ Git.sync = function(ws_path, config, cb)
   Git.state.syncing[ws_path] = true
 
   -- Pull first
+  -- Pull first
   Git.pull(ws_path, config, function(pull_ok, pull_msg)
     if not pull_ok then
+      Git.state.syncing[ws_path] = false
       if cb then cb(false, "Pull failed: " .. pull_msg) end
       return
     end
@@ -466,6 +468,7 @@ Git.sync = function(ws_path, config, cb)
     -- Then commit any local changes
     Git.commit(ws_path, config, nil, function(commit_ok, commit_msg)
       if not commit_ok and commit_msg ~= "Nothing to commit" then
+        Git.state.syncing[ws_path] = false
         if cb then cb(false, "Commit failed: " .. commit_msg) end
         return
       end
@@ -473,9 +476,11 @@ Git.sync = function(ws_path, config, cb)
       -- Then push
       if config.auto_push then
         Git.push(ws_path, config, function(push_ok, push_msg)
+          Git.state.syncing[ws_path] = false
           if cb then cb(push_ok, push_msg) end
         end)
       else
+        Git.state.syncing[ws_path] = false
         if cb then cb(true, "Synced (commit only)") end
       end
     end)
