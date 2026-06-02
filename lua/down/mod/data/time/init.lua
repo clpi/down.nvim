@@ -1,6 +1,5 @@
-local down = require("down")
-local util = down.util
-local mod = down.mod
+local util = require("down.util")
+local mod = require("down.mod")
 local u = require("down.mod.data.time.util")
 local re = vim.re
 

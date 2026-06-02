@@ -1,6 +1,6 @@
-local log = require("down.log")
-local mod = require("down.mod")
-local modconf = require("down.mod.util")
+local log = require ("down.log")
+local mod = require ("down.mod")
+local modconf = require ("down.mod.util")
 
 --- The down.nvim configuration
 --- @class down.Config
@@ -59,21 +59,21 @@ Config.dependencies = {
 --- Default command for down.nvim, specified in user's config
 Config.command = { "Down" }
 
-function Config:check_hook(...)
-  if self.user.hook and type(self.user.hook) == "function" then
-    return self.user.hook(...)
+function Config:check_hook (...)
+  if self.user.hook and type (self.user.hook) == "function" then
+    return self.user.hook (...)
   end
 end
 
 ---@param k? down.config.Toggle
 ---@param v? boolean
-function Config:check_toggle(k, v)
+function Config:check_toggle (k, v)
   if
     k
-    and type(k) == "string"
+    and type (k) == "string"
     and v
-    and type(v) == "boolean"
-    and vim.tbl_contains(self.toggles, k)
+    and type (v) == "boolean"
+    and vim.tbl_contains (self.toggles, k)
   then
     self[k] = v
   end
@@ -83,65 +83,65 @@ end
 ---@param user down.mod.Config user config
 ---@param ... any
 ---@return down.Config
-function Config:load(user, ...)
-  if
-    (self.started and self.started == false)
-    or (not type(user) == "table")
-    or (type(user) == "nil")
-  then
+function Config:load (user, ...)
+  if self.started then
     return self
-  elseif user.defaults and user.defaults == false then
+  end
+  if type (user) ~= "table" or user == nil then
+    user = {}
+  end
+  if user.defaults == false then
     self.user = user
   else
-    self.user = vim.tbl_extend("force", user, modconf.defaults)
+    self.user = vim.tbl_deep_extend ("force", modconf.defaults, user)
   end
-  vim.iter(pairs(self.user)):map(function(k, v)
-    self:check_toggle(k, v)
+  vim.iter (pairs (self.user)):map (function (k, v)
+    self:check_toggle (k, v)
   end)
-  self:check_hook(...)
+  self:check_hook (...)
   self.started = true
 end
 
-function Config:after()
-  return self:check_tests(require("down.mod").mods or self.user) ---@type boolean?
+function Config:after ()
+  return self:check_tests (require ("down.mod").mods or self.user) ---@type boolean?
 end
 
 --- @param ... string
 --- @return string
-function Config.vimdir(...)
-  local d = vim.fs.joinpath(vim.fn.stdpath("data"), "down/")
-  vim.fn.mkdir(d, "p")
-  local dir = vim.fs.joinpath("data", ...)
+function Config.vimdir (...)
+  local d = vim.fs.joinpath (vim.fn.stdpath ("data"), "down/")
+  vim.fn.mkdir (d, "p")
+  local dir = vim.fs.joinpath ("data", ...)
   return dir
 end
 
 --- @param ... string
 --- @return string
-function Config.homedir(...)
-  local d = vim.fs.joinpath(os.getenv("HOME") or "~/", ".down/", ...)
-  vim.fn.mkdir(d, "p")
+function Config.homedir (...)
+  local d = vim.fs.joinpath (os.getenv ("HOME") or "~/", ".down/", ...)
+  vim.fn.mkdir (d, "p")
   return d
 end
 
 --- @param fp? string
 --- @return string
-function Config:file(fp)
-  local f = vim.fs.joinpath(fp or self.vimdir("down.json"))
+function Config:file (fp)
+  local f = vim.fs.joinpath (fp or self.vimdir ("down.json"))
 end
 
 --- @param f string | nil
 --- @return down.config.User
-function Config.fromfile(f)
-  local file = vim.fn.readfile(Config.file(f))
-  local conf = vim.json.decode(file) ---@type down.config.User
+function Config.fromfile (f)
+  local file = vim.fn.readfile (Config.file (f))
+  local conf = vim.json.decode (file) ---@type down.config.User
   return conf
 end
 
 --- @param f string | nil
-function Config:save(f)
-  local json = vim.json.encode(self.user)
-  json = vim.fn.str2list(json)
-  return vim.fn.writefile(json, self:file(f), "S")
+function Config:save (f)
+  local json = vim.json.encode (self.user)
+  json = vim.fn.str2list (json)
+  return vim.fn.writefile (json, self:file (f), "S")
 end
 
 --- Setup the down config
@@ -149,63 +149,66 @@ end
 --- @param user down.mod.Config user config to load
 --- @param ... any The arguments to pass into an optional user hook
 --- @return down.Config
-function Config:setup(user, ...)
-  log.new(log.config, false)
-  log.info("Config.setup: Log started")
-  return self:load(user, ...)
+function Config:setup (user, ...)
+  log.new (log.config, false)
+  log.info ("Config.setup: Log started")
+  return self:load (user, ...)
 end
 
 ---@param mods? { [down.Mod.Id]?: down.Mod.Mod }
 ---@return boolean?
-function Config:check_tests(mods)
+function Config:check_tests (mods)
   if not self.test then
     return
   elseif self.test == false then
     return false
   elseif self.test and self.test == true then
-    return self:tests(mods or vim.iter(self.user or mods):filter(function(m)
-      return self.check_mod_test(m)
+    return self:tests (mods or vim.iter (self.user or mods):filter (function (m)
+      return self.check_mod_test (m)
     end))
   end
 end
 
 ---@param mod down.Mod.Mod`
 ---@return boolean
-function Config.check_mod_test(mod)
+function Config.check_mod_test (mod)
   return mod ~= nil
     and mod.id ~= nil
-    and modconf.check_id(mod.id)
-    and type(mod) == "table"
+    and modconf.check_id (mod.id)
+    and type (mod) == "table"
     and mod.tests ~= nil
-    and type(mod.tests) == "table"
-    and not vim.tbl_isempty(mod.tests)
+    and type (mod.tests) == "table"
+    and not vim.tbl_isempty (mod.tests)
 end
 
 ---@param mods? down.Mod.Mod[]
 ---@return boolean
-function Config:tests(mods)
-  vim.print("Testing config", vim.inspect(self))
-  return vim.iter(mods or self.user):filter(self.check_mod_test):all(function(m)
-    return self.test(m)
-  end)
+function Config:tests (mods)
+  vim.print ("Testing config", vim.inspect (self))
+  return vim
+    .iter (mods or self.user)
+    :filter (self.check_mod_test)
+    :all (function (m)
+      return self.test (m)
+    end)
 end
 
 ---@param mod down.Mod.Mod
 ---@return boolean
-function Config.test(mod)
-  vim.print("Testing " .. tostring(vim.inspect(mod.id)))
+function Config.test (mod)
+  vim.print ("Testing " .. tostring (vim.inspect (mod.id)))
   return vim
-    .iter(pairs(mod.tests))
-    :filter(function(tn, t)
-      return tn and type(t) == "function"
+    .iter (pairs (mod.tests))
+    :filter (function (tn, t)
+      return tn and type (t) == "function"
     end)
-    :all(function(tn, tt)
-      if not type(tt) == "function" then
+    :all (function (tn, tt)
+      if not type (tt) == "function" then
         return false
       end
-      local res = tt(mod) or false ---@type boolean
-      vim.print(
-        "Testing mod " .. mod.id .. " test: " .. tn .. ": " .. tostring(res)
+      local res = tt (mod) or false ---@type boolean
+      vim.print (
+        "Testing mod " .. mod.id .. " test: " .. tn .. ": " .. tostring (res)
       )
       return res
     end)
