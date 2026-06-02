@@ -452,6 +452,7 @@ Git.sync = function(ws_path, config, cb)
     if cb then cb(false, "Sync already in progress") end
     return
   end
+  Git.state.syncing[ws_path] = true
 
   -- Pull first
   Git.pull(ws_path, config, function(pull_ok, pull_msg)
