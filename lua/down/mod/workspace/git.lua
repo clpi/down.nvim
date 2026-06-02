@@ -289,8 +289,9 @@ Git.commit = function(ws_path, config, file, cb)
     end
 
     -- Check if there's actually anything to commit
-    Git.has_changes(ws_path, function(has_changes)
-      if not has_changes then
+    -- Check if there's actually anything staged to commit
+    Git.run({ "diff", "--cached", "--quiet" }, ws_path, function(has_staged)
+      if has_staged then
         Git.state.syncing[ws_path] = false
         if cb then cb(true, "Nothing to commit") end
         return
