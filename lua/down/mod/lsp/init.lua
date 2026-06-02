@@ -391,7 +391,7 @@ Lsp.attach = function()
     return
   end
 
-  local client_id = vim.lsp.start({
+  local config = {
     name = "down-lsp",
     cmd = { cmd_path, "serve" },
     filetypes = Lsp.config.filetypes,
@@ -403,10 +403,14 @@ Lsp.attach = function()
       Lsp.on_attach(client, bufnr)
     end,
     handlers = Lsp.handlers(),
-  })
+  }
 
-  if client_id then
-    vim.lsp.buf_attach_client(0, client_id)
+  -- vim.lsp.start auto-attaches to current buffer in 0.10+
+  local client_id = vim.lsp.start(config)
+
+  -- For older versions, manually attach
+  if client_id and vim.lsp.buf_attach_client then
+    pcall(vim.lsp.buf_attach_client, 0, client_id)
   end
 end
 
@@ -421,14 +425,15 @@ Lsp.handlers = function()
         return {}
       end
       local response = {}
-      for _, item in ipairs(result.items) do
+      local items = (result and result.items) or {}
+      for _, item in ipairs(items) do
         table.insert(response, Lsp.config.settings)
       end
       return response
     end,
     -- Custom handler for tag indexing progress
     ["$/progress"] = function(_, result, ctx)
-      if result.value and result.value.kind then
+      if result and result.value and result.value.kind then
         if result.value.kind == "begin" then
           vim.notify("[down.lsp] " .. (result.value.title or "Working..."), vim.log.levels.INFO)
         end

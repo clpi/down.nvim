@@ -122,13 +122,11 @@ Mention.builtins = {
     detail = "Current user",
     documentation = "Insert current git user name",
     insert_text = function()
-    insert_text = function()
       local name = vim.fn.system({ "git", "config", "user.name" })
       if vim.v.shell_error == 0 and name then
         return vim.trim(name)
       end
       return "me"
-    end,
     end,
     kind = "Person",
     category = "People",

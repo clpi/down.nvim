@@ -435,7 +435,7 @@ end
 --- Recursively merges the provided table with the mod.config.commands table.
 ---@param f down.Command[] #A table that follows the mod.config.commands structure
 Cmd.add_commands_from_table = function (f)
-  vim.tbl_extend ("force", Cmd.commands, f)
+  Cmd.commands = vim.tbl_extend ("force", Cmd.commands, f)
 end
 
 --- Rereads data from all mod and rebuild the list of available autocompletiinitinitons and commands

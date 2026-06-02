@@ -644,10 +644,20 @@ Workspace.commands = {
     enabled = true,
     name = "workspace.git",
     callback = function (e)
-      local Git = require ("down.mod.workspace.git")
-      local ws_path = Workspace.current_path ()
-      Git.status (ws_path, function (status)
-        vim.notify ("[down.nvim] " .. Git.format_status (status), vim.log.levels.INFO)
+      local ok, Git = pcall (require, "down.mod.workspace.git")
+      if not ok then
+        vim.notify ("[down.nvim] Git module not available", vim.log.levels.WARN)
+        return
+      end
+      local ws = Workspace.get (Workspace.current ())
+      if not ws then
+        vim.notify ("[down.nvim] No active workspace", vim.log.levels.WARN)
+        return
+      end
+      Git.status (ws, function (status)
+        vim.schedule (function ()
+          vim.notify ("[down.nvim] " .. Git.format_status (status), vim.log.levels.INFO)
+        end)
       end)
     end,
     commands = {
@@ -655,46 +665,58 @@ Workspace.commands = {
         name = "workspace.git.sync",
         args = 0,
         callback = function ()
-          local Git = require ("down.mod.workspace.git")
-          local ws_path = Workspace.current_path ()
-          Git.sync (ws_path, Workspace.config.git)
+          local ok, Git = pcall (require, "down.mod.workspace.git")
+          if not ok then return end
+          local ws = Workspace.get (Workspace.current ())
+          if not ws then return end
+          Git.sync (ws, Workspace.config.git)
         end,
       },
       commit = {
         name = "workspace.git.commit",
         args = 0,
         callback = function ()
-          local Git = require ("down.mod.workspace.git")
-          local ws_path = Workspace.current_path ()
-          Git.commit (ws_path, Workspace.config.git)
+          local ok, Git = pcall (require, "down.mod.workspace.git")
+          if not ok then return end
+          local ws = Workspace.get (Workspace.current ())
+          if not ws then return end
+          Git.commit (ws, Workspace.config.git)
         end,
       },
       push = {
         name = "workspace.git.push",
         args = 0,
         callback = function ()
-          local Git = require ("down.mod.workspace.git")
-          local ws_path = Workspace.current_path ()
-          Git.push (ws_path, Workspace.config.git)
+          local ok, Git = pcall (require, "down.mod.workspace.git")
+          if not ok then return end
+          local ws = Workspace.get (Workspace.current ())
+          if not ws then return end
+          Git.push (ws, Workspace.config.git)
         end,
       },
       pull = {
         name = "workspace.git.pull",
         args = 0,
         callback = function ()
-          local Git = require ("down.mod.workspace.git")
-          local ws_path = Workspace.current_path ()
-          Git.pull (ws_path, Workspace.config.git)
+          local ok, Git = pcall (require, "down.mod.workspace.git")
+          if not ok then return end
+          local ws = Workspace.get (Workspace.current ())
+          if not ws then return end
+          Git.pull (ws, Workspace.config.git)
         end,
       },
       status = {
         name = "workspace.git.status",
         args = 0,
         callback = function ()
-          local Git = require ("down.mod.workspace.git")
-          local ws_path = Workspace.current_path ()
-          Git.status (ws_path, function (status)
-            vim.notify ("[down.nvim] " .. Git.format_status (status), vim.log.levels.INFO)
+          local ok, Git = pcall (require, "down.mod.workspace.git")
+          if not ok then return end
+          local ws = Workspace.get (Workspace.current ())
+          if not ws then return end
+          Git.status (ws, function (status)
+            vim.schedule (function ()
+              vim.notify ("[down.nvim] " .. Git.format_status (status), vim.log.levels.INFO)
+            end)
           end)
         end,
       },
@@ -702,9 +724,11 @@ Workspace.commands = {
         name = "workspace.git.init",
         args = 0,
         callback = function ()
-          local Git = require ("down.mod.workspace.git")
-          local ws_path = Workspace.current_path ()
-          Git.init_repo (ws_path, Workspace.config.git)
+          local ok, Git = pcall (require, "down.mod.workspace.git")
+          if not ok then return end
+          local ws = Workspace.get (Workspace.current ())
+          if not ws then return end
+          Git.init_repo (ws, Workspace.config.git)
         end,
       },
     },
