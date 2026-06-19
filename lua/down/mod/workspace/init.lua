@@ -49,6 +49,8 @@ Workspace.config = {
     default = vim.fn.getcwd (0),
     cwd = vim.fn.getcwd (0),
   },
+  --- Per-workspace metadata, e.g. { path = "...", wiki = false }
+  workspace_options = {},
   --- The filetype of new douments, markdown is supported only for now
   ft = "markdown",
   --- The default index to use
