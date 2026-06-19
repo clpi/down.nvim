@@ -7,14 +7,14 @@ Lsp.dep = { "workspace", "cmd" }
 
 ---@class down.mod.lsp.Config
 Lsp.config = {
-  --- Enable auto-download of down.lsp binary
+  --- Enable auto-download of down binary
   auto_download = true,
   --- Auto-update check on startup
   auto_update = true,
-  --- GitHub repo for down.lsp releases
-  repo = "clpi/down.lsp",
+  --- GitHub repo for down releases
+  repo = "clpi/down",
   --- Binary name
-  bin = "down-lsp",
+  bin = "down",
   --- Custom binary path (overrides auto-download)
   cmd = nil,
   --- Additional LSP settings to pass
@@ -56,10 +56,12 @@ Lsp.config = {
 Lsp.setup = function()
   vim.api.nvim_create_autocmd("FileType", {
     pattern = Lsp.config.filetypes,
-    callback = function()
-      Lsp.start()
+    callback = function(ev)
+      if mod.get_mod("workspace").is_wiki_path(ev.file) then
+        Lsp.start(ev.buf)
+      end
     end,
-    desc = "Start down.lsp for markdown files",
+    desc = "Start down LSP for markdown files in wiki workspaces",
   })
 
   mod.await("workspace", function(ws)
@@ -239,7 +241,7 @@ Lsp.update = function(force)
     if has_update and latest then
       vim.schedule(function()
         vim.notify(
-          "[down.nvim] Updating down.lsp to " .. latest .. "...",
+          "[down.nvim] Updating down to " .. latest .. "...",
           vim.log.levels.INFO
         )
         Lsp.download(function(success)
@@ -258,7 +260,7 @@ Lsp.update = function(force)
     else
       vim.schedule(function()
         vim.notify(
-          "[down.nvim] down.lsp is up to date" .. (latest and (" (" .. latest .. ")") or ""),
+          "[down.nvim] down is up to date" .. (latest and (" (" .. latest .. ")") or ""),
           vim.log.levels.INFO
         )
       end)
@@ -267,11 +269,12 @@ Lsp.update = function(force)
 end
 
 --- Get workspace folders from workspace module
+---@param name? string
 ---@return lsp.WorkspaceFolder[]
-Lsp.workspace_folders = function()
+Lsp.workspace_folders = function(name)
   local ws = mod.get_mod("workspace")
   if ws and ws.as_lsp_workspaces then
-    return ws.as_lsp_workspaces()
+    return ws.as_lsp_workspaces(name, true)
   end
   return {
     {
@@ -325,19 +328,27 @@ Lsp.capabilities = function()
 end
 
 --- Start the LSP client
-Lsp.start = function()
+---@param bufnr? integer
+Lsp.start = function(bufnr)
+  bufnr = bufnr or 0
+  local bufname = vim.api.nvim_buf_get_name(bufnr)
+  local ws = mod.get_mod("workspace")
+  if ws and ws.is_wiki_path and not ws.is_wiki_path(bufname) then
+    return
+  end
+
   if not Lsp.is_installed() then
     if Lsp.config.auto_download then
       Lsp.download(function(success)
         if success then
           vim.schedule(function()
-            Lsp.attach()
+            Lsp.attach(bufnr)
           end)
         end
       end)
     else
       log.info(
-        "down.lsp not installed. Set config.lsp.auto_download = true or provide config.lsp.cmd"
+        "down not installed. Set config.lsp.auto_download = true or provide config.lsp.cmd"
       )
     end
     return
@@ -349,7 +360,32 @@ Lsp.start = function()
       if has_update and latest then
         vim.schedule(function()
           vim.notify(
-            "[down.nvim] down.lsp update available: " .. latest .. ". Run :Down lsp update",
+            "[down.nvim] down update available: " .. latest .. ". Run :Down lsp update",
+            vim.log.levels.INFO
+          )
+        end)
+      end
+    end)
+  end
+
+  Lsp.attach(bufnr)
+end
+      end)
+    else
+      log.info(
+        "down not installed. Set config.lsp.auto_download = true or provide config.lsp.cmd"
+      )
+    end
+    return
+  end
+
+  -- Check for updates in background if enabled
+  if Lsp.config.auto_update then
+    Lsp.check_update(function(has_update, latest)
+      if has_update and latest then
+        vim.schedule(function()
+          vim.notify(
+            "[down.nvim] down update available: " .. latest .. ". Run :Down lsp update",
             vim.log.levels.INFO
           )
         end)
@@ -413,7 +449,7 @@ Lsp.handlers = function()
     ["$/progress"] = function(_, result, ctx)
       if result.value and result.value.kind then
         if result.value.kind == "begin" then
-          vim.notify("[down.lsp] " .. (result.value.title or "Working..."), vim.log.levels.INFO)
+          vim.notify("[down] " .. (result.value.title or "Working..."), vim.log.levels.INFO)
         end
       end
     end,
@@ -449,7 +485,7 @@ Lsp.on_attach = function(client, bufnr)
   vim.keymap.set("n", "<leader>do", vim.lsp.buf.document_symbol, vim.tbl_extend("force", opts, { desc = "Document outline" }))
 
   -- Notify about LSP connection
-  log.trace("down.lsp attached to buffer " .. bufnr)
+  log.trace("down attached to buffer " .. bufnr)
 end
 
 --- Restart all down-lsp clients
@@ -517,7 +553,7 @@ Lsp.commands = {
           for _, client in ipairs(clients) do
             client.stop()
           end
-          vim.notify("[down.nvim] down.lsp stopped", vim.log.levels.INFO)
+          vim.notify("[down.nvim] down stopped", vim.log.levels.INFO)
         end,
       },
       restart = {
@@ -550,10 +586,10 @@ Lsp.commands = {
             local client = Lsp.get_client()
             local status = client and "running" or "stopped"
             vim.notify(
-              string.format("[down.nvim] down.lsp v%s (%s) at: %s", ver, status, Lsp.bin_path())
+              string.format("[down.nvim] down v%s (%s) at: %s", ver, status, Lsp.bin_path())
             )
           else
-            vim.notify("[down.nvim] down.lsp is not installed")
+            vim.notify("[down.nvim] down is not installed")
           end
         end,
       },

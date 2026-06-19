@@ -9,3 +9,5 @@ tools:
             - find *
             - ls *
             - head *
+            - cat *
+            - file *

@@ -17,11 +17,60 @@ Workspace.dep = { "ui", "data", "note", "cmd" }
 
 ---@return string
 Workspace.path = function (name)
-  return fs.normalize (fn.resolve (fn.expand (Workspace.data.workspaces[name])))
+  local entry = Workspace.data.workspaces[name]
+  local path = workspace_path_value (entry)
+  if not path then
+    return nil
+  end
+  return fs.normalize (fn.resolve (fn.expand (path)))
 end
 
 Workspace.home = function ()
   return Workspace.path (uv.os_homedir ())
+end
+
+local function workspace_path_value (entry)
+  if type (entry) == "table" then
+    return entry.path or entry.root or entry.uri
+  end
+  return entry
+end
+
+local function workspace_options_value (entry)
+  if type (entry) ~= "table" then
+    return {}
+  end
+  local options = {}
+  if entry.wiki ~= nil then
+    options.wiki = entry.wiki
+  end
+  return options
+end
+
+local function normalize_workspace_path (entry)
+  local path = workspace_path_value (entry)
+  if not path or path == "" then
+    return nil
+  end
+  return fs.normalize (fn.resolve (fn.expand (path)))
+end
+
+local function normalize_workspace_options (entry)
+  return workspace_options_value (entry)
+end
+
+--- Returns a workspace entry's normalized path.
+---@param entry string|table
+---@return string|nil
+Workspace.entry_path = function (entry)
+  return normalize_workspace_path (entry)
+end
+
+--- Returns a workspace entry's metadata.
+---@param entry string|table
+---@return table
+Workspace.entry_options = function (entry)
+  return normalize_workspace_options (entry)
 end
 
 ---@class down.mod.workspace.Data
@@ -80,16 +129,23 @@ Workspace.config = {
 ---@return down.mod.Setup
 Workspace.setup = function ()
   vim.iter (Workspace.config.workspaces):each (function (k, v)
-    Workspace.config.workspaces[k] = fs.normalize (fn.resolve (fn.expand (v)))
+    local path = normalize_workspace_path (v)
+    if path then
+      Workspace.config.workspaces[k] = path
+      Workspace.config.workspace_options[k] = normalize_workspace_options (v)
+    end
   end)
   -- Append-merge the neovim-config workspaces into the global store
   -- (~/.config/down/down.json) so they are tracked alongside profiles.
-  Global.merge_workspaces (Workspace.config.workspaces)
+  Global.merge_workspaces (Workspace.config.workspaces, nil, Workspace.config.workspace_options)
   -- Load the active profile's workspaces (includes everything ever
   -- registered globally) and merge with config-declared ones.
   local profile_ws = Global.profile_workspaces ()
+  local profile_options = Global.profile_workspace_options ()
   Workspace.data.workspaces =
     vim.tbl_extend ("keep", profile_ws, Workspace.config.workspaces)
+  Workspace.data.workspace_options =
+    vim.tbl_extend ("keep", profile_options, Workspace.config.workspace_options)
   Workspace.data.history = Workspace.data.history or {}
   local data = Global.load ()
   local active_profile = data.profiles[data.active_profile] or {}
@@ -130,9 +186,10 @@ Auto-initialized workspace for Neovim configuration.
       end
     end
     Workspace.data.workspaces[ws_name] = ws_path
+    Workspace.data.workspace_options[ws_name] = { wiki = true }
     Workspace.data.default = ws_name
     Workspace.data.active = ws_name
-    Global.add_workspace (ws_name, ws_path)
+    Global.add_workspace (ws_name, ws_path, nil, { wiki = true })
   end
 
   -- Initialize git sync for all workspaces
@@ -169,21 +226,43 @@ end
 --- @param name? string
 --- @param path? string
 Workspace.as_lsp_workspace = function (name, path)
+  path = path or Workspace.path (name or Workspace.data.active)
+  if not path then
+    return nil
+  end
   return {
     name = name or Workspace.data.active,
-    uri = vim.uri_from_fname (
-      path or Workspace.path (name or Workspace.data.active)
-    ),
+    uri = vim.uri_from_fname (path),
   }
 end
 
 --- Returns the workspace folders as lsp
---- @return lsp.WorkspaceFolder[]
-Workspace.as_lsp_workspaces = function ()
-  return vim
-    .iter (Workspace.data.workspaces)
-    :map (Workspace.as_lsp_workspace)
-    :totable ()
+---@param name? string
+---@param wiki_only? boolean
+---@return lsp.WorkspaceFolder[]
+Workspace.as_lsp_workspaces = function (name, wiki_only)
+  local workspaces = {}
+  if name then
+    local path = Workspace.path (name)
+    if path and (not wiki_only or Workspace.is_wiki (name)) then
+      workspaces[name] = path
+    end
+  else
+    for ws_name, path in pairs (Workspace.data.workspaces) do
+      if path and (not wiki_only or Workspace.is_wiki (ws_name)) then
+        workspaces[ws_name] = path
+      end
+    end
+  end
+
+  local folders = {}
+  for ws_name, ws_path in pairs (workspaces) do
+    local folder = Workspace.as_lsp_workspace (ws_name, ws_path)
+    if folder then
+      folders[#folders + 1] = folder
+    end
+  end
+  return folders
 end
 
 --- Returns the index file for a workspace
@@ -228,8 +307,52 @@ Workspace.get = function (name)
   return Workspace.data.workspaces[name]
 end
 
+--- Returns whether a workspace is a markdown wiki workspace.
+---@param name? string
+---@return boolean
+Workspace.is_wiki = function (name)
+  local options = Workspace.data.workspace_options[name or Workspace.data.active] or {}
+  return options.wiki ~= false
+end
+
+--- Returns the current workspace's wiki mode.
+---@return boolean
+Workspace.current_is_wiki = function ()
+  return Workspace.is_wiki (Workspace.data.active)
+end
+
+--- Resolve a workspace name from a filesystem path.
+---@param path string
+---@return string|nil
+Workspace.name_for_path = function (path)
+  local resolved = fs.normalize (fn.resolve (fn.expand (path)))
+  for name, ws_path in pairs (Workspace.data.workspaces) do
+    local normalized = Workspace.path (name)
+    if normalized and (resolved == normalized or resolved:sub (1, #normalized + 1) == normalized .. "/") then
+      return name
+    end
+  end
+  return nil
+end
+
+--- Returns whether a path belongs to a wiki workspace.
+---@param path string
+---@return boolean
+Workspace.is_wiki_path = function (path)
+  if not path or path == "" then
+    return Workspace.current_is_wiki ()
+  end
+  local name = Workspace.name_for_path (path)
+  if not name then
+    return true
+  end
+  return Workspace.is_wiki (name)
+end
+
 Workspace.set = function (name, path)
-  Workspace.data.workspaces[name] = Workspace.path (path)
+  local options = workspace_options_value (path)
+  Workspace.data.workspaces[name] = Workspace.path (workspace_path_value (path))
+  Workspace.data.workspace_options[name] = options
 end
 Workspace.has = function (n)
   return Workspace.data.workspaces[n] ~= nil
@@ -257,16 +380,23 @@ end
 --- Dynamically defines a new workspace if the name isn't already occupied and broadcasts the wsadded event
 ---@return boolean True if the workspace is added successfully, false otherwise
 ---@param wsname string #The unique name of the new workspace
----@param wspath string #A full path to the workspace root
-Workspace.add_workspace = function (wsname, wspath)
+---@param wspath string|table #A full path to the workspace root or workspace entry
+---@param options? table
+Workspace.add_workspace = function (wsname, wspath, options)
   if Workspace.data.workspaces[wsname] then
     return false
   end
-  wspath = Workspace.path (wspath)
+  local entry = wspath
+  wspath = normalize_workspace_path (entry)
+  if not wspath then
+    return false
+  end
+  options = options or workspace_options_value (entry)
   Workspace.data.workspaces[wsname] = wspath
-  Global.add_workspace (wsname, wspath)
+  Workspace.data.workspace_options[wsname] = options
+  Global.add_workspace (wsname, wspath, nil, options)
   mod.broadcast (
-    mod.new_event (Workspace, "workspace.events.wsadded", { wsname, wspath })
+    mod.new_event (Workspace, "workspace.events.wsadded", { wsname, wspath, options = options })
       or {}
   )
   Workspace.sync ()
@@ -284,6 +414,7 @@ Workspace.delete_workspace = function (wsname)
     return false
   end
   Workspace.data.workspaces[wsname] = nil
+  Workspace.data.workspace_options[wsname] = nil
   Global.remove_workspace (wsname)
   if Workspace.data.active == wsname then
     Workspace.data.active = "default"
@@ -309,8 +440,11 @@ Workspace.rename_workspace = function (old_name, new_name)
   end
 
   local path = Workspace.data.workspaces[old_name]
+  local options = Workspace.data.workspace_options[old_name] or {}
   Workspace.data.workspaces[old_name] = nil
+  Workspace.data.workspace_options[old_name] = nil
   Workspace.data.workspaces[new_name] = path
+  Workspace.data.workspace_options[new_name] = options
   Global.rename_workspace (old_name, new_name)
 
   if Workspace.data.active == old_name then
@@ -326,8 +460,13 @@ end
 
 --- Updates completions for the :down command
 Workspace.sync = function ()
-  Workspace.data.workspace_folders = Workspace.as_lsp_workspaces ()
+  Workspace.data.workspace_folders = Workspace.as_lsp_workspaces (nil, true)
   Workspace.data.workspaces = Workspace.config.workspaces or {}
+  Workspace.data.workspace_options = Workspace.config.workspace_options or {}
+  local profile_ws = Global.profile_workspaces ()
+  local profile_options = Global.profile_workspace_options ()
+  Workspace.data.workspaces = vim.tbl_extend ("keep", profile_ws, Workspace.data.workspaces)
+  Workspace.data.workspace_options = vim.tbl_extend ("keep", profile_options, Workspace.data.workspace_options)
   Workspace.data.active = Workspace.data.active or Workspace.data.default
   Workspace.data.history = Workspace.data.history or {}
   mod.await ("cmd", function (cmd)
@@ -620,7 +759,8 @@ Workspace.fmt = function ()
   return vim
     .iter (Workspace.workspaces ())
     :map (function (k, v)
-      return k .. " -> " .. v
+      local suffix = Workspace.is_wiki (k) and " [wiki]" or " [code]"
+      return k .. " -> " .. v .. suffix
     end)
     :totable ()
 end
@@ -662,10 +802,24 @@ Workspace.commands = {
                 if not wspath or wspath == "" then
                   return
                 end
-                Workspace.add_workspace (wsname, wspath)
-                vim.notify (
-                  "[down.nvim] Added workspace " .. wsname .. " at " .. wspath,
-                  vim.log.levels.INFO
+                vim.ui.select (
+                  { "wiki", "code" },
+                  { prompt = "Workspace mode for " .. wsname .. ":" },
+                  function (mode)
+                    local options = { wiki = mode ~= "code" }
+                    if Workspace.add_workspace (wsname, wspath, options) then
+                      vim.notify (
+                        "[down.nvim] Added workspace "
+                          .. wsname
+                          .. " at "
+                          .. wspath
+                          .. " ("
+                          .. (options.wiki and "wiki" or "code")
+                          .. ")",
+                        vim.log.levels.INFO
+                      )
+                    end
+                  end
                 )
               end
             )
