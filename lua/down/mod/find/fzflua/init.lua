@@ -7,12 +7,7 @@ local Fzflua = require("down.mod").new("find.fzflua")
 Fzflua.config = {}
 
 Fzflua.setup = function()
-  return {
-    dependencies = {},
-    loaded = true,
-  }
+  return { loaded = true }
 end
-
-Fzflua.load = function() end
 
 return Fzflua

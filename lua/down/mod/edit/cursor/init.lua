@@ -7,14 +7,11 @@ local tuok, tu = pcall(require, "nvim-treesitter.ts_utils")
 
 ---@class down.mod.edit.Cursor: down.Mod
 local Cursor = mod.new("edit.cursor")
+Cursor.dep = { "integration.treesitter", "workspace" }
 
 ---@return down.mod.Setup
 function Cursor.setup()
   return {
-    dependencies = {
-      "integration.treesitter",
-      "workspace",
-    },
     loaded = tuok,
   }
 end

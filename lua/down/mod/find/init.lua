@@ -237,7 +237,7 @@ Find.maps = {
 
 Find.data = {}
 
-Find.load = function()
+Find.setup = function()
   if not Find.config.finders then
     Find.config.finders = { "builtin" }
     if has_telescope then
@@ -266,12 +266,9 @@ Find.load = function()
     end
   end
   Find.picker = require("down.mod.find." .. Find.config.default).picker
-end
-
-Find.setup = function()
+  Find.dep = Find.config.finders
   return {
     loaded = true,
-    dependencies = Find.config.finders,
   }
 end
 

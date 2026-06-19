@@ -14,7 +14,6 @@ E.config = {
   disabled = {},
   ---@brief List of integrations to enable (relative to the integration dir)
   enabled = {
-    "telescope",
     "codecompanion",
     "avante",
   },
@@ -61,9 +60,9 @@ E.setup = function()
   for _, dep in ipairs(E.config.enabled) do
     table.insert(deps, "integration." .. dep)
   end
+  E.dep = deps
   return {
     loaded = true,
-    dependencies = deps,
   }
 end
 

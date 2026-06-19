@@ -10,8 +10,4 @@ Date.setup = function()
   }
 end
 
-Date.load = function()
-
-end
-
 return Date

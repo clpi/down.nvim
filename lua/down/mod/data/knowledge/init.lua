@@ -3,6 +3,7 @@ local mod = require ("down.mod")
 
 ---@class down.mod.data.knowledge.Knowledge: down.Mod
 local Knowledge = mod.new ("data.knowledge")
+Knowledge.dep = { "data", "workspace" }
 
 ---@class down.mod.data.knowledge.Entity
 ---@field id string
@@ -39,9 +40,18 @@ Knowledge.config = {
 
 ---@return down.mod.Setup
 Knowledge.setup = function ()
+  Knowledge.restore ()
+  if Knowledge.config.auto_index then
+    vim.api.nvim_create_autocmd ("BufWritePost", {
+      pattern = "*.md",
+      callback = function (ev)
+        Knowledge.index_file (ev.file)
+      end,
+      desc = "Index file into knowledge graph on save",
+    })
+  end
   return {
     loaded = true,
-    dependencies = { "data", "workspace" },
   }
 end
 
@@ -289,18 +299,5 @@ Knowledge.commands = {
     },
   },
 }
-
-Knowledge.load = function ()
-  Knowledge.restore ()
-  if Knowledge.config.auto_index then
-    vim.api.nvim_create_autocmd ("BufWritePost", {
-      pattern = "*.md",
-      callback = function (ev)
-        Knowledge.index_file (ev.file)
-      end,
-      desc = "Index file into knowledge graph on save",
-    })
-  end
-end
 
 return Knowledge

@@ -7,10 +7,7 @@ local fn, a, madd = vim.fn, vim.api, vim.fn.matchadd
 -- Conceal.border = require("down.mod.ui.conceal.border")
 
 Conceal.setup = function()
-  return {
-    loaded = true,
-    dependencies = {},
-  }
+  return { loaded = true }
 end
 
 Conceal.math = Conceal.math

@@ -1,5 +1,7 @@
 MODREV, SPECREV = 'scm', '-1'
 maintainer_user = 'clpi'
+maintainer_email = 'clp@clp.is'
+maintainer = 'Chris Pecunies <' .. maintainer_email .. '>'
 license = 'MIT'
 detailed = [[
   Extensibility of org, comfort of markdown, for everyone
@@ -27,14 +29,12 @@ version = MODREV .. SPECREV
 branch = 'master'
 tag = 'v0.1.1-alpha'
 package_name = 'down.nvim'
-github_url = 'https://github.com/' .. maintainer .. '/' .. package_name .. '.git'
-github_wiki_url = 'https://github.com/' .. maintainer .. '/' .. package_name .. '/wiki'
-github_issues_url = 'https://github.com/' .. maintainer .. '/' .. package_name .. '/issues'
-github_git_url = 'git://github.com/' .. maintainer .. '/' .. package_name .. '.git'
+github_url = 'https://github.com/' .. maintainer_user .. '/' .. package_name .. '.git'
+github_wiki_url = 'https://github.com/' .. maintainer_user .. '/' .. package_name .. '/wiki'
+github_issues_url = 'https://github.com/' .. maintainer_user .. '/' .. package_name .. '/issues'
+github_git_url = 'git://github.com/' .. maintainer_user .. '/' .. package_name .. '.git'
 maintainer_url = 'https://github.com/' .. maintainer_user
-maintainer_email = 'clp@clp.is'
 homepage = 'https://down.cli.st'
-maintainer = 'Chris Pecunies <' .. maintainer_email .. '>'
 
 source = {
   url = github_url,
@@ -92,8 +92,6 @@ build = {
   modules = {},
   install = {
     bin = {
-      downls = './scripts/bin/down-lsp.sh',
-      down_lsp = './scripts/bin/down-lsp',
       down = './scripts/bin/down',
     },
   },

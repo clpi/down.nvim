@@ -7,13 +7,8 @@ local Snacks = require("down.mod").new("find.snacks")
 Snacks.config = {}
 
 Snacks.setup = function()
-  return {
-    dependencies = {},
-    loaded = pcall(require, "snacks"),
-  }
+  return { loaded = pcall(require, "snacks") }
 end
-
-Snacks.load = function() end
 
 --- Picker functions for snacks.nvim
 Snacks.down = {

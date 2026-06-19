@@ -4,14 +4,12 @@ local mod = require("down.mod")
 local monthutil = require("down.mod.ui.calendar.month.util")
 
 local Month = mod.new("ui.calendar.month")
+Month.dep = { "ui.calendar", "data.time" }
 
 Month.setup = function()
+  mod.get("ui.calendar").add_view(Month.view_name, Month)
   return {
     loaded = true,
-    dependencies = {
-      "ui.calendar",
-      "data.time",
-    },
   }
 end
 
@@ -1209,10 +1207,6 @@ Month.display_help = function(lines)
   vim.api.nvim_buf_set_extmark(buffer, namespace, 0, 0, {
     virt_lines = lines,
   })
-end
-
-Month.load = function()
-  mod.get("ui.calendar").add_view(Month.view_name, Month)
 end
 
 return Month

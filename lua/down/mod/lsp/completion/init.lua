@@ -5,6 +5,7 @@ local log = require("down.log")
 
 ---@class down.mod.lsp.completion.Completion: down.Mod
 local Completion = mod.new("lsp.completion")
+Completion.dep = { "workspace", "tag", "cmd" }
 
 ---@class down.mod.lsp.completion.Config
 Completion.config = {
@@ -22,16 +23,6 @@ Completion.config = {
 
 ---@return down.mod.Setup
 Completion.setup = function()
-  return {
-    loaded = true,
-    dependencies = { "workspace", "tag", "cmd" },
-  }
-end
-
---- Sources
-Completion.sources = {}
-
-Completion.load = function()
   Completion.sources.slash = require("down.mod.lsp.completion.slash")
   Completion.sources.mention = require("down.mod.lsp.completion.mention")
   Completion.sources.tag = require("down.mod.lsp.completion.tag")
@@ -58,7 +49,13 @@ Completion.load = function()
     end,
     desc = "Trigger down.nvim completion on special characters",
   })
+  return {
+    loaded = true,
+  }
 end
+
+--- Sources
+Completion.sources = {}
 
 --- Trigger completion for a given character
 ---@param trigger string The trigger character (/, @, #)

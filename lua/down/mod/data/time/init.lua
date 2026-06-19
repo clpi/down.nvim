@@ -3,6 +3,7 @@ local mod = require("down.mod")
 
 ---@class down.mod.data.time.Time: down.Mod
 local Time = mod.new("data.time")
+Time.dep = { "cmd" }
 
 --- Time zone list (used for timezone parsing)
 local time_zones = {
@@ -301,7 +302,6 @@ Time.maps = {
 function Time.setup()
   return {
     loaded = true,
-    dependencies = { "cmd" },
   }
 end
 

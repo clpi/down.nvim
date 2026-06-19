@@ -7,6 +7,7 @@ local sep = util.sep
 
 ---@class down.mod.note.Note: down.Mod
 local Note = mod.new ("note")
+Note.dep = { "ui.win", "ui.calendar", "data", "cmd", "template", "workspace", "integration.treesitter" }
 
 Note.maps = {
   { "n", ",dn", "<CMD>Down note today<CR>", "Down today note" },
@@ -775,25 +776,13 @@ Note.commands = {
   },
 }
 
-Note.load = function ()
+---@return down.mod.Setup
+Note.setup = function ()
   if Note.config.strategies[Note.config.strategy] then
     Note.config.strategy = Note.config.strategies[Note.config.strategy]
   end
-end
-
----@return down.mod.Setup
-Note.setup = function ()
   return {
     loaded = true,
-    dependencies = {
-      "ui.win",
-      "ui.calendar",
-      "data",
-      "cmd",
-      "template",
-      "workspace",
-      "integration.treesitter",
-    },
   }
 end
 

@@ -4,13 +4,6 @@ local mod = require("down.mod")
 local Avante = mod.new("integration.avante")
 
 Avante.setup = function()
-  return {
-    loaded = true,
-    dependencies = {},
-  }
-end
-
-Avante.load = function()
   -- Ensure down.lsp attaches to AvanteInput so that down.nvim completions work inside Avante prompts
   vim.api.nvim_create_autocmd("FileType", {
     pattern = "AvanteInput",
@@ -22,6 +15,7 @@ Avante.load = function()
     end,
     desc = "Attach down.lsp to Avante prompt buffer",
   })
+  return { loaded = true }
 end
 
 --- Helper function to append down.nvim workspace context to a system prompt

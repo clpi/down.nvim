@@ -6,10 +6,7 @@ local Day = mod.new 'ui.calendar.day'
 
 ---@return down.mod.Setup
 Day.setup = function()
-  return { ---@type down.mod.Setup
-    loaded = true,
-    dependencies = {},
-  }
+  return { loaded = true }
 end
 
 ---@class down.mod.ui.calendar.day.Config

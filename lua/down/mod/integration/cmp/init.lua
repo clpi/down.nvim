@@ -5,6 +5,7 @@ local cmpok, cmp = pcall(require, "cmp")
 
 ---@class down.mod.integration.Cmp: down.Mod
 local M = mod.new("integration.cmp")
+M.dep = { "workspace", "tag", "data" }
 
 M.clean = function(s)
   if not s then
@@ -47,9 +48,34 @@ M.config = {
 ---@return down.mod.Setup
 M.setup = function()
   if cmpok then
+    -- Register slash command source
+    if M.config.slash then
+      cmp.register_source("down_slash", M.slash_source().new())
+    end
+
+    -- Register mention source
+    if M.config.mention then
+      cmp.register_source("down_mention", M.mention_source().new())
+    end
+
+    -- Register tag source
+    if M.config.tag then
+      cmp.register_source("down_tag", M.tag_source().new())
+    end
+
+    -- Register file source
+    if M.config.files then
+      cmp.register_source("down_file", M.file_source().new())
+    end
+
+    -- Suggest adding sources to cmp config
+    log.trace(
+      "down.nvim: nvim-cmp sources registered. Add { name = 'down_slash' }, "
+        .. "{ name = 'down_mention' }, { name = 'down_tag' }, { name = 'down_file' } "
+        .. "to your cmp sources for markdown filetypes."
+    )
     return {
       loaded = true,
-      dependencies = { "workspace", "tag", "data" },
     }
   else
     return { loaded = false }
@@ -299,39 +325,6 @@ M.file_source = function()
 end
 
 --- Register all sources with nvim-cmp
-M.load = function()
-  if not cmpok then
-    return
-  end
-
-  -- Register slash command source
-  if M.config.slash then
-    cmp.register_source("down_slash", M.slash_source().new())
-  end
-
-  -- Register mention source
-  if M.config.mention then
-    cmp.register_source("down_mention", M.mention_source().new())
-  end
-
-  -- Register tag source
-  if M.config.tag then
-    cmp.register_source("down_tag", M.tag_source().new())
-  end
-
-  -- Register file source
-  if M.config.files then
-    cmp.register_source("down_file", M.file_source().new())
-  end
-
-  -- Suggest adding sources to cmp config
-  log.trace(
-    "down.nvim: nvim-cmp sources registered. Add { name = 'down_slash' }, "
-      .. "{ name = 'down_mention' }, { name = 'down_tag' }, { name = 'down_file' } "
-      .. "to your cmp sources for markdown filetypes."
-  )
-end
-
 --- Files source (legacy compat)
 M.files = function()
   local items = {}

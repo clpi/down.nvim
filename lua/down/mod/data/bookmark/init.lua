@@ -1,5 +1,6 @@
 ---@class down.mod.data.bookmark.Bookmark: down.Mod
 local Bookmark = {}
+Bookmark.dep = { "data", "workspace", "cmd" }
 
 ---@class down.mod..bookmark.Config
 Bookmark.config = {
@@ -17,11 +18,6 @@ Bookmark.bookmarks = {
 Bookmark.setup = function()
   return {
     loaded = true,
-    dependencies = {
-      "data",
-      "workspace",
-      "cmd",
-    },
   }
 end
 
@@ -49,8 +45,6 @@ Bookmark.commands = {
     },
   },
 }
-
-Bookmark.load = function() end
 
 -- Bookmark.handle = {
 --   cmd = {

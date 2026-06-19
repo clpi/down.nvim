@@ -2,6 +2,7 @@ local mod = require("down.mod")
 
 ---@type down.Mod
 local M = mod.new("integration.blink")
+M.dep = { "workspace", "tag" }
 
 local has_blink, blink = pcall(require, "blink.cmp")
 
@@ -22,7 +23,6 @@ M.setup = function()
   if has_blink then
     return {
       loaded = true,
-      dependencies = { "workspace", "tag" },
     }
   else
     return { loaded = false }
@@ -177,17 +177,6 @@ M.tag_source = function()
   end
 
   return src
-end
-
-M.load = function()
-  if not has_blink then
-    return
-  end
-
-  -- Sources are exposed for users to register in their blink.cmp config:
-  -- require('down.mod.integration.blink').slash_source()
-  -- require('down.mod.integration.blink').mention_source()
-  -- require('down.mod.integration.blink').tag_source()
 end
 
 --- Get recommended sources for blink.cmp depending on context.

@@ -3,18 +3,13 @@ local log = require 'down.log'
 
 ---@type down.Mod
 local Capture = mod.new 'note.capture'
+Capture.dep = { 'cmd', 'ui', 'ui.popup', 'workspace' }
 
 ---@return down.mod.Setup
 Capture.setup = function()
   ---@type down.mod.Setup
   return {
     loaded = true,
-    dependencies = {
-      'cmd',
-      'ui',
-      'ui.popup',
-      'workspace',
-    },
   }
 end
 

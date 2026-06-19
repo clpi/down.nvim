@@ -6,6 +6,7 @@ local sep = util.sep
 
 ---@class down.mod.template.Template: down.Mod
 local Template = mod.new 'template'
+Template.dep = { 'cmd', 'workspace', 'integration.treesitter' }
 
 Template.commands = {
   template = {
@@ -61,19 +62,12 @@ Template.commands = {
   },
 }
 
-Template.load = function()
+Template.setup = function()
   if Template.config.strategies[Template.config.strategy] then
     Template.config.strategy = Template.config.strategies[Template.config.strategy]
   end
-end
-Template.setup = function()
   return {
     loaded = true,
-    dependencies = {
-      'cmd',
-      'workspace',
-      'integration.treesitter',
-    },
   }
 end
 

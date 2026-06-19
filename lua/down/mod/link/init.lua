@@ -8,23 +8,10 @@ local tsq = vim.treesitter.query
 
 ---@class down.mod.Link: down.Mod
 local Link = mod.new 'link'
+Link.dep = { 'cmd', 'data.history', 'integration.treesitter', 'workspace' }
 
 --- @return down.mod.Setup
 Link.setup = function()
-  return { ---@type down.mod.Setup
-    loaded = tsu_ok,
-    dependencies = {
-      'cmd', --- For commands
-      'data.history', --- For history storage
-      'integration.treesitter', --- For treesitter node parsing
-      'workspace', --- For checking filetype and index file names of current workspace
-    },
-  }
-end
-
-Link.maps = {}
-
-Link.load = function()
   vim.api.nvim_create_autocmd("FileType", {
     pattern = "markdown",
     callback = function(ev)
@@ -35,7 +22,12 @@ Link.load = function()
       vim.keymap.set('n', '<TAB>', '<ESC>:<C-U>lua require("down.mod.link").goto.next()<CR>', vim.tbl_extend("force", opts, { desc = 'Next link' }))
     end,
   })
+  return { ---@type down.mod.Setup
+    loaded = tsu_ok,
+  }
 end
+
+Link.maps = {}
 
 Link.parser = function() end
 Link.mk = {}

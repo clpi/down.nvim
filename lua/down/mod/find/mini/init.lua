@@ -7,12 +7,7 @@ local Mini = require("down.mod").new("find.mini")
 Mini.config = {}
 
 Mini.setup = function()
-  return {
-    dependencies = {},
-    loaded = true,
-  }
+  return { loaded = true }
 end
-
-Mini.load = function() end
 
 return Mini

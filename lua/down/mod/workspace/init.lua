@@ -1,6 +1,7 @@
 local event = require ("down.event")
 local log = require ("down.log")
 local mod = require ("down.mod")
+local Data = require ("down.mod.data")
 local util = require ("down.mod.workspace.util")
 local utils = require ("down.util")
 
@@ -12,6 +13,7 @@ local fn, fs, it, uv, dbg =
 
 ---@class down.mod.workspace.Workspace: down.Workspaceod
 local Workspace = mod.new ("workspace")
+Workspace.dep = { "ui", "data", "note", "cmd" }
 
 ---@return string
 Workspace.path = function (name)
@@ -23,7 +25,7 @@ Workspace.home = function ()
 end
 
 ---@class down.mod.workspace.Data
-Workspace.data = setmetatable ({
+Workspace.data = Data.wrap ("workspace", {
   ---@type down.Workspaces
   workspaces = {},
   ---@type down.Workspace[]
@@ -34,61 +36,6 @@ Workspace.data = setmetatable ({
   default = nil,
   ---@type string?
   previous = nil,
-}, {
-  __concat = function (self, key)
-    if type (key) == "string" then
-      return tostring (self) .. key
-    end
-  end,
-  __newindex = function (self, key, val)
-    rawset (self, key, val)
-    if Workspace.dep and Workspace.dep["data"] then
-      Workspace.dep["data"].set ("workspace." .. key, self[key])
-      Workspace.dep.data.flush ()
-    end
-  end,
-  __tostring = function (self)
-    if type (self) == "table" then
-      return vim.inspect (self)
-    elseif type (self) == "string" then
-      return "workspace." .. self
-    end
-    return vim.inspect (self)
-  end,
-  __name = "workspace",
-  __index = function (self, key)
-    --   local res = rawget(self, key)
-    --   if not res == Workspace.dep["data"].get("workspace." .. key) then
-    --     Workspace.dep["data"].set("workspace." .. key, res)
-    --     Workspace.dep.data.flush()
-    --   end
-    --   return res
-    -- key = "workspace." .. key
-    return rawget (self, key)
-  end,
-  ---@param opts { load: boolean, }
-  __call = function (self, opts)
-    if not Workspace.dep or not Workspace.dep.data then
-      return
-    end
-    if opts and opts.load and opts.load == true then
-      for k, v in pairs (self) do
-        if not Workspace.dep.data.get ("workspace." .. k) then
-          Workspace.dep.data.set ("workspace." .. k, v)
-        end
-        if not Workspace.dep.data.get ("workspace." .. k) == v then
-          rawset (self, k, Workspace.dep.data.get ("workspace." .. k))
-        end
-      end
-    else
-      for k, v in pairs (self) do
-        if not Workspace.dep.data.get (k) == v then
-          Workspace.dep.data.set ("workspace." .. k, v)
-        end
-      end
-    end
-    Workspace.dep.data.flush ()
-  end,
 })
 
 ---@class down.mod.workspace.Config
@@ -125,11 +72,69 @@ Workspace.config = {
   },
 }
 
+--- Merged setup - returns setup table after performing initialization
 ---@return down.mod.Setup
 Workspace.setup = function ()
+  vim.iter (Workspace.config.workspaces):each (function (k, v)
+    Workspace.config.workspaces[k] = fs.normalize (fn.resolve (fn.expand (v)))
+  end)
+  Workspace.data.workspaces = Workspace.config.workspaces
+    or Workspace.data.workspaces
+    or {}
+  Workspace.data.history = Workspace.data.history or {}
+  Workspace.data.default = Workspace.config.default
+    or Workspace.data.default
+    or "default"
+  Workspace.data.previous = Workspace.data.previous or "default"
+  Workspace.data.active = Workspace.data.active
+    or Workspace.data.default
+    or "default"
+  vim.api.nvim_create_autocmd ("BufEnter", {
+    pattern = "*",
+    callback = function ()
+      mod.await ("cmd", function (cmd)
+        cmd.add_commands_from_table (Workspace.commands)
+      end)
+    end,
+  })
+  Workspace.sync ()
+
+  -- Auto-init workspace in Neovim config dir if no workspaces exist
+  if not next (Workspace.data.workspaces) then
+    local config_dir = vim.fn.stdpath ("config")
+    local ws_path = config_dir .. "/.down"
+    local ws_name = "nvim"
+    vim.fn.mkdir (ws_path .. "/data", "p")
+    local idx_path = ws_path .. "/index.md"
+    if vim.fn.filereadable (idx_path) == 0 then
+      local f = io.open (idx_path, "w")
+      if f then
+        f:write ([[
+# Neovim Config
+
+Auto-initialized workspace for Neovim configuration.
+]])
+        f:close ()
+      end
+    end
+    Workspace.data.workspaces[ws_name] = ws_path
+    Workspace.data.default = ws_name
+    Workspace.data.active = ws_name
+  end
+
+  -- Initialize git sync for all workspaces
+  if Workspace.config.git and Workspace.config.git.enabled then
+    vim.schedule (function ()
+      local Git = require ("down.mod.workspace.git")
+      for _, ws_path in pairs (Workspace.data.workspaces) do
+        if vim.fn.isdirectory (ws_path) == 1 then
+          Git.setup_workspace (ws_path, Workspace.config.git)
+        end
+      end
+    end)
+  end
   return {
     loaded = true,
-    dependencies = { "ui", "data", "note", "cmd" },
   }
 end
 
@@ -166,45 +171,6 @@ Workspace.as_lsp_workspaces = function ()
     .iter (Workspace.data.workspaces)
     :map (Workspace.as_lsp_workspace)
     :totable ()
-end
-
---- Loads the workspace module
-Workspace.load = function ()
-  vim.iter (Workspace.config.workspaces):each (function (k, v)
-    Workspace.config.workspaces[k] = fs.normalize (fn.resolve (fn.expand (v)))
-  end)
-  Workspace.data.workspaces = Workspace.config.workspaces
-    or Workspace.data.workspaces
-    or {}
-  Workspace.data.history = Workspace.data.history or {}
-  Workspace.data.default = Workspace.config.default
-    or Workspace.data.default
-    or "default"
-  Workspace.data.previous = Workspace.data.previous or "default"
-  Workspace.data.active = Workspace.data.active
-    or Workspace.data.default
-    or "default"
-  vim.api.nvim_create_autocmd ("BufEnter", {
-    pattern = "*",
-    callback = function ()
-      mod.await ("cmd", function (cmd)
-        cmd.add_commands_from_table (Workspace.commands)
-      end)
-    end,
-  })
-  Workspace.sync ()
-
-  -- Initialize git sync for all workspaces
-  if Workspace.config.git and Workspace.config.git.enabled then
-    vim.schedule (function ()
-      local Git = require ("down.mod.workspace.git")
-      for _, ws_path in pairs (Workspace.data.workspaces) do
-        if vim.fn.isdirectory (ws_path) == 1 then
-          Git.setup_workspace (ws_path, Workspace.config.git)
-        end
-      end
-    end)
-  end
 end
 
 --- Returns the index file for a workspace
@@ -337,16 +303,6 @@ end
 --- Updates completions for the :down command
 Workspace.sync = function ()
   Workspace.data.workspace_folders = Workspace.as_lsp_workspaces ()
-  if Workspace.dep and Workspace.dep.data then
-    Workspace.dep.data.data.workspaces = Workspace.data.workspaces
-    Workspace.dep.data.flush ()
-  end
-  if Workspace.commands.workspace then
-    Workspace.commands.workspace.complete = { Workspace.names () }
-  end
-  if Workspace.commands.index then
-    Workspace.commands.index.complete = { Workspace.names () }
-  end
   Workspace.data.workspaces = Workspace.config.workspaces or {}
   Workspace.data.active = Workspace.data.active or Workspace.data.default
   Workspace.data.history = Workspace.data.history or {}

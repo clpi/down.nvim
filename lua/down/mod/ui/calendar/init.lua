@@ -3,6 +3,7 @@ local util = require 'down.util'
 local log = require 'down.log'
 
 local Calendar = mod.new 'ui.calendar'
+Calendar.dep = { 'ui', 'ui.calendar.day', 'ui.calendar.month' }
 
 Calendar.maps = {
   { 'n', ',d.', '<CMD>Down calendar<CR>', 'Open calendar' },
@@ -10,13 +11,54 @@ Calendar.maps = {
   { 'n', ',dl', '<CMD>Down calendar<CR>' },
 }
 Calendar.setup = function()
+  Calendar.add_mode('standalone', function(_)
+    return {}
+  end)
+
+  Calendar.add_mode('select_date', function(callback)
+    return {
+      on_select = function(_, date)
+        if callback then
+          callback(date)
+        end
+        return false
+      end,
+    }
+  end)
+
+  Calendar.add_mode('select_range', function(callback)
+    return {
+      range_start = nil,
+      range_end = nil,
+
+      on_select = function(self, date)
+        if not self.range_start then
+          self.range_start = date
+          return true
+        else
+          if os.time(date) <= os.time(self.range_start) then
+            log.error 'Error: you should choose a date that is after the starting day.'
+            return false
+          end
+
+          self.range_end = date
+          callback({ self.range_start, self.range_end })
+          return false
+        end
+      end,
+
+      get_day_highlight = function(self, date, base_highlight)
+        if self.range_start ~= nil then
+          if os.time(date) < os.time(self.range_start) then
+            return '@comment'
+          end
+        end
+        return base_highlight
+      end,
+    }
+  end)
   return {
     loaded = true,
-    dependencies = {
-      'ui',
-      'ui.calendar.day',
-      'ui.calendar.month',
-    },
   }
 end
 
@@ -125,55 +167,6 @@ Calendar.select_date_range = function(options)
   local buffer, window = Calendar.open_window(options)
   options.mode = 'select_range'
   return Calendar.new_calendar(buffer, window, options)
-end
-
-Calendar.load = function()
-  Calendar.add_mode('standalone', function(_)
-    return {}
-  end)
-
-  Calendar.add_mode('select_date', function(callback)
-    return {
-      on_select = function(_, date)
-        if callback then
-          callback(date)
-        end
-        return false
-      end,
-    }
-  end)
-
-  Calendar.add_mode('select_range', function(callback)
-    return {
-      range_start = nil,
-      range_end = nil,
-
-      on_select = function(self, date)
-        if not self.range_start then
-          self.range_start = date
-          return true
-        else
-          if os.time(date) <= os.time(self.range_start) then
-            log.error 'Error: you should choose a date that is after the starting day.'
-            return false
-          end
-
-          self.range_end = date
-          callback({ self.range_start, self.range_end })
-          return false
-        end
-      end,
-
-      get_day_highlight = function(self, date, base_highlight)
-        if self.range_start ~= nil then
-          if os.time(date) < os.time(self.range_start) then
-            return '@comment'
-          end
-        end
-        return base_highlight
-      end,
-    }
-  end)
 end
 
 return Calendar

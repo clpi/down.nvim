@@ -3,6 +3,7 @@ local mod = require("down.mod")
 
 ---@class down.mod.lsp.Lsp: down.Mod
 local Lsp = mod.new("lsp")
+Lsp.dep = { "workspace", "cmd" }
 
 ---@class down.mod.lsp.Config
 Lsp.config = {
@@ -53,9 +54,20 @@ Lsp.config = {
 
 ---@return down.mod.Setup
 Lsp.setup = function()
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = Lsp.config.filetypes,
+    callback = function()
+      Lsp.start()
+    end,
+    desc = "Start down.lsp for markdown files",
+  })
+
+  mod.await("workspace", function(ws)
+    if ws.events and ws.events.wschanged then
+    end
+  end)
   return {
     loaded = true,
-    dependencies = { "workspace", "cmd" },
   }
 end
 
@@ -548,24 +560,6 @@ Lsp.commands = {
     },
   },
 }
-
-Lsp.load = function()
-  vim.api.nvim_create_autocmd("FileType", {
-    pattern = Lsp.config.filetypes,
-    callback = function()
-      Lsp.start()
-    end,
-    desc = "Start down.lsp for markdown files",
-  })
-
-  -- Re-notify LSP when workspace changes
-  mod.await("workspace", function(ws)
-    -- If workspace module has events, listen for workspace changes
-    if ws.events and ws.events.wschanged then
-      -- Will re-attach with new workspace folders on change
-    end
-  end)
-end
 
 Lsp.maps = {
   { "n", ",dl", "<cmd>Down lsp status<CR>", { desc = "LSP status", silent = true } },

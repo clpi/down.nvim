@@ -7,7 +7,382 @@ local api, bo, fn = vim.api, vim.bo, vim.fn
 local Cmd = mod.new ("cmd")
 
 Cmd.setup = function ()
-  return { loaded = true, dependencies = {} }
+  vim.api.nvim_create_user_command ("Down", Cmd.cb, {
+    desc = "The down command",
+    range = 2,
+    force = true,
+    nargs = "*",
+    complete = Cmd.generate_completions,
+  })
+
+  -- Register compact and skills commands
+  Cmd.commands.compact = {
+    enabled = true,
+    args = 0,
+    min_args = 0,
+    max_args = 1,
+    name = "compact",
+    complete = function () return {} end,
+    callback = function (e)
+      local root = e.body and e.body[1] or vim.fn.getcwd ()
+      local compact = require ("down.compact")
+      local result = compact.pack (root)
+      vim.cmd ("new")
+      vim.api.nvim_buf_set_lines (0, 0, -1, false, vim.split (result, "\n"))
+      vim.bo.filetype = "xml"
+      vim.bo.buflisted = false
+      vim.bo.bufhidden = "wipe"
+    end,
+  }
+  Cmd.commands.skills = {
+    enabled = true,
+    args = 0,
+    min_args = 0,
+    max_args = 1,
+    name = "skills",
+    complete = function () return {} end,
+    callback = function (e)
+      local root = e.body and e.body[1] or vim.fn.getcwd ()
+      local skills = require ("down.skills")
+      skills.config.output = nil
+      local result = skills.generate (root)
+      vim.cmd ("new")
+      vim.api.nvim_buf_set_lines (0, 0, -1, false, vim.split (result, "\n"))
+      vim.bo.filetype = "markdown"
+      vim.bo.buflisted = false
+      vim.bo.bufhidden = "wipe"
+    end,
+  }
+
+  -- Register init command
+  Cmd.commands.init = {
+    enabled = true,
+    args = 0,
+    min_args = 0,
+    max_args = 1,
+    name = "init",
+    complete = function () return {} end,
+    callback = function (e)
+      local root = e.body and e.body[1] or vim.fn.getcwd ()
+      local init = require ("down.init")
+      local ok, name = init.setup (root)
+      if ok then
+        vim.notify ("Initialized workspace '" .. name .. "' at " .. root, vim.log.levels.INFO)
+      else
+        vim.notify ("Init failed: " .. (name or "unknown"), vim.log.levels.ERROR)
+      end
+    end,
+  }
+
+  -- Register add command
+  Cmd.commands.add = {
+    enabled = true,
+    args = 1,
+    min_args = 1,
+    max_args = 1,
+    name = "add",
+    complete = function ()
+      local buf = vim.api.nvim_get_current_buf ()
+      local file = vim.api.nvim_buf_get_name (buf)
+      if file ~= "" then return { file } end
+      return {}
+    end,
+    callback = function (e)
+      local source = e.body and e.body[1]
+      if not source then
+        vim.ui.input ({ prompt = "Add source (file/dir/URL/name): " }, function (input)
+          if input and input ~= "" then
+            local add = require ("down.add")
+            local out, err = add.ingest (input)
+            if out then vim.notify ("Added: " .. out, vim.log.levels.INFO)
+            else vim.notify ("Error: " .. (err or "unknown"), vim.log.levels.ERROR) end
+          end
+        end)
+        return
+      end
+      local add = require ("down.add")
+      local out, err = add.ingest (source)
+      if out then vim.notify ("Added: " .. out, vim.log.levels.INFO)
+      else vim.notify ("Error: " .. (err or "unknown"), vim.log.levels.ERROR) end
+    end,
+  }
+
+  -- Register ignore command (append to .downignore)
+  Cmd.commands.ignore = {
+    enabled = true,
+    args = 1,
+    min_args = 1,
+    max_args = 1,
+    name = "ignore",
+    complete = function () return {} end,
+    callback = function (e)
+      local pattern = e.body and e.body[1]
+      if not pattern then
+        vim.ui.input ({ prompt = "Pattern to ignore: " }, function (input)
+          if input and input ~= "" then
+            local cwd = vim.fn.getcwd ()
+            local ignore_path = cwd .. "/.down/.downignore"
+            local f = io.open (ignore_path, "a")
+            if f then
+              f:write (input .. "\n")
+              f:close ()
+              vim.notify ("Added to .downignore: " .. input, vim.log.levels.INFO)
+            else
+              vim.notify ("No .down/ directory found. Run :Down init first.", vim.log.levels.WARN)
+            end
+          end
+        end)
+        return
+      end
+      local cwd = vim.fn.getcwd ()
+      local ignore_path = cwd .. "/.down/.downignore"
+      local f = io.open (ignore_path, "a")
+      if f then
+        f:write (pattern .. "\n")
+        f:close ()
+        vim.notify ("Added to .downignore: " .. pattern, vim.log.levels.INFO)
+      else
+        vim.notify ("No .down/ directory found. Run :Down init first.", vim.log.levels.WARN)
+      end
+    end,
+  }
+
+  -- Register profile command
+  Cmd.commands.profile = {
+    enabled = true,
+    args = 0,
+    name = "profile",
+    callback = function (e)
+      local body = e.body or {}
+      local sub = body[1]
+      local mod = require ("down.mod")
+
+      -- Load profile data from global config
+      local config_home = os.getenv ("XDG_CONFIG_HOME") or (os.getenv ("HOME") or "~") .. "/.config"
+      local profile_path = config_home .. "/down/down.json"
+      local function load_profiles ()
+        local f = io.open (profile_path, "r")
+        if not f then return { profiles = { default = { workspaces = {} } }, active_profile = "default" } end
+        local raw = f:read ("*a")
+        f:close ()
+        if not raw or raw == "" then return { profiles = { default = { workspaces = {} } }, active_profile = "default" } end
+        local ok, data = pcall (vim.json.decode, raw)
+        if ok and type (data) == "table" then
+          if not data.profiles then data.profiles = { default = { workspaces = data.workspaces or {} } } end
+          if not data.active_profile then data.active_profile = "default" end
+          return data
+        end
+        return { profiles = { default = { workspaces = {} } }, active_profile = "default" }
+      end
+      local function save_profiles (data)
+        vim.fn.mkdir (config_home .. "/down", "p")
+        local f = io.open (profile_path, "w")
+        if f then f:write (vim.json.encode (data)) f:close () end
+      end
+
+      if sub == "list" or sub == "ls" or not sub then
+        local data = load_profiles ()
+        local items = {}
+        for n, p in pairs (data.profiles or {}) do
+          local marker = (data.active_profile == n) and " *" or "  "
+          local count = 0
+          for _ in pairs (p.workspaces or {}) do count = count + 1 end
+          items[#items + 1] = marker .. n .. " (" .. count .. " workspaces)"
+        end
+        if #items == 0 then
+          vim.notify ("No profiles configured", vim.log.levels.INFO)
+        else
+          vim.ui.select (items, { prompt = "Profiles:" }, function (choice)
+            if choice then
+              local name = choice:match ("%s+(%S+)%s") or choice:match ("(%S+)")
+              local data = load_profiles ()
+              data.active_profile = name
+              save_profiles (data)
+              -- Update workspace data
+              local ws = mod.get_mod ("workspace")
+              if ws and data.profiles[name] then
+                for wname, wpath in pairs (data.profiles[name].workspaces or {}) do
+                  ws.data.workspaces[wname] = wpath
+                end
+                if data.profiles[name].default then
+                  ws.data.default = data.profiles[name].default
+                  ws.data.active = data.profiles[name].default
+                end
+                ws.sync ()
+              end
+              vim.notify ("Switched to profile: " .. name, vim.log.levels.INFO)
+            end
+          end)
+        end
+      elseif sub == "switch" or sub == "use" then
+        local name = body[2]
+        local data = load_profiles ()
+        local function do_switch (profile_name)
+          if not data.profiles[profile_name] then
+            vim.notify ("Profile not found: " .. profile_name, vim.log.levels.ERROR)
+            return
+          end
+          data.active_profile = profile_name
+          save_profiles (data)
+          -- Update workspace data from profile
+          local ws = mod.get_mod ("workspace")
+          if ws and data.profiles[profile_name] then
+            local pw = data.profiles[profile_name]
+            for wname, wpath in pairs (pw.workspaces or {}) do
+              ws.data.workspaces[wname] = wpath
+            end
+            if pw.default then
+              ws.data.default = pw.default
+              ws.data.active = pw.default
+            end
+            ws.sync ()
+          end
+          vim.notify ("Switched to profile: " .. profile_name, vim.log.levels.INFO)
+        end
+        if not name then
+          local items = {}
+          for n in pairs (data.profiles or {}) do
+            items[#items + 1] = n
+          end
+          vim.ui.select (items, { prompt = "Switch to profile:" }, function (choice)
+            if choice then do_switch (choice) end
+          end)
+        else
+          do_switch (name)
+        end
+      end
+    end,
+    commands = {
+      add = {
+        enabled = true, args = 0, name = "profile.add",
+        callback = function ()
+          vim.ui.input ({ prompt = "New profile name: " }, function (name)
+            if name and name ~= "" then
+              local config_home = os.getenv ("XDG_CONFIG_HOME") or (os.getenv ("HOME") or "~") .. "/.config"
+              local profile_path = config_home .. "/down/down.json"
+              local f = io.open (profile_path, "r")
+              local data = { profiles = { default = { workspaces = {} } }, active_profile = "default" }
+              if f then
+                local raw = f:read ("*a")
+                f:close ()
+                if raw and raw ~= "" then
+                  local ok, parsed = pcall (vim.json.decode, raw)
+                  if ok and type (parsed) == "table" then data = parsed end
+                end
+              end
+              if not data.profiles then data.profiles = { default = { workspaces = {} } } end
+              data.profiles[name] = { workspaces = {} }
+              vim.fn.mkdir (config_home .. "/down", "p")
+              local wf = io.open (profile_path, "w")
+              if wf then wf:write (vim.json.encode (data)) wf:close () end
+              vim.notify ("Added profile: " .. name, vim.log.levels.INFO)
+            end
+          end)
+        end,
+      },
+      remove = {
+        enabled = true, args = 0, name = "profile.remove",
+        callback = function ()
+          local config_home = os.getenv ("XDG_CONFIG_HOME") or (os.getenv ("HOME") or "~") .. "/.config"
+          local profile_path = config_home .. "/down/down.json"
+          local f = io.open (profile_path, "r")
+          if not f then vim.notify ("No profiles found", vim.log.levels.WARN) return end
+          local raw = f:read ("*a")
+          f:close ()
+          local ok, data = pcall (vim.json.decode, raw)
+          if not ok then return end
+          if not data.profiles then data.profiles = { default = { workspaces = {} } } end
+          local items = {}
+          for n in pairs (data.profiles) do
+            if n ~= "default" then items[#items + 1] = n end
+          end
+          if #items == 0 then
+            vim.notify ("No removable profiles", vim.log.levels.INFO)
+            return
+          end
+          vim.ui.select (items, { prompt = "Remove profile:" }, function (choice)
+            if choice then
+              data.profiles[choice] = nil
+              if data.active_profile == choice then data.active_profile = "default" end
+              vim.fn.mkdir (config_home .. "/down", "p")
+              local wf = io.open (profile_path, "w")
+              if wf then wf:write (vim.json.encode (data)) wf:close () end
+              vim.notify ("Removed profile: " .. choice, vim.log.levels.INFO)
+            end
+          end)
+        end,
+      },
+      list = {
+        enabled = true, args = 0, name = "profile.list",
+        callback = function ()
+          local config_home = os.getenv ("XDG_CONFIG_HOME") or (os.getenv ("HOME") or "~") .. "/.config"
+          local profile_path = config_home .. "/down/down.json"
+          local f = io.open (profile_path, "r")
+          local data = { profiles = { default = { workspaces = {} } }, active_profile = "default" }
+          if f then
+            local raw = f:read ("*a")
+            f:close ()
+            if raw and raw ~= "" then
+              local ok, parsed = pcall (vim.json.decode, raw)
+              if ok and type (parsed) == "table" then data = parsed end
+            end
+          end
+          local items = {}
+          for n, p in pairs (data.profiles or {}) do
+            local marker = (data.active_profile == n) and " *" or "  "
+            local count = 0
+            for _ in pairs (p.workspaces or {}) do count = count + 1 end
+            items[#items + 1] = marker .. n .. " (" .. count .. " workspaces)"
+          end
+          vim.ui.select (items, { prompt = "Profiles:" }, function (_) end)
+        end,
+      },
+      switch = {
+        enabled = true, args = 0, name = "profile.switch",
+        callback = function ()
+          local config_home = os.getenv ("XDG_CONFIG_HOME") or (os.getenv ("HOME") or "~") .. "/.config"
+          local profile_path = config_home .. "/down/down.json"
+          local f = io.open (profile_path, "r")
+          local data = { profiles = { default = { workspaces = {} } }, active_profile = "default" }
+          if f then
+            local raw = f:read ("*a")
+            f:close ()
+            if raw and raw ~= "" then
+              local ok, parsed = pcall (vim.json.decode, raw)
+              if ok and type (parsed) == "table" then data = parsed end
+            end
+          end
+          local items = {}
+          for n in pairs (data.profiles or {}) do
+            items[#items + 1] = n
+          end
+          vim.ui.select (items, { prompt = "Switch to profile:" }, function (choice)
+            if choice then
+              data.active_profile = choice
+              vim.fn.mkdir (config_home .. "/down", "p")
+              local wf = io.open (profile_path, "w")
+              if wf then wf:write (vim.json.encode (data)) wf:close () end
+              -- Update workspace data
+              local ws = require ("down.mod").get_mod ("workspace")
+              if ws and data.profiles[choice] then
+                for wname, wpath in pairs (data.profiles[choice].workspaces or {}) do
+                  ws.data.workspaces[wname] = wpath
+                end
+                if data.profiles[choice].default then
+                  ws.data.default = data.profiles[choice].default
+                  ws.data.active = data.profiles[choice].default
+                end
+                ws.sync ()
+              end
+              vim.notify ("Switched to profile: " .. choice, vim.log.levels.INFO)
+            end
+          end)
+        end,
+      },
+    },
+  }
+
+  return { loaded = true }
 end
 
 Cmd.get_commands = function (m)
@@ -453,17 +828,6 @@ end
 ---@param callback function
 Cmd.set_completion = function (callback)
   Cmd.generate_completions = callback
-end
-
-Cmd.load = function ()
-  vim.api.nvim_create_user_command ("Down", Cmd.cb, {
-    desc = "The down command",
-    range = 2,
-    force = true,
-    -- bang = true,
-    nargs = "*",
-    complete = Cmd.generate_completions,
-  })
 end
 
 ---@class down.mod.cmd.Config

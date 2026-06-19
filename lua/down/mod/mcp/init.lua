@@ -2,15 +2,11 @@ local mod = require("down.mod")
 
 ---@class down.mod.mcp.Mcp: down.Mod
 local Mcp = mod.new("mcp")
+Mcp.dep = { "lsp" }
 
 Mcp.setup = function()
-  return {
-    loaded = true,
-    dependencies = { "lsp" }, -- Depends on lsp to auto-install the down binary
-  }
+  return { loaded = true }
 end
-
-Mcp.load = function() end
 
 Mcp.get_bin_path = function()
   local lsp_mod = mod.get_mod("lsp")

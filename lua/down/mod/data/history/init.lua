@@ -5,6 +5,7 @@ local tbl = require("table")
 
 ---@class down.mod.data.history.History: down.Mod
 local History = mod.new("data.history")
+History.dep = { "cmd" }
 
 ---@class down.mod.data.history.Config: down.mod.Config
 History.config = {
@@ -135,9 +136,6 @@ end
 History.setup = function()
   ---@type down.mod.Setup
   return {
-    dependencies = {
-      "cmd",
-    },
     loaded = true,
   }
 end

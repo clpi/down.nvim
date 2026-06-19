@@ -635,7 +635,6 @@
 ---  | "log"
 ---  | "mod"
 ---  | "data.store"
----  | 'integration.telescope'
 ---  | 'find.fzflua'
 ---  | 'find.builtin'
 ---  | 'find.snacks'
@@ -676,6 +675,10 @@
 ---  | "ui.icon"
 ---  | "ui.hl"
 ---  | "edit.indent"
+---  | "data.semantic"
+---  | "ai"
+---  | "ai.chat"
+---  | "ai.gen"
 ---
 ---
 ---  The user configuration passed into down.setup

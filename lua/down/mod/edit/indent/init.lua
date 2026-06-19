@@ -17,7 +17,7 @@ Indent.maps = {
   },
 }
 
-Indent.load = function()
+Indent.setup = function()
   -- NOTE: temporary
   vim.api.nvim_create_user_command('DownInc', function()
     Indent.head.inc()
@@ -30,6 +30,7 @@ Indent.load = function()
   end, {
     desc = 'decs heading level',
   })
+  return { loaded = true }
 end
 ---@class down.edit.indent.Config
 Indent.config = {}

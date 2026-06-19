@@ -1,5 +1,23 @@
 #!/usr/bin/env lua
 
+-- Set up package path to include the local lua/ modules.
+-- Resolve repo root relative to this script or fall back to CWD.
+local function abspath(p)
+  local f = io.popen('cd "' .. p .. '" 2>/dev/null && pwd')
+  if f then local r = f:read("*l") f:close() return r end
+  return p
+end
+local root = abspath((arg[0]:match("^(.*)/") or "."))
+-- If we ended up at scripts/bin/, go up two levels to repo root
+if root:match("/scripts/bin$") then
+  root = root:gsub("/scripts/bin$", "")
+elseif root:match("/scripts$") then
+  root = root:gsub("/scripts$", "")
+elseif root:match("/bin$") then
+  root = root:gsub("/bin$", "")
+end
+package.path = root .. "/lua/?.lua;" .. root .. "/lua/?/init.lua;" .. package.path
+
 Down = {}
 
 --+  +----------------------+ down +----------------------+  +--
@@ -560,9 +578,107 @@ down.flags = {
   help = Arg.flag('help', 'Print help', down.help.print),
 }
 
+--- Extract remaining args after a command name
+---@param cmd_name string
+---@return string[]
+local function rest_args(cmd_name)
+  local rest = {}
+  local found = false
+  for _, a in ipairs(arg) do
+    if found then rest[#rest + 1] = a end
+    if a == cmd_name then found = true end
+  end
+  return rest
+end
+
+--- Simple JSON encoder for CLI (no vim.json needed)
+local function json_encode(tbl, indent)
+  indent = indent or 0
+  local pad = string.rep("  ", indent)
+  local pad1 = string.rep("  ", indent + 1)
+  if type(tbl) ~= "table" then
+    if type(tbl) == "string" then return '"' .. tbl:gsub('\\', '\\\\'):gsub('"', '\\"') .. '"'
+    elseif type(tbl) == "number" then return tostring(tbl)
+    elseif type(tbl) == "boolean" then return tbl and "true" or "false"
+    else return "null" end
+  end
+  local parts = {}
+  local is_list = true
+  local max = 0
+  for k in pairs(tbl) do
+    if type(k) ~= "number" then is_list = false break end
+    if k > max then max = k end
+  end
+  if is_list and max == #tbl and max > 0 then
+    for _, v in ipairs(tbl) do
+      parts[#parts + 1] = pad1 .. json_encode(v, indent + 1)
+    end
+    return "[\n" .. table.concat(parts, ",\n") .. "\n" .. pad .. "]"
+  else
+    for k, v in pairs(tbl) do
+      local key = '"' .. tostring(k) .. '"'
+      parts[#parts + 1] = pad1 .. key .. ": " .. json_encode(v, indent + 1)
+    end
+    return "{\n" .. table.concat(parts, ",\n") .. "\n" .. pad .. "}"
+  end
+end
+
+--- Load global down.json from ~/.down/
+---@return table
+local function load_global_json()
+  local home = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
+  local path = home .. "/down/down.json"
+  local f = io.open(path, "r")
+  if not f then return { workspaces = {}, profiles = { default = { workspaces = {} } }, active_profile = "default", active = nil, default = nil } end
+  local raw = f:read("*a")
+  f:close()
+  if not raw or raw == "" then return { workspaces = {}, profiles = { default = { workspaces = {} } }, active_profile = "default", active = nil, default = nil } end
+  local ok, data = pcall(function() return load("return " .. raw)() end)
+  if ok and type(data) == "table" then
+    if not data.profiles then data.profiles = { default = { workspaces = data.workspaces or {} } } end
+    if not data.active_profile then data.active_profile = "default" end
+    return data
+  end
+  return { workspaces = {}, profiles = { default = { workspaces = {} } }, active_profile = "default", active = nil, default = nil }
+end
+
+--- Save global down.json
+---@param data table
+local function save_global_json(data)
+  local home = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
+  local dir = home .. "/down"
+  os.execute('mkdir -p "' .. dir .. '" 2>/dev/null')
+  local path = dir .. "/down.json"
+  local f = io.open(path, "w")
+  if not f then return false end
+  f:write(json_encode(data))
+  f:close()
+  return true
+end
+
+--- Find .down/ directory walking up from current dir
+---@param start string
+---@return string|nil
+local function find_down_dir(start)
+  local dir = start
+  while dir and dir ~= "/" do
+    local d = dir .. "/.down"
+    local h = io.popen('test -d "' .. d .. '" && echo y')
+    if h then
+      local r = h:read("*l")
+      h:close()
+      if r == "y" then return d end
+    end
+    dir = dir:match("^(.*)/[^/]+$")
+  end
+  return nil
+end
+
 down.cmds = {
-  init = Arg.cmd(1, 'init', 'Initialize workspace', function()
-    down.fmt.fmt(down.fmt.cmds.init.color, down.fmt.cmds.init.title)
+  init = Arg.cmd(1, 'init', 'Initialize a down workspace', function()
+    local init = require('down.init')
+    init.cli(rest_args('init'))
+    os.exit(0)
   end),
   upgrade = Arg.cmd(1, 'upgrade', 'Upgrade binary', function()
     down.fmt.fmt(down.fmt.cmds.upgrade.color, down.fmt.cmds.init.title)
@@ -573,14 +689,203 @@ down.cmds = {
   note = Arg.cmd(1, 'note', 'Note functionality', function(...)
     down.fmt.fmt(down.fmt.cmds.note.color, down.fmt.cmds.note.title)
   end),
-  workspace = Arg.cmd(1, 'workspace', 'List workspaces', function(...)
-    down.fmt.fmt(down.fmt.cmds.workspace.color, down.fmt.cmds.workspace.title)
+  workspace = Arg.cmd(2, 'workspace', 'Manage workspaces', function()
+    local rest = rest_args('workspace')
+    local sub = rest[1]
+    local g_data = load_global_json()
+    local profile = g_data.active_profile or "default"
+    local ws_data = g_data.profiles[profile] or { workspaces = {} }
+
+    if sub == 'add' then
+      local name = rest[2] or (io.popen("pwd"):read("*l"):match("[^/]+$"))
+      local path = rest[3] or io.popen("pwd"):read("*l")
+      ws_data.workspaces[name] = path
+      g_data.profiles[profile] = ws_data
+      save_global_json(g_data)
+      print("Added workspace: " .. name .. " -> " .. path)
+    elseif sub == 'remove' or sub == 'rm' then
+      local name = rest[2]
+      if not name then print("Usage: down workspace remove <name>") os.exit(1) end
+      if name == "default" then print("Cannot remove default workspace") os.exit(1) end
+      ws_data.workspaces[name] = nil
+      g_data.profiles[profile] = ws_data
+      save_global_json(g_data)
+      print("Removed workspace: " .. name)
+    elseif sub == 'list' or sub == 'ls' then
+      print("Profile: " .. profile)
+      print("")
+      for n, p in pairs(ws_data.workspaces or {}) do
+        local marker = (g_data.active == n) and " *" or "  "
+        print(marker .. n .. " -> " .. p)
+      end
+    elseif sub == 'switch' or sub == 'use' then
+      local name = rest[2]
+      if not name then print("Usage: down workspace switch <name>") os.exit(1) end
+      if not ws_data.workspaces[name] then print("Workspace not found: " .. name) os.exit(1) end
+      g_data.active = name
+      save_global_json(g_data)
+      print("Switched to workspace: " .. name)
+    elseif sub == '--help' or sub == '-h' then
+      print([[down workspace - Manage workspaces
+
+Usage: down workspace <subcommand> [args]
+
+Subcommands:
+  add <name> [path]    Add a workspace
+  remove <name>        Remove a workspace
+  list                 List all workspaces
+  switch <name>        Switch active workspace
+  -h, --help           Show this help]])
+    else
+      for n, p in pairs(ws_data.workspaces or {}) do
+        local marker = (g_data.active == n) and " *" or "  "
+        print(marker .. n .. " -> " .. p)
+      end
+    end
+    os.exit(0)
+  end),
+  profile = Arg.cmd(2, 'profile', 'Manage profiles', function()
+    local rest = rest_args('profile')
+    local sub = rest[1]
+    local g_data = load_global_json()
+
+    if sub == 'add' then
+      local name = rest[2]
+      if not name then print("Usage: down profile add <name>") os.exit(1) end
+      if g_data.profiles[name] then print("Profile already exists: " .. name) os.exit(1) end
+      g_data.profiles[name] = { workspaces = {} }
+      save_global_json(g_data)
+      print("Added profile: " .. name)
+    elseif sub == 'remove' or sub == 'rm' then
+      local name = rest[2]
+      if not name then print("Usage: down profile remove <name>") os.exit(1) end
+      if name == "default" then print("Cannot remove default profile") os.exit(1) end
+      if not g_data.profiles[name] then print("Profile not found: " .. name) os.exit(1) end
+      g_data.profiles[name] = nil
+      if g_data.active_profile == name then g_data.active_profile = "default" end
+      save_global_json(g_data)
+      print("Removed profile: " .. name)
+    elseif sub == 'list' or sub == 'ls' then
+      for n, p in pairs(g_data.profiles or {}) do
+        local marker = (g_data.active_profile == n) and " *" or "  "
+        local count = 0
+        for _ in pairs(p.workspaces or {}) do count = count + 1 end
+        print(marker .. n .. " (" .. count .. " workspaces)")
+      end
+    elseif sub == 'switch' or sub == 'use' then
+      local name = rest[2]
+      if not name then print("Usage: down profile switch <name>") os.exit(1) end
+      if not g_data.profiles[name] then print("Profile not found: " .. name) os.exit(1) end
+      g_data.active_profile = name
+      save_global_json(g_data)
+      print("Switched to profile: " .. name)
+    elseif sub == '--help' or sub == '-h' then
+      print([[down profile - Manage profiles
+
+Usage: down profile <subcommand> [args]
+
+Subcommands:
+  add <name>           Create a new profile
+  remove <name>        Delete a profile
+  list                 List all profiles
+  switch <name>        Switch active profile
+  -h, --help           Show this help]])
+    else
+      for n, p in pairs(g_data.profiles or {}) do
+        local marker = (g_data.active_profile == n) and " *" or "  "
+        print(marker .. n)
+      end
+    end
+    os.exit(0)
+  end),
+  add = Arg.cmd(1, 'add', 'Add file/dir/URL to data dir', function()
+    local add = require('down.add')
+    add.cli(rest_args('add'))
+    os.exit(0)
+  end),
+  rm = Arg.cmd(1, 'rm', 'Append to .downignore', function()
+    local rest = rest_args('rm')
+    local down_dir = find_down_dir(io.popen("pwd"):read("*l"))
+    if not down_dir then
+      print("Error: no .down/ directory found in current path")
+      os.exit(1)
+    end
+    local ignore_path = down_dir .. "/.downignore"
+    local f = io.open(ignore_path, "a")
+    if not f then
+      print("Error: cannot open " .. ignore_path)
+      os.exit(1)
+    end
+    if #rest == 0 then
+      print("Usage: down rm <pattern> [pattern...]")
+      print("Appends patterns to " .. ignore_path)
+      os.exit(1)
+    end
+    for _, pat in ipairs(rest) do
+      f:write(pat .. "\n")
+      print("Added to .downignore: " .. pat)
+    end
+    f:close()
+    os.exit(0)
+  end),
+  remove = Arg.cmd(1, 'remove', 'Alias for rm', function()
+    arg[1] = 'rm' -- reuse rm handler
+    down.cmds.rm.handler()
   end),
   run = Arg.cmd(1, 'run', 'Run the lsp', function(...)
     down.fmt.fmt(down.fmt.cmds.run.color, down.fmt.cmds.run.title)
   end),
   serve = Arg.cmd(1, 'serve', 'Serve the lsp', function(...)
     down.fmt.fmt(down.fmt.cmds.run.color, down.fmt.cmds.run.title)
+  end),
+  compact = Arg.cmd(1, 'compact', 'Pack codebase into AI-friendly format', function()
+    local compact = require('down.compact')
+    compact.cli(rest_args('compact'))
+    os.exit(0)
+  end),
+  skills = Arg.cmd(1, 'skills', 'Generate project SKILL.md', function()
+    local skills = require('down.skills')
+    skills.cli(rest_args('skills'))
+    os.exit(0)
+  end),
+  completion = Arg.cmd(1, 'completion', 'Shell completions', function()
+    local rest = rest_args('completion')
+    local shell = rest[1] or 'bash'
+    local cmds = {}
+    for k in pairs(down.cmds) do cmds[#cmds + 1] = k end
+    table.sort(cmds)
+    if shell == 'bash' then
+      print('# down completions for bash')
+      print('# Add to ~/.bashrc: eval "$(down completion bash)"')
+      print('_down_completion() {')
+      print('  local cur=${COMP_WORDS[COMP_CWORD]}')
+      print('  local prev=${COMP_WORDS[COMP_CWORD-1]}')
+      print('  local cmds="' .. table.concat(cmds, " ") .. '"')
+      print('  if [[ $COMP_CWORD -eq 1 ]]; then')
+      print('    COMPREPLY=($(compgen -W "$cmds" -- "$cur"))')
+      print('  fi')
+      print('}')
+      print('complete -F _down_completion down')
+    elseif shell == 'zsh' then
+      print('# down completions for zsh')
+      print('# Add to ~/.zshrc: eval "$(down completion zsh)"')
+      print('#compdef down')
+      print('local cmds=(' .. table.concat(cmds, " ") .. ')')
+      print('_down() {')
+      print('  _describe "command" cmds')
+      print('}')
+      print('_down')
+    elseif shell == 'fish' then
+      print('# down completions for fish')
+      print('# Save to ~/.config/fish/completions/down.fish')
+      print('complete -c down -f')
+      for _, cmd in ipairs(cmds) do
+        print('complete -c down -n "__fish_use_subcommand" -a ' .. cmd .. ' -d "' .. (down.cmds[cmd] and down.cmds[cmd].desc or cmd) .. '"')
+      end
+    else
+      print("Usage: down completion [bash|zsh|fish]")
+    end
+    os.exit(0)
   end),
   -- version = Arg.cmd("version", "Print version", down.flags.version.desc, down.flags.version.handler),
   config = Arg.cmd(1, 'config', 'Set config values', function(...)

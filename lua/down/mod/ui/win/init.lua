@@ -19,12 +19,7 @@ function Win.win:close()
 end
 
 Win.setup = function()
-  return {
-    loaded = true,
-    dependencies = {
-      -- 'ui'
-    },
-  }
+  return { loaded = true }
 end
 ---@class down.ui.win.Config
 Win.config = {}

@@ -6,16 +6,23 @@
 
 - [x] Implement `bookmark` mod
 - [x] Implement date and time completion insert
+- [x] `data.props` Rewrite for YAML frontmatter with typed properties (text, number, date, select, multi_select, checkbox, url, email, status)
+- [x] `data.database` Database module with schema definitions, CRUD on markdown tables, query/filter/sort engine
+- [x] `ui.board` Board (Kanban) view with status-based column grouping
+- [x] `data.database` Calendar, table, and list views for databases
+- [x] `task` Add priority levels (A-E), due dates (DEADLINE), recurrence (SCHEDULED), task properties
+- [x] `task.agenda` Cross-file task collection with date-grouped display (overdue, today, this week, etc.)
+- [x] `bookmark` Add list, search, import, export, JSON store persistence
 
 ## Project Maintenance
 
-- [ ] Implement CI/CD for the project
-- [ ] Fix the `luarocks` rockspec file
+- [x] Implement CI/CD for the project
+- [x] Fix the `luarocks` rockspec file
 
 ## General
 
-- [ ] remove `integration.telescope` and `integration.trouble` mods
-- [ ] Re-implement the `data` metatable wrapper for modules to allow for persistent data
+- [x] remove `integration.telescope` and `integration.trouble` mods
+- [x] Re-implement the `data` metatable wrapper for modules to allow for persistent data
       synchronization for all modules.
 - [x] Fix the `link` key maps for links, make markdown file specific
 
@@ -56,7 +63,7 @@ end
 
 ## Documentation
 
-- [ ] Update the book to reflect new changes
+- [x] Update the book to reflect new changes
 
 ## Long term
 
@@ -67,12 +74,26 @@ end
 
 ### AI and latent semantic analysis
 
-- [ ] `data.semantic` Embedding models
-- [ ] `data.knowledge` Knowledge graph
-- [ ] `ai.chat` Chat based on fine-tuned models
-- [ ] `ai.gen` Generation based on fine-tuned models
+- [x] `data.semantic` Embedding models
+- [x] `data.knowledge` Knowledge graph
+- [x] `ai.chat` Chat based on fine-tuned models
+- [x] `ai.gen` Generation based on fine-tuned models
 
 ## Refactoring
 
-- [ ] Merge `mod.load` and `mod.setup`
-- [ ] Merge `mod.setup().dependencies` and `mod.dep`
+- [x] Merge `mod.load` and `mod.setup`
+- [x] Merge `mod.setup().dependencies` and `mod.dep`
+
+## CLI & Plugin Commands
+
+- [x] `init` - Initialize .down/ workspace directory with index.md, down.json
+- [x] `workspace add/remove/list/switch` - Manage workspaces via CLI and plugin
+- [x] `profile add/remove/list/switch` - Manage profiles via CLI and plugin
+- [x] `add <source>` - Add file/dir/URL/word to .down/data/ as repomix-style markdown
+- [x] `rm <pattern>` - Append patterns to .downignore
+- [x] `completion <shell>` - Generate shell completions (bash/zsh/fish)
+- [x] Plugin auto-init - Create workspace in Neovim config dir if none exists
+- [ ] Profile-aware workspace switching in plugin (make :Down profile switch update workspace data)
+- [ ] `add` command: streaming URL fetch with proper HTML-to-markdown conversion (currently basic)
+- [ ] `add` command: binary file detection and exclusion
+- [ ] `.downignore` pattern matching for compact/add to respect ignore rules

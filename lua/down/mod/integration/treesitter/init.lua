@@ -67,15 +67,10 @@ Treesitter.heading_query = [[
              ]]
 
 Treesitter.setup = function()
-  local has_ts = get_ts_dep("nvim-treesitter.ts_utils") ~= nil
-  return { loaded = has_ts }
-end
-
-Treesitter.load = function()
   local tsu = get_ts_dep("nvim-treesitter.ts_utils")
   if not tsu then
     log.warn("nvim-treesitter not available, treesitter integration disabled")
-    return
+    return { loaded = false }
   end
   Treesitter.ts_utils = tsu
   local ntp = get_ts_dep("nvim-treesitter.parsers")
@@ -140,6 +135,8 @@ Treesitter.load = function()
     "<Plug>(down.treesitter.previous.link)",
     util.wrap(Treesitter.goto_previous_query_match, Treesitter.link_query)
   )
+  local has_ts = get_ts_dep("nvim-treesitter.ts_utils") ~= nil
+  return { loaded = has_ts }
 end
 
 Treesitter.config = {

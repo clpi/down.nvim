@@ -5,14 +5,11 @@ local utils = require 'down.util'
 
 ---@type down.Editod
 local Edit = mod.new('edit', { 'cursor', 'indent' })
+Edit.dep = { 'edit.cursor', 'edit.indent' }
 
 Edit.setup = function()
   return {
     loaded = true,
-    dependencies = {
-      'edit.cursor',
-      'edit.indent',
-    },
   }
 end
 

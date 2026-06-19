@@ -17,14 +17,6 @@ end
 
 ---@return down.mod.Setup
 Telescope.setup = function()
-  ---@type down.mod.Setup
-  return {
-    loaded = ok,
-    dependencies = {},
-  }
-end
-
-Telescope.load = function()
   Telescope.picker = picker
 
   -- Register the extension with telescope
@@ -37,6 +29,10 @@ Telescope.load = function()
 
   -- Load the extension to make :Telescope down available
   tel.load_extension("down")
+  ---@type down.mod.Setup
+  return {
+    loaded = ok,
+  }
 end
 
 ---@class down.mod.find.telescope.Config: down.mod.Config

@@ -19,20 +19,15 @@ Data.setup = function ()
   })
   Data.sync ()
   ---@type down.mod.Setup
-  return {
-    loaded = true,
-    dependencies = {},
-  }
+  return { loaded = true }
 end
 
-Data.load = function () end
-
----@class down.mod..Config
+---@class down.mod.data.Config
 Data.config = {
   path = stdp ("data") .. "/down.json",
   dir = {
     vim = join (stdp ("data") or fn.expand ("~/.local/share/nvim"), "down/"),
-    home = join (os.getenv ("HOME") or "~/", ".down/"),
+    home = join (os.getenv ("XDG_CONFIG_HOME") or os.getenv ("HOME") .. "/.config" or "~/.config", "down/"),
   },
   file = {
     vim = join (
@@ -40,68 +35,81 @@ Data.config = {
       "down/",
       "down.json"
     ),
-    home = join (os.getenv ("HOME") or "~/", ".down/", "down.json"),
+    home = join (os.getenv ("XDG_CONFIG_HOME") or os.getenv ("HOME") .. "/.config" or "~/.config", "down/", "down.json"),
   },
 }
 
----@param name string
----@type fun(name: string): metatable
+--- Creates a metatable that auto-persists table writes to the data store.
+--- The namespace is used as a prefix for keys: `namespace.key`
+--- - __index: lazy-loads from disk, falls back to defaults, then raw table
+--- - __newindex: writes to raw table and persists via Data.set
+--- - __call: flushes all keys in the table to disk
+--- - __tostring: returns the namespace name
+---@param namespace string
+---@param defaults? table<string, any>
 ---@return metatable
-Data.mt = function (name)
-  ---@type metatable
+Data.mt = function (namespace, defaults)
   return {
-    ---@param self down.Dataod.Dataod
-    __tostring = function (self)
-      return name
+    __tostring = function ()
+      return namespace
     end,
-    ---@param self down.Dataod.Dataod
     __index = function (self, key)
-      if not self[name .. "." .. key] then
-        return
+      -- Check raw table first (user-set values)
+      local val = rawget (self, key)
+      if val ~= nil then
+        return val
       end
-      if not B.dep.data.get (key) == self[key] then
-        B.dep.data.set (name .. "." .. key, self[key])
+      -- Try loading from disk
+      local stored = Data.get (namespace .. "." .. key)
+      if stored ~= nil then
+        rawset (self, key, stored)
+        return stored
       end
-      return self[key]
+      -- Fall back to defaults
+      if defaults and defaults[key] ~= nil then
+        rawset (self, key, defaults[key])
+        return defaults[key]
+      end
+      return nil
     end,
-    __name = name,
-    ---@param self down.Dataod.Dataod
     __newindex = function (self, key, val)
-      self[key] = val
-      B.dep.data.set (name .. "." .. key, val)
+      rawset (self, key, val)
+      Data.set (namespace .. "." .. key, val)
     end,
-    ---@param a down.Dataod.Dataod
+    __call = function (self)
+      for k, v in pairs (self) do
+        if type (k) == "string" and not k:match ("^__") then
+          Data.set (namespace .. "." .. k, v)
+        end
+      end
+      Data.flush ()
+    end,
     __concat = function (a, b)
       if type (b) == "string" then
         return tostring (a) .. "." .. b
       end
       return tostring (a) .. tostring (b)
     end,
-    ---@param self down.Dataod.Dataod
-    ---@param load? boolean
-    __call = function (self, load)
-      for key, val in pairs (self) do
-        if load then
-          self[key] = Data.data.get (name .. "." .. key)
-        elseif
-          not Data.dep.data.get (name .. "." .. key)
-          or not Data.dep.data.get (name .. "." .. key) == val
-        then
-          Data.dep.data.set (name .. "." .. key, val)
-        end
-      end
-      Data.flush ()
-    end,
   }
 end
 
+--- Wraps a table with auto-persistence under the given namespace.
+--- Values are lazy-loaded from disk on first access; defaults are used
+--- if no value exists on disk.
+---@generic T: table
+---@param namespace string
+---@param defaults? T
+---@return T
+Data.wrap = function (namespace, defaults)
+  return setmetatable ({}, Data.mt (namespace, defaults or {}))
+end
+
+--- Shorthand alias for backward compatibility
 ---@generic T: table
 ---@param name string
 ---@param t T
 ---@return T
-Data.tbl = function (name, t)
-  return setmetatable (t, Data.mt (name))
-end
+Data.tbl = Data.wrap
 
 Data.concat = function (p1, p2)
   return table.concat ({ p1, require ("down.util").sep, p2 })

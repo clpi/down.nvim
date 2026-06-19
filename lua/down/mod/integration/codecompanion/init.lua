@@ -4,10 +4,15 @@ local mod = require("down.mod")
 local Codecompanion = mod.new("integration.codecompanion")
 
 Codecompanion.setup = function()
-  return {
-    loaded = true, -- Expose tools even if CC is not loaded yet
-    dependencies = {},
-  }
+  -- Try to inject automatically if codecompanion config is already available
+  pcall(function()
+    local cc = require("codecompanion.config")
+    if cc and cc.strategies and cc.strategies.chat then
+      cc.strategies.chat.slash_commands = cc.strategies.chat.slash_commands or {}
+      cc.strategies.chat.slash_commands["down"] = Codecompanion.slash_commands.workspace
+    end
+  end)
+  return { loaded = true }
 end
 
 Codecompanion.slash_commands = {
@@ -36,16 +41,5 @@ Codecompanion.slash_commands = {
     end,
   }
 }
-
-Codecompanion.load = function()
-  -- Try to inject automatically if codecompanion config is already available
-  pcall(function()
-    local cc = require("codecompanion.config")
-    if cc and cc.strategies and cc.strategies.chat then
-      cc.strategies.chat.slash_commands = cc.strategies.chat.slash_commands or {}
-      cc.strategies.chat.slash_commands["down"] = Codecompanion.slash_commands.workspace
-    end
-  end)
-end
 
 return Codecompanion

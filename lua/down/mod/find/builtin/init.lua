@@ -6,16 +6,11 @@ local Builtin = require("down.mod").new("find.builtin")
 Builtin.config = {}
 
 Builtin.setup = function()
-  return {
-    dependencies = {},
-    loaded = true,
-  }
+  return { loaded = true }
 end
 
 Builtin.pick = {
 
 }
-
-Builtin.load = function() end
 
 return Builtin

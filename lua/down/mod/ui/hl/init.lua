@@ -376,16 +376,15 @@ Hl.config = {
 }
 
 Hl.setup = function()
-  return { loaded = true, dependencies = {} }
-end
-
-Hl.load = function()
   Hl.trigger_highlight()
 
   vim.api.nvim_create_autocmd({ "FileType", "ColorScheme" }, {
     callback = Hl.trigger_highlight,
   })
+  return { loaded = true }
 end
+
+
 
 ---@class base.highlight
 

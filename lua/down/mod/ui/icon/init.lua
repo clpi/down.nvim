@@ -9,6 +9,7 @@ local Icon = mod.new("ui.icon", {
   "complex",
   "diamond",
 })
+Icon.dep = { "integration.treesitter" }
 Icon.render = require("down.mod.ui.icon.render")
 
 Icon.mark = require("down.mod.ui.icon.render.mark")
@@ -16,15 +17,6 @@ Icon.mark = require("down.mod.ui.icon.render.mark")
 Icon.util = require("down.mod.ui.icon.util")
 
 Icon.setup = function()
-  return {
-    loaded = true,
-    dependencies = {
-      "integration.treesitter",
-    },
-  }
-end
-
-Icon.load = function()
   local icon =
       Icon.import[Icon.id .. "." .. Icon.config.icon].config["icon_" .. Icon.config.icon]
   if not icon then
@@ -33,7 +25,9 @@ Icon.load = function()
         Icon.config.icon
       )
     )
-    return
+    return {
+      loaded = true,
+    }
   end
 
   Icon.config = vim.tbl_deep_extend(
@@ -69,6 +63,9 @@ Icon.load = function()
       Icon.mark.all.mark.changed(bufid)
     end,
   })
+  return {
+    loaded = true,
+  }
 end
 
 return Icon

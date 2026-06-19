@@ -35,6 +35,12 @@ Down.default_mods = {
   "tag",
   "mcp",
   "data.knowledge",
+  "data.props",
+  "data.database",
+  "data.semantic",
+  "ai",
+  "ai.chat",
+  "ai.gen",
 }
 
 --- Load the user configuration, and load into config
@@ -51,6 +57,9 @@ end
 --- Load the workspace and user modules
 function Down:start ()
   self.log.trace ("Starting down")
+
+  -- Load data module first so persistent data is available for workspace
+  self.mod.load_mod ("data")
 
   -- Load workspace first with user config
   local ws_config = self.config.user.workspace
@@ -107,14 +116,6 @@ function Down:load_integrations ()
     end
   end
 
-  -- Telescope integration
-  local has_telescope = pcall (require, "telescope")
-  if has_telescope and not self.mod.is_loaded ("integration.telescope") then
-    local tel_config = self.config.user["integration.telescope"]
-    if tel_config ~= false then
-      self.mod.load_mod ("integration.telescope", type (tel_config) == "table" and tel_config or {})
-    end
-  end
 end
 
 --- After the plugin has started

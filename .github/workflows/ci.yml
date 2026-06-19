@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.4"
+
+      - name: Setup LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install lint tools
+        run: |
+          luarocks install luacheck
+          cargo install stylua --version 0.20.0
+          cargo install selene --version 0.27.1
+
+      - name: Run luacheck
+        run: luacheck --config .luacheckrc ./lua
+
+      - name: Run stylua (check)
+        run: stylua --check lua/
+
+      - name: Run selene
+        run: selene --display-style=quiet lua/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.4"
+
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      - name: Run tests
+        run: |
+          nvim --headless -u ./test/config/minit.lua --noplugin -c 'lua require("down.test").run()' -c 'qa!'

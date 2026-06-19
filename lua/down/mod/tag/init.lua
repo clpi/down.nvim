@@ -3,6 +3,7 @@ local log = require('down.log')
 
 ---@class down.mod.tag.Tag: down.Mod
 local Tag = mod.new 'tag'
+Tag.dep = { 'workspace', 'cmd', 'data' }
 
 ---@class down.mod.tag.Commands: down.Commands
 Tag.commands = {
@@ -70,7 +71,6 @@ Tag.commands = {
 Tag.setup = function()
   return {
     loaded = true,
-    dependencies = { 'workspace', 'cmd', 'data' },
   }
 end
 

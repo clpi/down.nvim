@@ -4,15 +4,12 @@ local log = require 'down.log'
 ---@class down.mod.ui.Ui: down.Mod
 local Ui = mod.new 'ui'
 
-Ui.load = function()
+Ui.setup = function()
   for _, i in pairs(Ui.import) do
     Ui = vim.tbl_extend('force', Ui, i)
   end
-end
-Ui.setup = function()
   return {
     namespace = vim.api.nvim_create_namespace 'down.mod.ui',
-    dependencies = {},
     loaded = true,
   }
 end

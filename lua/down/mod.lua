@@ -99,7 +99,6 @@ Mod.mods = {}
 
 Mod.default = {
   mods = {
-    -- "integration.telescope",
     "find",
     "note",
     "workspace",
@@ -173,18 +172,30 @@ Mod.from_table = function (m, cfg)
     return Mod.mods[m.id]
   end
   ---@type down.mod.Setup
-  local mod_load = m.setup and m.setup () or Mod.default.setup ()
+  local mod_load = m.setup and m.setup() or Mod.default.setup()
   ---@type down.Mod
   local mod_to_replace
   if mod_load.replaces and mod_load.replaces ~= "" then
-    mod_to_replace = vim.deepcopy (Mod.mods[mod_load.replaces])
+    mod_to_replace = vim.deepcopy(Mod.mods[mod_load.replaces])
   end
   Mod.mods[m.id] = m
-  if mod_load.dependencies and vim.tbl_count (mod_load.dependencies) then
-    for _, req in pairs (mod_load.dependencies) do
-      if not Mod.is_loaded (req) then
-        if not Mod.load_mod (req) then
-          return Mod.delete (m.id)
+
+  -- Resolve dependencies from m.dep (list of strings) or mod_load.dependencies (legacy)
+  local deps = mod_load.dependencies
+  if (not deps or not vim.tbl_count(deps)) and type(m.dep) == "table" then
+    -- New pattern: m.dep is a list of dependency IDs
+    deps = {}
+    for _, v in ipairs(m.dep) do
+      deps[#deps + 1] = v
+    end
+    if #deps == 0 then deps = nil end
+  end
+  if deps and vim.tbl_count(deps) > 0 then
+    m.dep = {}
+    for _, req in ipairs(deps) do
+      if not Mod.is_loaded(req) then
+        if not Mod.load_mod(req) then
+          return Mod.delete(m.id)
         end
       end
       m.dep[req] = Mod.mods[req]
@@ -193,14 +204,14 @@ Mod.from_table = function (m, cfg)
   if mod_to_replace then
     m.id = mod_to_replace.id
     if mod_to_replace.replaced then
-      return Mod.delete (m.id)
+      return Mod.delete(m.id)
     end
     if mod_load.merge then
-      m = vim.tbl_deep_extend ("force", m, mod_to_replace)
+      m = vim.tbl_deep_extend("force", m, mod_to_replace)
     end
     m.replaced = true
   end
-  Mod.mod_load (m)
+  Mod.mod_load(m)
   return Mod.mods[m.id]
 end
 
@@ -337,9 +348,6 @@ function Mod.mod_load (m)
   Mod.load_maps (m)
   Mod.load_opts (m)
   Event.load_callback (m)
-  if m.load then
-    m.load ()
-  end
 end
 
 Mod.get = function (m)
