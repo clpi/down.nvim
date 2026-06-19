@@ -103,7 +103,7 @@ end
 - [x] Global data dir at ~/.local/share/down/ with memory/data/cache
 - [x] Plugin: `:Down memory add/list/show/search/delete`
 - [x] Plugin: `:Down context`
-- [ ] GitHub release CI — auto-build Go binaries for linux/macos/windows on tag push
-- [ ] Plugin: implement add command via Go CLI instead of Lua when binary is available
-- [ ] CLI: memory export/import for sharing context across projects
-- [ ] Plugin: context command should embed compact output when Go binary available
+- [x] GitHub release CI — auto-build Go binaries for linux/macos/windows on tag push
+- [x] Plugin: implement add command via Go CLI instead of Lua when binary is available
+- [x] CLI: memory export/import for sharing context across projects
+- [x] Plugin: context command should embed compact output when Go binary available

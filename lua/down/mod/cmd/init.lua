@@ -15,6 +15,28 @@ Cmd.setup = function ()
     complete = Cmd.generate_completions,
   })
 
+  -- Helper: resolve the down CLI binary path
+  local function down_bin ()
+    local paths = {
+      vim.fn.stdpath ("data") .. "/down/bin/down",
+      "down", -- system PATH
+    }
+    for _, p in ipairs (paths) do
+      if vim.fn.executable (p) == 1 then return p end
+    end
+    return nil
+  end
+
+  -- Helper: run down CLI and return stdout
+  local function down_run (args)
+    local bin = down_bin ()
+    if not bin then return nil, "no cli binary" end
+    local cmd = { bin, table.unpack (args) }
+    local result = vim.fn.system (cmd)
+    if vim.v.shell_error ~= 0 then return nil, result end
+    return result:gsub ("%s+$", ""), nil
+  end
+
   -- Register compact and skills commands
   Cmd.commands.compact = {
     enabled = true,
@@ -89,21 +111,28 @@ Cmd.setup = function ()
     end,
     callback = function (e)
       local source = e.body and e.body[1]
+      do_add = function (src)
+        local out, err = down_run ({ "add", src })
+        if out then
+          vim.notify (out, vim.log.levels.INFO)
+        else
+          -- Fall back to Lua implementation
+          local add = require ("down.add")
+          local path, lua_err = add.ingest (src)
+          if path then
+            vim.notify ("Added: " .. path, vim.log.levels.INFO)
+          else
+            vim.notify ("Error: " .. (lua_err or err or "unknown"), vim.log.levels.ERROR)
+          end
+        end
+      end
       if not source then
         vim.ui.input ({ prompt = "Add source (file/dir/URL/name): " }, function (input)
-          if input and input ~= "" then
-            local add = require ("down.add")
-            local out, err = add.ingest (input)
-            if out then vim.notify ("Added: " .. out, vim.log.levels.INFO)
-            else vim.notify ("Error: " .. (err or "unknown"), vim.log.levels.ERROR) end
-          end
+          if input and input ~= "" then do_add (input) end
         end)
         return
       end
-      local add = require ("down.add")
-      local out, err = add.ingest (source)
-      if out then vim.notify ("Added: " .. out, vim.log.levels.INFO)
-      else vim.notify ("Error: " .. (err or "unknown"), vim.log.levels.ERROR) end
+      do_add (source)
     end,
   }
 
@@ -494,33 +523,51 @@ Cmd.setup = function ()
       local root = e.body and e.body[1] or vim.fn.getcwd ()
       local name = vim.fn.fnamemodify (root, ":t")
       local out = { "# " .. name .. " — AI Context", "", "> Generated: " .. os.date "%Y-%m-%d %H:%M:%S", "" }
+
+      -- Try Go CLI context first
+      local ctx_out, _ = down_run ({ "context", root, "-o", root .. "/.down/context.md" })
+
+      -- Embed compact output if Go binary available
+      local compact_str = nil
+      down_run ({ "compact", root, "-o", root .. "/.down/compact.xml" })
+
       -- Detect languages
       local langs = {}
-      vim.fn.system ("find " .. root .. " -type f -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null | head -500"):gsub ("%.(%w+)\n", function (ext)
-        local m = { lua = "Lua", go = "Go", js = "JavaScript", py = "Python", rs = "Rust", md = "Markdown", json = "JSON", toml = "TOML", yml = "YAML" }
-        if m[ext] and not langs[m[ext]] then langs[m[ext]] = true end
+      pcall (function ()
+        for ext, lang in pairs ({ lua = "Lua", go = "Go", js = "JavaScript", py = "Python", rs = "Rust", md = "Markdown", json = "JSON", toml = "TOML", yml = "YAML" }) do
+          local count = tonumber (vim.fn.system ("find " .. root .. " -name '*." .. ext .. "' -not -path '*/.git/*' 2>/dev/null | wc -l")) or 0
+          if count > 0 then langs[lang] = true end
+        end
       end)
       local lang_list = {}
       for l in pairs (langs) do lang_list[#lang_list + 1] = l end
+      table.sort (lang_list)
       if #lang_list > 0 then
         out[#out + 1] = "**Languages:** " .. table.concat (lang_list, ", ")
         out[#out + 1] = ""
       end
       out[#out + 1] = "## Structure"
       out[#out + 1] = "```"
-      out[#out + 1] = vim.fn.system ("ls -R " .. root .. " 2>/dev/null | head -100")
+      pcall (function ()
+        for _, l in ipairs (vim.split (vim.fn.system ("ls -R " .. root .. " 2>/dev/null | head -80"), "\n")) do
+          out[#out + 1] = l
+        end
+      end)
       out[#out + 1] = "```"
       out[#out + 1] = ""
       out[#out + 1] = "## Task"
       out[#out + 1] = ""
       out[#out + 1] = "<!-- Describe what you want the AI to do -->"
-      -- Write to .down/context.md
-      local out_path = root .. "/.down/context.md"
+
+      -- Write context
       os.execute ('mkdir -p "' .. root .. '/.down"')
+      local out_path = root .. "/.down/context.md"
       local f = io.open (out_path, "w")
       if f then f:write (table.concat (out, "\n")) f:close () end
+
       -- Open in buffer
-      vim.cmd ("vsplit " .. out_path)
+      vim.cmd (ctx_out and "vsplit " .. out_path or "vsplit")
+      if ctx_out then vim.cmd ("edit " .. out_path) end
       vim.notify ("Context written to " .. out_path, vim.log.levels.INFO)
     end,
   }
