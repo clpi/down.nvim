@@ -107,3 +107,25 @@ end
 - [x] Plugin: implement add command via Go CLI instead of Lua when binary is available
 - [x] CLI: memory export/import for sharing context across projects
 - [x] Plugin: context command should embed compact output when Go binary available
+- [x] Export command: HTML, CSV, PDF, markdown export from workspace
+- [x] Database formulas: computed fields, rollups (count/sum/avg/min/max/join)
+- [x] Static site publish: generate navigable HTML site from workspace with dark mode
+- [x] Automations: file watchers with trigger/action rules (index, tag, notify, compact, run)
+- [x] MCP server: 12 real tools replacing stubs (workspace, knowledge, memory, tasks, notes)
+- [x] LSP: enabled signatureHelp handler
+- [x] Notion feature parity: databases, views, AI, export, publish, automations, MCP, profiles
+- [x] Document workspace philosophy: .down/ dir as markdown context inside codebases
+- [x] `sync` subcommand with sub-commands: data, knowledge, memory, context, vector, web
+- [x] `vector` subcommand — manage embeddings in .down/vector/ (index, search, list, delete)
+- [x] `todo` subcommand — manage todos across workspace/global with priority/tag/done filters
+- [x] Workspace wiki config — `down init --wiki` for markdown-first workspaces
+- [x] LSP: knowledge graph entity tokens in semantic highlighting
+- [x] LSP: monikers, rename, linked edits, document links, document highlights
+
+## Future
+- [ ] Collaborative sync via git auto-commit on change
+- [ ] Mobile companion app (read-only notes browser)
+- [ ] Web UI for workspace browsing
+- [ ] AI-powered auto-tagging and relationship discovery
+- [ ] Calendar integration (sync with external calendars)
+- [ ] PDF/EPUB export with pandoc templates
