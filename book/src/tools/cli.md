@@ -133,6 +133,34 @@ down lsp knowledge related design.md  # Related documents
 
 Use `--root` to point at a workspace (default: nearest `.down/` ancestor).
 
+
+### `down git <subcommand>`
+
+Sync git repository history and diffs into `.down/git/` as organized markdown.
+Full commit history is compacted into `history.md`; each commit gets a detail
+file with patch under `commits/`.
+
+```bash
+down git                    # Sync (same as `down git sync`)
+down git sync               # Export history + diffs to .down/git/
+down git status             # Repo + sync status
+down git log                # Recent commits (links to .down/git/commits/)
+down git diff               # Working tree diff
+down git sync -f            # Regenerate all commit files
+```
+
+Output layout:
+
+```
+.down/git/
+  index.json        # sync state
+  history.md        # compact full timeline (by month)
+  HEAD.md           # current commit + diff
+  working-tree.md   # uncommitted changes
+  branches/<name>.md
+  commits/<sha>.md  # per-commit message + patch
+```
+
 ### `down context [directory]`
 
 Generate a comprehensive AI project context document at `.down/context.md`.

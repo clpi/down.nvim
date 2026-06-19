@@ -831,6 +831,7 @@ Cmd.setup = function ()
     link = { subcmds = {}, ft = nil },
     snippet = { subcmds = {}, ft = nil },
     template = { subcmds = {}, ft = nil },
+    git = { subcmds = { "sync", "status", "log", "diff" }, ft = "markdown" },
     lsp = {
       subcmds = {
         "slash",
