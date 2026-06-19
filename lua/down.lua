@@ -58,6 +58,9 @@ end
 function Down:start ()
   self.log.trace ("Starting down")
 
+  -- Auto-install down CLI binary if not present
+  Down:ensure_cli ()
+
   -- Load data module first so persistent data is available for workspace
   self.mod.load_mod ("data")
 
@@ -151,6 +154,19 @@ function Down:test ()
     if d.test then
       Down.log.trace ("Result: " .. tostring (d.test ()))
     end
+  end
+end
+
+--- Ensure the down CLI binary is installed at first plugin load
+function Down:ensure_cli ()
+  local bin_dir = vim.fn.stdpath ("data") .. "/down/bin"
+  local bin_path = bin_dir .. "/down"
+  if vim.fn.executable (bin_path) == 1 then return end
+  if vim.fn.executable ("down") == 1 then return end
+  vim.fn.mkdir (bin_dir, "p")
+  local ext_dir = vim.fn.stdpath ("config"):gsub ("nvim$", "") .. "down/ext/down"
+  if vim.fn.isdirectory (ext_dir) == 1 and vim.fn.executable ("go") == 1 then
+    pcall (vim.fn.system, { "go", "build", "-o", bin_path, ext_dir .. "/." })
   end
 end
 

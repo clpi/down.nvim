@@ -93,7 +93,17 @@ end
 - [x] `rm <pattern>` - Append patterns to .downignore
 - [x] `completion <shell>` - Generate shell completions (bash/zsh/fish)
 - [x] Plugin auto-init - Create workspace in Neovim config dir if none exists
-- [ ] Profile-aware workspace switching in plugin (make :Down profile switch update workspace data)
-- [ ] `add` command: streaming URL fetch with proper HTML-to-markdown conversion (currently basic)
-- [ ] `add` command: binary file detection and exclusion
-- [ ] `.downignore` pattern matching for compact/add to respect ignore rules
+- [x] Profile-aware workspace switching in plugin (make :Down profile switch update workspace data)
+- [x] `add` command: streaming URL fetch with proper HTML-to-markdown conversion (currently basic)
+- [x] `add` command: binary file detection and exclusion
+- [x] `.downignore` pattern matching for compact/add to respect ignore rules
+- [x] Auto-install Go CLI binary on first-time plugin load
+- [x] `memory` subcommand — persistent AI memory store (add/list/show/search/delete)
+- [x] `context` subcommand — AI project context generation
+- [x] Global data dir at ~/.local/share/down/ with memory/data/cache
+- [x] Plugin: `:Down memory add/list/show/search/delete`
+- [x] Plugin: `:Down context`
+- [ ] GitHub release CI — auto-build Go binaries for linux/macos/windows on tag push
+- [ ] Plugin: implement add command via Go CLI instead of Lua when binary is available
+- [ ] CLI: memory export/import for sharing context across projects
+- [ ] Plugin: context command should embed compact output when Go binary available

@@ -382,7 +382,204 @@ Cmd.setup = function ()
     },
   }
 
+  -- Register memory command
+  Cmd.commands.memory = {
+    enabled = true,
+    args = 0,
+    name = "memory",
+    callback = function (e)
+      local body = e.body or {}
+      local sub = body[1]
+      local data_home = os.getenv ("XDG_DATA_HOME") or (os.getenv ("HOME") .. "/.local/share")
+      local mem_dir = data_home .. "/down/memory"
+
+      if sub == "add" or sub == "set" then
+        local key = body[2]
+        local value = body[3]
+        if not key then
+          vim.ui.input ({ prompt = "Memory key: " }, function (k)
+            if k and k ~= "" then
+              vim.ui.input ({ prompt = "Value: " }, function (v)
+                if v then
+                  os.execute ('mkdir -p "' .. mem_dir .. '"')
+                  local f = io.open (mem_dir .. "/" .. k .. ".json", "w")
+                  if f then
+                    f:write (vim.json.encode ({ key = k, value = v, created = os.date ("%Y-%m-%d %H:%M") }))
+                    f:close ()
+                    vim.notify ("Memory saved: " .. k, vim.log.levels.INFO)
+                  end
+                end
+              end)
+            end
+          end)
+          return
+        end
+        os.execute ('mkdir -p "' .. mem_dir .. '"')
+        local f = io.open (mem_dir .. "/" .. key .. ".json", "w")
+        if f then
+          f:write (vim.json.encode ({ key = key, value = value, created = os.date ("%Y-%m-%d %H:%M") }))
+          f:close ()
+          vim.notify ("Memory saved: " .. key, vim.log.levels.INFO)
+        end
+      elseif sub == "list" or sub == "ls" or not sub then
+        local entries = vim.fn.glob (mem_dir .. "/*.json", true, true)
+        if #entries == 0 then
+          vim.notify ("No memory entries", vim.log.levels.INFO)
+        else
+          local buf = vim.api.nvim_create_buf (false, true)
+          vim.api.nvim_buf_set_option (buf, "buftype", "nofile")
+          vim.api.nvim_buf_set_option (buf, "bufhidden", "wipe")
+          local lines = { "# Memory", "" }
+          for _, path in ipairs (entries) do
+            local f = io.open (path, "r")
+            if f then
+              local raw = f:read ("*a")
+              f:close ()
+              local ok, data = pcall (vim.json.decode, raw)
+              if ok and data then
+                lines[#lines + 1] = "## " .. (data.key or "?")
+                lines[#lines + 1] = ""
+                for _, l in ipairs (vim.split (data.value or "", "\n")) do
+                  lines[#lines + 1] = l
+                end
+                lines[#lines + 1] = "---"
+                lines[#lines + 1] = ""
+              end
+            end
+          end
+          vim.api.nvim_buf_set_lines (buf, 0, -1, false, lines)
+          vim.cmd ("vsplit")
+          vim.api.nvim_win_set_buf (0, buf)
+        end
+      elseif sub == "show" then
+        local key = body[2]
+        if not key then
+          vim.ui.input ({ prompt = "Show memory key: " }, function (k)
+            if k then _show_memory_entry (mem_dir, k) end
+          end)
+        else
+          _show_memory_entry (mem_dir, key)
+        end
+      elseif sub == "search" then
+        local query = body[2]
+        if not query then
+          vim.ui.input ({ prompt = "Search memory: " }, function (q)
+            if q then _search_memory (mem_dir, q) end
+          end)
+        else
+          _search_memory (mem_dir, query)
+        end
+      elseif sub == "delete" or sub == "rm" then
+        local key = body[2]
+        if not key then
+          vim.ui.input ({ prompt = "Delete memory key: " }, function (k)
+            if k then os.remove (mem_dir .. "/" .. k .. ".json") vim.notify ("Deleted: " .. k, vim.log.levels.INFO) end
+          end)
+        else
+          os.remove (mem_dir .. "/" .. key .. ".json")
+          vim.notify ("Deleted: " .. key, vim.log.levels.INFO)
+        end
+      end
+    end,
+  }
+
+  -- Register context command
+  Cmd.commands.context = {
+    enabled = true,
+    args = 0,
+    min_args = 0,
+    max_args = 1,
+    name = "context",
+    callback = function (e)
+      local root = e.body and e.body[1] or vim.fn.getcwd ()
+      local name = vim.fn.fnamemodify (root, ":t")
+      local out = { "# " .. name .. " — AI Context", "", "> Generated: " .. os.date "%Y-%m-%d %H:%M:%S", "" }
+      -- Detect languages
+      local langs = {}
+      vim.fn.system ("find " .. root .. " -type f -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null | head -500"):gsub ("%.(%w+)\n", function (ext)
+        local m = { lua = "Lua", go = "Go", js = "JavaScript", py = "Python", rs = "Rust", md = "Markdown", json = "JSON", toml = "TOML", yml = "YAML" }
+        if m[ext] and not langs[m[ext]] then langs[m[ext]] = true end
+      end)
+      local lang_list = {}
+      for l in pairs (langs) do lang_list[#lang_list + 1] = l end
+      if #lang_list > 0 then
+        out[#out + 1] = "**Languages:** " .. table.concat (lang_list, ", ")
+        out[#out + 1] = ""
+      end
+      out[#out + 1] = "## Structure"
+      out[#out + 1] = "```"
+      out[#out + 1] = vim.fn.system ("ls -R " .. root .. " 2>/dev/null | head -100")
+      out[#out + 1] = "```"
+      out[#out + 1] = ""
+      out[#out + 1] = "## Task"
+      out[#out + 1] = ""
+      out[#out + 1] = "<!-- Describe what you want the AI to do -->"
+      -- Write to .down/context.md
+      local out_path = root .. "/.down/context.md"
+      os.execute ('mkdir -p "' .. root .. '/.down"')
+      local f = io.open (out_path, "w")
+      if f then f:write (table.concat (out, "\n")) f:close () end
+      -- Open in buffer
+      vim.cmd ("vsplit " .. out_path)
+      vim.notify ("Context written to " .. out_path, vim.log.levels.INFO)
+    end,
+  }
+
   return { loaded = true }
+end
+
+-- Memory helpers
+local function _show_memory_entry (mem_dir, key)
+  local f = io.open (mem_dir .. "/" .. key .. ".json", "r")
+  if not f then vim.notify ("Not found: " .. key, vim.log.levels.ERROR) return end
+  local raw = f:read ("*a")
+  f:close ()
+  local ok, data = pcall (vim.json.decode, raw)
+  if ok then
+    local buf = vim.api.nvim_create_buf (false, true)
+    vim.api.nvim_buf_set_option (buf, "buftype", "nofile")
+    vim.api.nvim_buf_set_option (buf, "bufhidden", "wipe")
+    local lines = { "# " .. (data.key or key), "", data.value or "", "" }
+    vim.api.nvim_buf_set_lines (buf, 0, -1, false, lines)
+    vim.cmd ("vsplit")
+    vim.api.nvim_win_set_buf (0, buf)
+  end
+end
+
+local function _search_memory (mem_dir, query)
+  local entries = vim.fn.glob (mem_dir .. "/*.json", true, true)
+  local results = {}
+  for _, path in ipairs (entries) do
+    local f = io.open (path, "r")
+    if f then
+      local raw = f:read ("*a")
+      f:close ()
+      if raw:lower ():find (query:lower (), 1, true) then
+        local ok, data = pcall (vim.json.decode, raw)
+        if ok then results[#results + 1] = data end
+      end
+    end
+  end
+  if #results == 0 then
+    vim.notify ("No memory matches for: " .. query, vim.log.levels.WARN)
+    return
+  end
+  local buf = vim.api.nvim_create_buf (false, true)
+  vim.api.nvim_buf_set_option (buf, "buftype", "nofile")
+  vim.api.nvim_buf_set_option (buf, "bufhidden", "wipe")
+  local lines = { "# Memory search: " .. query, "" }
+  for _, r in ipairs (results) do
+    lines[#lines + 1] = "## " .. (r.key or "?")
+    lines[#lines + 1] = ""
+    for _, l in ipairs (vim.split (r.value or "", "\n")) do
+      lines[#lines + 1] = l
+    end
+    lines[#lines + 1] = "---"
+    lines[#lines + 1] = ""
+  end
+  vim.api.nvim_buf_set_lines (buf, 0, -1, false, lines)
+  vim.cmd ("vsplit")
+  vim.api.nvim_win_set_buf (0, buf)
 end
 
 Cmd.get_commands = function (m)
