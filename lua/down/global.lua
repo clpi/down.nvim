@@ -6,12 +6,14 @@ local M = {}
 
 ---@class down.global.Profile
 ---@field workspaces table<string,string>?
+---@field workspace_options table<string, table>?
 ---@field default string?
 
 ---@class down.global.Config
 ---@field profiles table<string, down.global.Profile>
 ---@field active_profile string
 ---@field workspaces table<string,string>  global workspace registry
+---@field workspace_options table<string,table>  global workspace metadata
 
 --- Path to the global config file (~/.config/down/down.json)
 ---@return string
@@ -25,9 +27,10 @@ end
 
 local function defaults ()
   return {
-    profiles = { default = { workspaces = {}, default = nil } },
+    profiles = { default = { workspaces = {}, workspace_options = {}, default = nil } },
     active_profile = "default",
     workspaces = {},
+    workspace_options = {},
   }
 end
 
@@ -60,10 +63,16 @@ function M.load ()
   if not data.workspaces then
     data.workspaces = {}
   end
-  -- Ensure every profile has a workspaces table
+  if not data.workspace_options then
+    data.workspace_options = {}
+  end
+  -- Ensure every profile has a workspaces table and metadata table
   for _, p in pairs (data.profiles) do
     if not p.workspaces then
       p.workspaces = {}
+    end
+    if not p.workspace_options then
+      p.workspace_options = {}
     end
   end
   return data
@@ -104,18 +113,23 @@ end
 --- not overwrite paths already registered globally).
 ---@param workspaces table<string,string>  map of name -> path
 ---@param profile_name? string             profile to merge into (default: active)
+---@param options table<string,table>?     map of name -> metadata
 ---@return down.global.Config data          the resulting global config
-function M.merge_workspaces (workspaces, profile_name)
+function M.merge_workspaces (workspaces, profile_name, options)
   local data = M.load ()
   profile_name = profile_name or data.active_profile or "default"
   if not data.profiles[profile_name] then
-    data.profiles[profile_name] = { workspaces = {}, default = nil }
+    data.profiles[profile_name] = { workspaces = {}, workspace_options = {}, default = nil }
   end
   local profile = data.profiles[profile_name]
   for name, path in pairs (workspaces or {}) do
     if name and name ~= "" and path and path ~= "" then
       data.workspaces[name] = path
       profile.workspaces[name] = path
+      if options and options[name] then
+        data.workspace_options[name] = options[name]
+        profile.workspace_options[name] = options[name]
+      end
     end
   end
   M.save (data)
@@ -126,8 +140,9 @@ end
 ---@param name string
 ---@param path string
 ---@param profile_name? string
-function M.add_workspace (name, path, profile_name)
-  M.merge_workspaces ({ [name] = path }, profile_name)
+---@param options table?
+function M.add_workspace (name, path, profile_name, options)
+  M.merge_workspaces ({ [name] = path }, profile_name, options and { [name] = options } or nil)
 end
 
 --- Remove a workspace from the global registry + a profile (or all profiles).
