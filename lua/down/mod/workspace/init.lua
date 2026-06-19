@@ -1,8 +1,8 @@
+local Data = require ("down.mod.data")
+local Global = require ("down.global")
 local event = require ("down.event")
 local log = require ("down.log")
 local mod = require ("down.mod")
-local Data = require ("down.mod.data")
-local util = require ("down.mod.workspace.util")
 local utils = require ("down.util")
 
 local fn, fs, it, uv, dbg =
@@ -78,11 +78,19 @@ Workspace.setup = function ()
   vim.iter (Workspace.config.workspaces):each (function (k, v)
     Workspace.config.workspaces[k] = fs.normalize (fn.resolve (fn.expand (v)))
   end)
-  Workspace.data.workspaces = Workspace.config.workspaces
-    or Workspace.data.workspaces
-    or {}
+  -- Append-merge the neovim-config workspaces into the global store
+  -- (~/.config/down/down.json) so they are tracked alongside profiles.
+  Global.merge_workspaces (Workspace.config.workspaces)
+  -- Load the active profile's workspaces (includes everything ever
+  -- registered globally) and merge with config-declared ones.
+  local profile_ws = Global.profile_workspaces ()
+  Workspace.data.workspaces =
+    vim.tbl_extend ("keep", profile_ws, Workspace.config.workspaces)
   Workspace.data.history = Workspace.data.history or {}
-  Workspace.data.default = Workspace.config.default
+  local data = Global.load ()
+  local active_profile = data.profiles[data.active_profile] or {}
+  Workspace.data.default = active_profile.default
+    or Workspace.config.default
     or Workspace.data.default
     or "default"
   Workspace.data.previous = Workspace.data.previous or "default"
@@ -120,6 +128,7 @@ Auto-initialized workspace for Neovim configuration.
     Workspace.data.workspaces[ws_name] = ws_path
     Workspace.data.default = ws_name
     Workspace.data.active = ws_name
+    Global.add_workspace (ws_name, ws_path)
   end
 
   -- Initialize git sync for all workspaces
@@ -250,7 +259,8 @@ Workspace.add_workspace = function (wsname, wspath)
     return false
   end
   wspath = Workspace.path (wspath)
-  Workspace.data.workspaces[wsname] = Workspace.path (wspath)
+  Workspace.data.workspaces[wsname] = wspath
+  Global.add_workspace (wsname, wspath)
   mod.broadcast (
     mod.new_event (Workspace, "workspace.events.wsadded", { wsname, wspath })
       or {}
@@ -261,44 +271,54 @@ end
 
 --- Deletes a workspace
 ---@param wsname string
-Workspace.delete_workspace = function(wsname)
-  if not Workspace.data.workspaces[wsname] then return false end
+Workspace.delete_workspace = function (wsname)
+  if not Workspace.data.workspaces[wsname] then
+    return false
+  end
   if wsname == "default" then
-    log.warn("Cannot delete default workspace")
+    log.warn ("Cannot delete default workspace")
     return false
   end
   Workspace.data.workspaces[wsname] = nil
+  Global.remove_workspace (wsname)
   if Workspace.data.active == wsname then
     Workspace.data.active = "default"
   end
-  Workspace.sync()
-  vim.notify("[down.nvim] Deleted workspace: " .. wsname, vim.log.levels.INFO)
+  Workspace.sync ()
+  vim.notify ("[down.nvim] Deleted workspace: " .. wsname, vim.log.levels.INFO)
   return true
 end
 
 --- Renames a workspace
 ---@param old_name string
 ---@param new_name string
-Workspace.rename_workspace = function(old_name, new_name)
-  if not Workspace.data.workspaces[old_name] then return false end
-  if Workspace.data.workspaces[new_name] then return false end
+Workspace.rename_workspace = function (old_name, new_name)
+  if not Workspace.data.workspaces[old_name] then
+    return false
+  end
+  if Workspace.data.workspaces[new_name] then
+    return false
+  end
   if old_name == "default" then
-    log.warn("Cannot rename default workspace")
+    log.warn ("Cannot rename default workspace")
     return false
   end
 
   local path = Workspace.data.workspaces[old_name]
   Workspace.data.workspaces[old_name] = nil
   Workspace.data.workspaces[new_name] = path
+  Global.rename_workspace (old_name, new_name)
 
   if Workspace.data.active == old_name then
     Workspace.data.active = new_name
   end
-  Workspace.sync()
-  vim.notify("[down.nvim] Renamed workspace: " .. old_name .. " -> " .. new_name, vim.log.levels.INFO)
+  Workspace.sync ()
+  vim.notify (
+    "[down.nvim] Renamed workspace: " .. old_name .. " -> " .. new_name,
+    vim.log.levels.INFO
+  )
   return true
 end
-
 
 --- Updates completions for the :down command
 Workspace.sync = function ()
@@ -484,7 +504,11 @@ Workspace.touch = function (p, workspace)
   return fn.writefile ({}, fs.joinpath (ws_match, p))
 end
 Workspace.new_note = function ()
-  if Workspace.config.use_popup and Workspace.dep.ui and Workspace.dep.ui.new_prompt then
+  if
+    Workspace.config.use_popup
+    and Workspace.dep.ui
+    and Workspace.dep.ui.new_prompt
+  then
     Workspace.dep.ui.new_prompt ("downNewNote", "New Note: ", function (text)
       Workspace.new_file (text)
     end, {
@@ -623,14 +647,24 @@ Workspace.commands = {
         name = "workspace.workspace.add",
         enabled = true,
         args = 0,
-        callback = function(e)
-          vim.ui.input({ prompt = "New workspace name: " }, function(wsname)
-            if not wsname or wsname == "" then return end
-            vim.ui.input({ prompt = "New workspace path: ", default = vim.fn.getcwd() }, function(wspath)
-              if not wspath or wspath == "" then return end
-              Workspace.add_workspace(wsname, wspath)
-              vim.notify("[down.nvim] Added workspace " .. wsname .. " at " .. wspath, vim.log.levels.INFO)
-            end)
+        callback = function (e)
+          vim.ui.input ({ prompt = "New workspace name: " }, function (wsname)
+            if not wsname or wsname == "" then
+              return
+            end
+            vim.ui.input (
+              { prompt = "New workspace path: ", default = vim.fn.getcwd () },
+              function (wspath)
+                if not wspath or wspath == "" then
+                  return
+                end
+                Workspace.add_workspace (wsname, wspath)
+                vim.notify (
+                  "[down.nvim] Added workspace " .. wsname .. " at " .. wspath,
+                  vim.log.levels.INFO
+                )
+              end
+            )
           end)
         end,
       },
@@ -638,28 +672,39 @@ Workspace.commands = {
         name = "workspace.workspace.delete",
         enabled = true,
         args = 0,
-        callback = function(e)
-          vim.ui.select(Workspace.names(), { prompt = "Delete workspace:" }, function(choice)
-            if choice then
-              Workspace.delete_workspace(choice)
+        callback = function (e)
+          vim.ui.select (
+            Workspace.names (),
+            { prompt = "Delete workspace:" },
+            function (choice)
+              if choice then
+                Workspace.delete_workspace (choice)
+              end
             end
-          end)
+          )
         end,
       },
       rename = {
         name = "workspace.workspace.rename",
         enabled = true,
         args = 0,
-        callback = function(e)
-          vim.ui.select(Workspace.names(), { prompt = "Rename workspace:" }, function(choice)
-            if choice then
-              vim.ui.input({ prompt = "New name for " .. choice .. ": " }, function(new_name)
-                if new_name and new_name ~= "" then
-                  Workspace.rename_workspace(choice, new_name)
-                end
-              end)
+        callback = function (e)
+          vim.ui.select (
+            Workspace.names (),
+            { prompt = "Rename workspace:" },
+            function (choice)
+              if choice then
+                vim.ui.input (
+                  { prompt = "New name for " .. choice .. ": " },
+                  function (new_name)
+                    if new_name and new_name ~= "" then
+                      Workspace.rename_workspace (choice, new_name)
+                    end
+                  end
+                )
+              end
             end
-          end)
+          )
         end,
       },
     },
@@ -685,7 +730,10 @@ Workspace.commands = {
       local Git = require ("down.mod.workspace.git")
       local ws_path = Workspace.current_path ()
       Git.status (ws_path, function (status)
-        vim.notify ("[down.nvim] " .. Git.format_status (status), vim.log.levels.INFO)
+        vim.notify (
+          "[down.nvim] " .. Git.format_status (status),
+          vim.log.levels.INFO
+        )
       end)
     end,
     commands = {
@@ -732,7 +780,10 @@ Workspace.commands = {
           local Git = require ("down.mod.workspace.git")
           local ws_path = Workspace.current_path ()
           Git.status (ws_path, function (status)
-            vim.notify ("[down.nvim] " .. Git.format_status (status), vim.log.levels.INFO)
+            vim.notify (
+              "[down.nvim] " .. Git.format_status (status),
+              vim.log.levels.INFO
+            )
           end)
         end,
       },
