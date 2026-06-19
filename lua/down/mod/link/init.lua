@@ -22,33 +22,20 @@ Link.setup = function()
   }
 end
 
-Link.maps = {
-  {
-    'n',
-    '<BS>',
-    '<ESC>:<C-U>edit #<CR>',
-    { desc = 'Go back', silent = true, noremap = false, nowait = true },
-  },
-  {
-    'n',
-    '<CR>',
-    '<ESC>:<C-U>lua require("down.mod.link").follow.link_or_create()<CR>',
-    { desc = 'Follow/Create link', silent = true, noremap = false, nowait = true },
-  },
-  {
-    'n',
-    '<S-TAB>',
-    '<ESC>:<C-U>lua require("down.mod.link").goto.prev()<CR>',
-    { desc = 'Previous link', silent = true, noremap = false, nowait = true },
-  },
-  {
-    'n',
-    '<TAB>',
-    '<ESC>:<C-U>lua require("down.mod.link").goto.next()<CR>',
-    { desc = 'Next link', silent = true, noremap = false, nowait = true },
-  },
-}
-Link.load = function() end
+Link.maps = {}
+
+Link.load = function()
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = "markdown",
+    callback = function(ev)
+      local opts = { silent = true, noremap = false, nowait = true, buffer = ev.buf }
+      vim.keymap.set('n', '<BS>', '<ESC>:<C-U>edit #<CR>', vim.tbl_extend("force", opts, { desc = 'Go back' }))
+      vim.keymap.set('n', '<CR>', '<ESC>:<C-U>lua require("down.mod.link").follow.link_or_create()<CR>', vim.tbl_extend("force", opts, { desc = 'Follow/Create link' }))
+      vim.keymap.set('n', '<S-TAB>', '<ESC>:<C-U>lua require("down.mod.link").goto.prev()<CR>', vim.tbl_extend("force", opts, { desc = 'Previous link' }))
+      vim.keymap.set('n', '<TAB>', '<ESC>:<C-U>lua require("down.mod.link").goto.next()<CR>', vim.tbl_extend("force", opts, { desc = 'Next link' }))
+    end,
+  })
+end
 
 Link.parser = function() end
 Link.mk = {}
