@@ -190,4 +190,32 @@ M.load = function()
   -- require('down.mod.integration.blink').tag_source()
 end
 
+--- Get recommended sources for blink.cmp depending on context.
+--- Provides LSP completions for code blocks in markdown files.
+--- Example usage in blink.cmp config:
+--- sources = { default = require('down.mod.integration.blink').sources_default }
+---@param ctx table
+---@return string[]
+M.sources_default = function(ctx)
+  local success, node = pcall(vim.treesitter.get_node)
+  
+  -- Support for different code block languages injected in markdown
+  if success and node then
+    local lang = node:tree():lang()
+    if lang and lang ~= "markdown" and lang ~= "markdown_inline" then
+      if vim.tbl_contains({ 'comment', 'line_comment', 'block_comment' }, node:type()) then
+        return { 'buffer' }
+      end
+      return { 'lsp', 'path', 'snippets', 'buffer' }
+    end
+  end
+
+  -- Native filetype context
+  if vim.bo.filetype == 'lua' then
+    return { 'lsp', 'path' }
+  end
+
+  return { 'lsp', 'path', 'snippets', 'buffer' }
+end
+
 return M

@@ -102,6 +102,28 @@ Mention.builtins = {
     kind = "Date",
     category = "Date",
   },
+  {
+    label = "@date",
+    icon = "󰃭",
+    detail = "Today's date",
+    documentation = "Insert today's date",
+    insert_text = function ()
+      return os.date ("%Y-%m-%d")
+    end,
+    kind = "Date",
+    category = "Date",
+  },
+  {
+    label = "@time",
+    icon = "󰅐",
+    detail = "Current time",
+    documentation = "Insert current time",
+    insert_text = function ()
+      return os.date ("%H:%M")
+    end,
+    kind = "Date",
+    category = "Date",
+  },
 
   --- Workspace mentions
   {

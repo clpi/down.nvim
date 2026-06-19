@@ -4,8 +4,8 @@
 
 ### New features
 
-- [ ] Implement `bookmark` mod
-- [ ] Implement `date` and `time` completion insert
+- [x] Implement `bookmark` mod
+- [x] Implement date and time completion insert
 
 ## Project Maintenance
 
@@ -29,16 +29,16 @@
 
 ## LSP and completion
 
-- [ ] `lsp` Implement automatic installation and setup and autocmd
-- [ ] `lsp` Implement tag completion in `down.lsp`
+- [x] `lsp` Implement automatic installation and setup and autocmd
+- [x] `lsp` Implement tag completion in `down.lsp`
 
 ## Finder
 
-- [ ] `find` Implement existing telescope finders in the `find` module
+- [x] `find` Implement existing telescope finders in the `find` module
 
 ### blink.cmp
 
-- [ ] Implement code completions for languages of markdown code blocks in `blink.cmp` integration
+- [x] Implement code completions for languages of markdown code blocks in `blink.cmp` integration
       like the following:
 
 ```lua
@@ -59,6 +59,11 @@ end
 - [ ] Update the book to reflect new changes
 
 ## Long term
+
+### Integrations
+
+- [x] CodeCompanion support (`/down` slash command)
+- [x] Avante support (`AvanteInput` prompt completion)
 
 ### AI and latent semantic analysis
 

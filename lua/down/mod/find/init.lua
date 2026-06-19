@@ -154,6 +154,70 @@ Find.commands = {
         name = "find.template",
         args = 0,
       },
+      all_files = {
+        callback = function(e)
+          Find.picker("all_files")()
+        end,
+        enabled = true,
+        name = "find.all_files",
+        args = 0,
+      },
+      backlink = {
+        callback = function(e)
+          Find.picker("backlink")()
+        end,
+        enabled = true,
+        name = "find.backlink",
+        args = 0,
+      },
+      linkable = {
+        callback = function(e)
+          Find.picker("linkable")()
+        end,
+        enabled = true,
+        name = "find.linkable",
+        args = 0,
+      },
+      todo = {
+        callback = function(e)
+          Find.picker("todo")()
+        end,
+        enabled = true,
+        name = "find.todo",
+        args = 0,
+      },
+      agenda = {
+        callback = function(e)
+          Find.picker("agenda")()
+        end,
+        enabled = true,
+        name = "find.agenda",
+        args = 0,
+      },
+      header = {
+        callback = function(e)
+          Find.picker("header")()
+        end,
+        enabled = true,
+        name = "find.header",
+        args = 0,
+      },
+      markdown = {
+        callback = function(e)
+          Find.picker("markdown")()
+        end,
+        enabled = true,
+        name = "find.markdown",
+        args = 0,
+      },
+      grep = {
+        callback = function(e)
+          Find.picker("grep")()
+        end,
+        enabled = true,
+        name = "find.grep",
+        args = 0,
+      },
     },
   },
 }

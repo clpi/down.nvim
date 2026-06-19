@@ -15,6 +15,8 @@ E.config = {
   ---@brief List of integrations to enable (relative to the integration dir)
   enabled = {
     "telescope",
+    "codecompanion",
+    "avante",
   },
 }
 
@@ -55,10 +57,13 @@ E.generic_setup = function(ext, req)
 end
 
 E.setup = function()
-  local enabled = {}
+  local deps = {}
+  for _, dep in ipairs(E.config.enabled) do
+    table.insert(deps, "integration." .. dep)
+  end
   return {
     loaded = true,
-    dependencies = enabled,
+    dependencies = deps,
   }
 end
 

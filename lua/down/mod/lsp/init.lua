@@ -165,77 +165,52 @@ Lsp.check_update = function(cb)
   })
 end
 
---- Download and install the LSP binary
+--- Compile and install the LSP binary
 ---@param cb? fun(success: boolean)
----@param version? string specific version tag to install
 Lsp.download = function(cb, version)
-  local platform = Lsp.platform()
-  if not platform then
-    log.warn("down.lsp: unsupported platform for auto-download")
-    if cb then
-      cb(false)
-    end
-    return
-  end
-
   local bin_name = Lsp.config.bin
   if vim.fn.has("win32") == 1 then
     bin_name = bin_name .. ".exe"
   end
 
-  vim.notify("[down.nvim] Downloading down.lsp...", vim.log.levels.INFO)
+  vim.notify("[down.nvim] Compiling down binary...", vim.log.levels.INFO)
 
   local install_dir = Lsp.install_dir()
-  local tag = version or "latest"
-  local url
-  if tag == "latest" then
-    url = string.format(
-      "https://github.com/%s/releases/latest/download/%s-%s",
-      Lsp.config.repo,
-      Lsp.config.bin,
-      platform
-    )
-  else
-    url = string.format(
-      "https://github.com/%s/releases/download/%s/%s-%s",
-      Lsp.config.repo,
-      tag,
-      Lsp.config.bin,
-      platform
-    )
-  end
   local dest = vim.fs.joinpath(install_dir, bin_name)
 
-  vim.fn.jobstart({ "curl", "-sL", "-o", dest, url }, {
+  -- Get plugin root directory
+  local script_path = debug.getinfo(1).source:sub(2)
+  local plugin_root = vim.fn.fnamemodify(script_path, ":p:h:h:h:h:h")
+  local ext_down_path = vim.fs.joinpath(plugin_root, "ext", "down")
+
+  if vim.fn.executable("go") ~= 1 then
+    vim.notify("[down.nvim] Error: 'go' is not installed. Cannot compile down binary.", vim.log.levels.ERROR)
+    if cb then cb(false) end
+    return
+  end
+
+  if vim.fn.isdirectory(ext_down_path) == 0 then
+    vim.notify("[down.nvim] Error: ext/down directory not found at " .. ext_down_path, vim.log.levels.ERROR)
+    if cb then cb(false) end
+    return
+  end
+
+  vim.fn.jobstart({ "go", "build", "-o", dest, "main.go" }, {
+    cwd = ext_down_path,
     on_exit = function(_, code)
       if code == 0 then
         vim.fn.setfperm(dest, "rwxr-xr-x")
         vim.schedule(function()
-          -- Save the version we just installed
-          if version then
-            Lsp.save_version(version)
-          else
-            -- Query the latest tag and save it
-            Lsp.check_update(function(_, ver)
-              if ver then
-                Lsp.save_version(ver)
-              end
-            end)
-          end
-          vim.notify(
-            "[down.nvim] down.lsp installed successfully",
-            vim.log.levels.INFO
-          )
+          -- Save a fake version to prevent re-downloads immediately
+          Lsp.save_version("local-build")
+          vim.notify("[down.nvim] down binary compiled successfully", vim.log.levels.INFO)
           if cb then
             cb(true)
           end
         end)
       else
         vim.schedule(function()
-          vim.notify(
-            "[down.nvim] Failed to download down.lsp",
-            vim.log.levels.WARN
-          )
+          vim.notify("[down.nvim] Failed to compile down binary. Check your go installation.", vim.log.levels.WARN)
           if cb then
             cb(false)
           end
@@ -389,7 +364,7 @@ Lsp.attach = function()
 
   local client_id = vim.lsp.start({
     name = "down-lsp",
-    cmd = { cmd_path, "serve" },
+    cmd = { cmd_path, "lsp" },
     filetypes = Lsp.config.filetypes,
     root_dir = vim.fs.root(0, Lsp.config.root_markers) or vim.fn.getcwd(),
     workspace_folders = Lsp.workspace_folders(),
