@@ -1,106 +1,161 @@
 # CLI
 
 The `down` command-line tool provides a standalone interface for working with
-your down.nvim workspace and generating AI-friendly project dumps.
+your down workspace. It runs as a native Go binary with all features available
+from the terminal.
 
 ## Installation
 
 ```bash
-# Link to a directory in your PATH
-ln -s ./scripts/bin/down /usr/local/bin/down
+# Build from source
+cd ext/down && go build -o down .
 
-# Or copy
-cp ./scripts/bin/down /usr/local/bin/down
+# Or download from releases (auto-installed by plugin)
+curl -L https://github.com/clpi/down.nvim/releases/latest/download/down-darwin-arm64.tar.gz | tar xz
 ```
+
+## Global Configuration
+
+- Config: `~/.config/down/` — profiles, settings
+- Data: `~/.local/share/down/` — memory, cache, workspace data
+- Cache: `~/.cache/down/` — logs, temp files
 
 ## Commands
 
-### `down compact`
+### `down init [path]`
 
-Pack a directory into an AI-friendly XML or markdown format, similar to repomix.
-Respects `.gitignore`, excludes binary files, and generates a directory tree.
-
-```bash
-down compact [options] [directory]
-```
-
-| Option | Description |
-|--------|-------------|
-| `-o, --output FILE` | Write output to file (default: stdout) |
-| `-f, --format FMT` | Output format: `xml` (default), `markdown` |
-| `--no-tree` | Omit directory tree |
-| `--no-tokens` | Omit token count |
-| `-h, --help` | Show help |
-
-**Examples:**
+Initialize a new down workspace. Creates `.down/` with `index.md`, `down.json`,
+`.downignore`, and `data/` directory.
 
 ```bash
-# Pack current directory to stdout in XML format
-down compact .
-
-# Pack to a file in markdown format
-down compact . -f markdown -o project-pack.md
-
-# Pack without directory tree
-down compact /path/to/project --no-tree
+down init                    # Init in current directory
+down init /path/to/project   # Init in specific directory
+down init --name myproject   # Set workspace name
 ```
 
-### `down skills`
+### `down compact [directory]`
 
-Generate a `SKILL.md` file for your project that describes its structure,
-languages, dependencies, entry points, and conventions. Ideal for providing
-context to AI coding agents.
+Pack a directory into an AI-friendly XML or markdown format. Respects
+`.downignore` patterns, excludes binary files, and generates directory trees.
 
 ```bash
-down skills [options] [directory]
+down compact .                          # XML to stdout
+down compact . -f markdown -o pack.md   # Markdown to file
+down compact . --no-tokens              # Omit token count
 ```
 
-| Option | Description |
-|--------|-------------|
-| `-o, --output FILE` | Output path (default: `SKILL.md`) |
-| `--no-arch` | Skip architecture section |
-| `--no-deps` | Skip dependencies section |
-| `--no-entries` | Skip entry points section |
-| `--no-conventions` | Skip conventions section |
-| `-h, --help` | Show help |
+### `down skills [directory]`
 
-**Examples:**
+Generate a project SKILL.md analyzing languages, dependencies, entry points,
+structure, and conventions.
 
 ```bash
-# Generate SKILL.md in current directory
-down skills .
-
-# Generate with custom output path
-down skills /path/to/project -o docs/SKILL.md
+down skills .                           # To stdout
+down skills . -o docs/SKILL.md          # To file
 ```
 
-### `down workspace`
+### `down add <source>`
 
-List and manage workspaces.
+Add files, directories, URLs, or named concepts to `.down/data/` as repomix-style
+markdown with frontmatter metadata.
 
-### `down init`
+```bash
+down add README.md              # File → compact markdown
+down add src/                   # Directory → compact
+down add https://example.com    # URL → markdown fetch
+down add context                # Bare word → create context.md
+down add notes/                 # Trailing / → create dir with index.md
+```
 
-Initialize a new workspace.
+### `down ignore <pattern>`
 
-### `down note`
+Append patterns to the nearest `.down/.downignore` file. Patterns use
+gitignore-compatible glob syntax.
 
-Note-taking functionality.
+```bash
+down ignore "*.log"
+down ignore "tmp/" "*.bak"
+```
 
-### `down config`
+### `down workspace <subcommand>`
 
-View and set configuration values.
+Manage workspaces across profiles.
+
+```bash
+down workspace add myproj /path   # Add workspace
+down workspace list               # List all (with active marker)
+down workspace switch myproj      # Switch active workspace
+down workspace remove myproj      # Remove workspace
+```
+
+### `down profile <subcommand>`
+
+Manage profiles — named sets of workspaces.
+
+```bash
+down profile add work             # Create profile
+down profile list                 # List profiles (with active marker)
+down profile switch work          # Switch profile (loads its workspaces)
+down profile remove work          # Delete profile
+```
+
+### `down memory <subcommand>`
+
+Persistent AI memory store. Entries are stored as JSON files in
+`~/.local/share/down/memory/`.
+
+```bash
+down memory add api-key "sk-xxx" --tag secrets    # Store with tags
+down memory show api-key                           # Show entry
+down memory search "api"                           # Search
+down memory list                                   # List all
+down memory delete api-key                         # Delete
+down memory export memories.json                   # Export all
+down memory import memories.json                   # Import from file
+```
+
+### `down context [directory]`
+
+Generate a comprehensive AI project context document at `.down/context.md`.
+
+```bash
+down context .                                    # Generate context
+down context . -p "Fix all bugs in this project"  # With task prompt
+```
+
+### `down mcp`
+
+Start the Model Context Protocol server on stdio. Provides 12 tools for AI
+agents: workspace management, note search/read, knowledge graph, memory,
+tasks, and note creation.
+
+```bash
+down mcp    # Start MCP server
+```
 
 ### `down serve`
 
-Start the LSP server.
+Start the full LSP server (language server protocol).
 
 ### `down run`
 
 Run the LSP binary directly.
 
+### `down config`
+
+View and set configuration values.
+
 ## Neovim Integration
 
-The same functionality is available inside Neovim:
+All commands are available inside Neovim via `:Down`:
 
-- `:Down compact` — Opens package output in a new buffer
-- `:Down skills` — Opens generated SKILL.md in a new buffer
+- `:Down init` — Initialize workspace
+- `:Down compact` — Opens package output in a buffer
+- `:Down skills` — Opens SKILL.md in a buffer
+- `:Down add <source>` — Add to data dir
+- `:Down ignore <pattern>` — Append to .downignore
+- `:Down workspace add/list/switch/remove`
+- `:Down profile add/list/switch/remove` — Switches workspace data
+- `:Down memory add/show/list/search/delete`
+- `:Down context` — Generate and open context
+- `:Down chat` — AI chat interface
