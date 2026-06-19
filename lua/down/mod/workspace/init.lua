@@ -28,6 +28,8 @@ end
 Workspace.data = Data.wrap ("workspace", {
   ---@type down.Workspaces
   workspaces = {},
+  ---@type table<string, table>
+  workspace_options = {},
   ---@type down.Workspace[]
   history = {},
   ---@type string?
