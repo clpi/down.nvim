@@ -517,12 +517,34 @@ Link.commands = {
             args = 0,
             condition = "markdown",
             callback = function()
-              local hg = Link.dep['data.history'].get()
-              if hg then
-                for _, hi in ipairs(hg.get) do
-                  print(hi, hg)
+              local params = {
+                command = "down.backlinks",
+                arguments = { vim.uri_from_bufnr(0) }
+              }
+              vim.lsp.buf_request_all(0, "workspace/executeCommand", params, function(results)
+                for client_id, res in pairs(results) do
+                  if res.result and res.result.backlinks then
+                    local backlinks = res.result.backlinks
+                    if #backlinks == 0 then
+                      vim.notify("[down.nvim] No backlinks found.", vim.log.levels.INFO)
+                      return
+                    end
+                    local qf_list = {}
+                    for _, bl in ipairs(backlinks) do
+                      local path = vim.uri_to_fname(bl.sourceUri)
+                      table.insert(qf_list, {
+                        filename = path,
+                        lnum = bl.line + 1,
+                        text = "[" .. bl.kind .. "] " .. (bl.context or "")
+                      })
+                    end
+                    vim.fn.setqflist(qf_list, 'r')
+                    vim.cmd("copen")
+                    return
+                  end
                 end
-              end
+                vim.notify("[down.nvim] Failed to retrieve backlinks or none found.", vim.log.levels.WARN)
+              end)
             end,
           },
         },

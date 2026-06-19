@@ -718,6 +718,41 @@ Note.commands = {
         args = 0,
         name = "note.template",
       },
+      tasks = {
+        enabled = true,
+        args = 0,
+        name = "note.tasks",
+        callback = function()
+          local params = {
+            command = "down.task.list",
+          }
+          vim.lsp.buf_request_all(0, "workspace/executeCommand", params, function(results)
+            for client_id, res in pairs(results) do
+              if res.result and res.result.tasks then
+                local tasks = res.result.tasks
+                if #tasks == 0 then
+                  vim.notify("[down.nvim] No tasks found.", vim.log.levels.INFO)
+                  return
+                end
+                local qf_list = {}
+                for _, task in ipairs(tasks) do
+                  local path = vim.uri_to_fname(task.uri)
+                  local prefix = task.completed and "[x] " or "[ ] "
+                  table.insert(qf_list, {
+                    filename = path,
+                    lnum = task.line + 1,
+                    text = prefix .. task.text
+                  })
+                end
+                vim.fn.setqflist(qf_list, 'r')
+                vim.cmd("copen")
+                return
+              end
+            end
+            vim.notify("[down.nvim] Failed to retrieve tasks or none found.", vim.log.levels.WARN)
+          end)
+        end,
+      },
       toc = {
         enabled = false,
         args = 1,
