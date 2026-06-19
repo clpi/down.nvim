@@ -293,6 +293,47 @@ Workspace.add_workspace = function (wsname, wspath)
   return true
 end
 
+--- Deletes a workspace
+---@param wsname string
+Workspace.delete_workspace = function(wsname)
+  if not Workspace.data.workspaces[wsname] then return false end
+  if wsname == "default" then
+    log.warn("Cannot delete default workspace")
+    return false
+  end
+  Workspace.data.workspaces[wsname] = nil
+  if Workspace.data.active == wsname then
+    Workspace.data.active = "default"
+  end
+  Workspace.sync()
+  vim.notify("[down.nvim] Deleted workspace: " .. wsname, vim.log.levels.INFO)
+  return true
+end
+
+--- Renames a workspace
+---@param old_name string
+---@param new_name string
+Workspace.rename_workspace = function(old_name, new_name)
+  if not Workspace.data.workspaces[old_name] then return false end
+  if Workspace.data.workspaces[new_name] then return false end
+  if old_name == "default" then
+    log.warn("Cannot rename default workspace")
+    return false
+  end
+
+  local path = Workspace.data.workspaces[old_name]
+  Workspace.data.workspaces[old_name] = nil
+  Workspace.data.workspaces[new_name] = path
+
+  if Workspace.data.active == old_name then
+    Workspace.data.active = new_name
+  end
+  Workspace.sync()
+  vim.notify("[down.nvim] Renamed workspace: " .. old_name .. " -> " .. new_name, vim.log.levels.INFO)
+  return true
+end
+
+
 --- Updates completions for the :down command
 Workspace.sync = function ()
   Workspace.data.workspace_folders = Workspace.as_lsp_workspaces ()
@@ -621,6 +662,51 @@ Workspace.commands = {
     callback = function (e)
       Workspace.menu (e)
     end,
+    commands = {
+      add = {
+        name = "workspace.workspace.add",
+        enabled = true,
+        args = 0,
+        callback = function(e)
+          vim.ui.input({ prompt = "New workspace name: " }, function(wsname)
+            if not wsname or wsname == "" then return end
+            vim.ui.input({ prompt = "New workspace path: ", default = vim.fn.getcwd() }, function(wspath)
+              if not wspath or wspath == "" then return end
+              Workspace.add_workspace(wsname, wspath)
+              vim.notify("[down.nvim] Added workspace " .. wsname .. " at " .. wspath, vim.log.levels.INFO)
+            end)
+          end)
+        end,
+      },
+      delete = {
+        name = "workspace.workspace.delete",
+        enabled = true,
+        args = 0,
+        callback = function(e)
+          vim.ui.select(Workspace.names(), { prompt = "Delete workspace:" }, function(choice)
+            if choice then
+              Workspace.delete_workspace(choice)
+            end
+          end)
+        end,
+      },
+      rename = {
+        name = "workspace.workspace.rename",
+        enabled = true,
+        args = 0,
+        callback = function(e)
+          vim.ui.select(Workspace.names(), { prompt = "Rename workspace:" }, function(choice)
+            if choice then
+              vim.ui.input({ prompt = "New name for " .. choice .. ": " }, function(new_name)
+                if new_name and new_name ~= "" then
+                  Workspace.rename_workspace(choice, new_name)
+                end
+              end)
+            end
+          end)
+        end,
+      },
+    },
   },
   edit = {
     min_args = 0,

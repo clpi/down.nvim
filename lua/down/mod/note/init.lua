@@ -97,28 +97,28 @@ Note.open_year = function (time, custom_date)
     time
   )
 
-  local note_file_exists = Note.dep["workspace"].exists (
-    workspace_path .. sep .. folder_name .. sep .. path
-  )
+  local full_path = workspace_path .. sep .. folder_name .. sep .. path
+  local note_file_exists = Note.dep["workspace"].exists(full_path)
 
-  Note.dep["workspace"].new_file (folder_name .. sep .. path, workspace)
+  Note.dep["workspace"].new_file(folder_name .. sep .. path, workspace)
 
   if
     not note_file_exists
     and Note.config.template.enable
-    and Note.dep["workspace"].exists (
-      workspace_path .. sep .. folder_name .. sep .. tmpl
-    )
+    and Note.dep["workspace"].exists(workspace_path .. sep .. folder_name .. sep .. tmpl)
   then
-    vim.cmd (
-      "$read "
-        .. workspace_path
-        .. sep
-        .. folder_name
-        .. sep
-        .. tmpl
-        .. "| silent! w"
-    )
+    local tmpl_lines = vim.fn.readfile(workspace_path .. sep .. folder_name .. sep .. tmpl)
+    local date_str = os.date("%Y-%m-%d", time or os.time())
+    local time_str = os.date("%H:%M:%S", time or os.time())
+    
+    for i, line in ipairs(tmpl_lines) do
+      line = line:gsub("{{date}}", date_str)
+      line = line:gsub("{{time}}", time_str)
+      tmpl_lines[i] = line
+    end
+    
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, tmpl_lines)
+    vim.cmd("silent! w")
   end
 end
 ---@param time? number #The time to open the note entry at as returned by `os.time()`
@@ -151,28 +151,28 @@ Note.open_month = function (time, custom_date)
     time
   )
 
-  local note_file_exists = Note.dep["workspace"].exists (
-    workspace_path .. sep .. folder_name .. sep .. path
-  )
+  local full_path = workspace_path .. sep .. folder_name .. sep .. path
+  local note_file_exists = Note.dep["workspace"].exists(full_path)
 
-  Note.dep["workspace"].new_file (folder_name .. sep .. path, workspace)
+  Note.dep["workspace"].new_file(folder_name .. sep .. path, workspace)
 
   if
     not note_file_exists
     and Note.config.template.enable
-    and Note.dep["workspace"].exists (
-      workspace_path .. sep .. folder_name .. sep .. tmpl
-    )
+    and Note.dep["workspace"].exists(workspace_path .. sep .. folder_name .. sep .. tmpl)
   then
-    vim.cmd (
-      "$read "
-        .. workspace_path
-        .. sep
-        .. folder_name
-        .. sep
-        .. tmpl
-        .. "| silent! w"
-    )
+    local tmpl_lines = vim.fn.readfile(workspace_path .. sep .. folder_name .. sep .. tmpl)
+    local date_str = os.date("%Y-%m-%d", time or os.time())
+    local time_str = os.date("%H:%M:%S", time or os.time())
+    
+    for i, line in ipairs(tmpl_lines) do
+      line = line:gsub("{{date}}", date_str)
+      line = line:gsub("{{time}}", time_str)
+      tmpl_lines[i] = line
+    end
+    
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, tmpl_lines)
+    vim.cmd("silent! w")
   end
 end
 Note.capture = function ()
@@ -218,28 +218,28 @@ Note.open_note = function (time, custom_date)
     time
   )
 
-  local note_file_exists = Note.dep["workspace"].exists (
-    workspace_path .. sep .. folder_name .. sep .. path
-  )
+  local full_path = workspace_path .. sep .. folder_name .. sep .. path
+  local note_file_exists = Note.dep["workspace"].exists(full_path)
 
-  Note.dep["workspace"].new_file (folder_name .. sep .. path, workspace)
+  Note.dep["workspace"].new_file(folder_name .. sep .. path, workspace)
 
   if
     not note_file_exists
     and Note.config.template.enable
-    and Note.dep["workspace"].exists (
-      workspace_path .. sep .. folder_name .. sep .. tmpl
-    )
+    and Note.dep["workspace"].exists(workspace_path .. sep .. folder_name .. sep .. tmpl)
   then
-    vim.cmd (
-      "$read "
-        .. workspace_path
-        .. sep
-        .. folder_name
-        .. sep
-        .. tmpl
-        .. "| silent! w"
-    )
+    local tmpl_lines = vim.fn.readfile(workspace_path .. sep .. folder_name .. sep .. tmpl)
+    local date_str = os.date("%Y-%m-%d", time or os.time())
+    local time_str = os.date("%H:%M:%S", time or os.time())
+    
+    for i, line in ipairs(tmpl_lines) do
+      line = line:gsub("{{date}}", date_str)
+      line = line:gsub("{{time}}", time_str)
+      tmpl_lines[i] = line
+    end
+    
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, tmpl_lines)
+    vim.cmd("silent! w")
   end
 end
 

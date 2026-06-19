@@ -17,15 +17,15 @@
 - [ ] remove `integration.telescope` and `integration.trouble` mods
 - [ ] Re-implement the `data` metatable wrapper for modules to allow for persistent data
       synchronization for all modules.
-- [ ] Fix the `link` key maps for links, make markdown file specific
+- [x] Fix the `link` key maps for links, make markdown file specific
 
 ## Workspace
 
-- [ ] `workspace` Add functionality to add, delete, update workspaces from command
+- [x] `workspace` Add functionality to add, delete, update workspaces from command
 
 ## Note
 
-- [ ] `note` Fix template implementation
+- [x] `note` Fix template implementation
 
 ## LSP and completion
 
