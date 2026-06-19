@@ -1,13 +1,35 @@
 local util = require("down.util")
 local mod = require("down.mod")
-local u = require("down.mod.data.time.util")
-local re = vim.re
 
 ---@class down.mod.data.time.Time: down.Mod
 local Time = mod.new("data.time")
 
+--- Time zone list (used for timezone parsing)
+local time_zones = {
+  'ACDT', 'ACST', 'ACT', 'ACWST', 'ADT', 'AEDT', 'AEST', 'AET', 'AFT',
+  'AKDT', 'AKST', 'ALMT', 'AMST', 'AMT', 'ANAT', 'AQTT', 'ART', 'AST', 'AWST',
+  'AZOST', 'AZOT', 'AZT', 'BNT', 'BIOT', 'BIT', 'BOT', 'BRST', 'BRT', 'BST',
+  'BTT', 'CAT', 'CCT', 'CDT', 'CEST', 'CET', 'CHADT', 'CHAST', 'CHOT', 'CHOST',
+  'CHST', 'CHUT', 'CIST', 'CKT', 'CLST', 'CLT', 'COST', 'COT', 'CST', 'CT',
+  'CVT', 'CWST', 'CXT', 'DAVT', 'DDUT', 'DFT', 'EASST', 'EAST', 'EAT', 'ECT',
+  'EDT', 'EEST', 'EET', 'EGST', 'EGT', 'EST', 'ET', 'FET', 'FJT', 'FKST', 'FKT',
+  'FNT', 'GALT', 'GAMT', 'GET', 'GFT', 'GILT', 'GIT', 'GMT', 'GST', 'GYT',
+  'HDT', 'HAEC', 'HST', 'HKT', 'HMT', 'HOVST', 'HOVT', 'ICT', 'IDLW', 'IDT',
+  'IOT', 'IRDT', 'IRKT', 'IRST', 'IST', 'JST', 'KALT', 'KGT', 'KOST', 'KRAT',
+  'KST', 'LHST', 'LINT', 'MAGT', 'MART', 'MAWT', 'MDT', 'MET', 'MEST', 'MHT',
+  'MIST', 'MIT', 'MMT', 'MSK', 'MST', 'MUT', 'MVT', 'MYT', 'NCT', 'NDT', 'NFT',
+  'NOVT', 'NPT', 'NST', 'NT', 'NUT', 'NZDT', 'NZST', 'OMST', 'ORAT', 'PDT', 'PET',
+  'PETT', 'PGT', 'PHOT', 'PHT', 'PHST', 'PKT', 'PMDT', 'PMST', 'PONT', 'PST', 'PWT',
+  'PYST', 'PYT', 'RET', 'ROTT', 'SAKT', 'SAMT', 'SAST', 'SBT', 'SCT', 'SDT', 'SGT',
+  'SLST', 'SRET', 'SRT', 'SST', 'SYOT', 'TAHT', 'THA', 'TFT', 'TJT', 'TKT', 'TLT',
+  'TMT', 'TRT', 'TOT', 'TVT', 'ULAST', 'ULAT', 'UTC', 'UYST', 'UYT', 'UZT', 'VET',
+  'VLAT', 'VOLT', 'VOST', 'VUT', 'WAKT', 'WAST', 'WAT', 'WEST', 'WET', 'WIB',
+  'WIT', 'WITA', 'WGST', 'WGT', 'WST', 'YAKT', 'YEKT',
+}
+
 -- NOTE: Maybe encapsulate whole date parser in a single PEG grammar?
-local _, time_regex = pcall(re.compile, [[{%d%d?} ":" {%d%d} ("." {%d%d?})?]])
+-- Use string matching for time pattern
+local time_pattern = "(%d%d?):(%d%d)(%.%d%d?)?"
 
 ---@alias Date {weekday: {name: string, number: number}?, day: number?, month: {name: string, number: number}?, year: number?, timezone: string?, time: {hr: number, min: number, sec: number?}?}
 
@@ -132,25 +154,25 @@ Time.parse_date = function(input)
       output.year = tonumber(d)
     elseif d:match("^%d+%w*$") then
       output.day = tonumber(d:match("%d+"))
-    elseif vim.list_contains(u.tz, d:upper()) then
-      output.timezone = d:upper()
     else
-      do
-        local hr, min, sec = vim.re.match(d, time_regex)
-        if hr and min then
-          output.time = setmetatable({
-            hr = tonumber(hr),
-            min = tonumber(min),
-            sec = sec and tonumber(sec) or nil,
-          }, {
-            __tostring = function()
-              return d
-            end,
-          })
+      -- Check for time pattern hh:mm or hh:mm.ss
+      local hr, min, sec = d:match("(%d%d?):(%d%d)(%.%d%d?)?")
+      if hr and min then
+        output.time = setmetatable({
+          hr = tonumber(hr),
+          min = tonumber(min),
+          sec = sec and tonumber(sec:gsub("^%.", "")) or nil,
+        }, {
+          __tostring = function()
+            return d
+          end,
+        })
 
-          goto continue
-        end
+        goto continue
       end
+    end
+
+    do
 
       do
         local valid_months = {}
@@ -179,13 +201,13 @@ Time.parse_date = function(input)
       end
 
       do
-        d = d:match("^([^,]+),?$")
+        local parsed_d = d:match("^([^,]+),?$")
 
         local valid_weekdays = {}
 
         -- Check for weekday abbreviation
         for i, weekday in ipairs(weekdays) do
-          if vim.startswith(weekday, d:lower()) then
+          if vim.startswith(weekday, parsed_d:lower()) then
             valid_weekdays[weekday] = i
           end
         end
@@ -231,7 +253,7 @@ Time.insert_date = function(ins)
       output = Time.parse_date(input)
 
       if type(output) == "string" then
-        utils.notify(output, vim.log.levels.ERROR)
+        util.notify(output, vim.log.levels.ERROR)
 
         vim.ui.input({
           prompt = "Date: ",
@@ -251,9 +273,9 @@ Time.insert_date = function(ins)
     end
   end
 
-  if Mod.is_mod_loaded("ui.calendar") then
+  if mod.is_loaded("ui.calendar") then
     vim.cmd.stopinsert()
-    Mod.get_mod("ui.calendar").select({ cb = vim.schedule_wrap(cb) })
+    mod.get_mod("ui.calendar").select({ cb = vim.schedule_wrap(cb) })
   else
     vim.ui.input({
       prompt = "Date: ",

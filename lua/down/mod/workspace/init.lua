@@ -366,7 +366,7 @@ Workspace.new_file = function (path, workspace, opts)
   if workspace ~= nil then
     fullpath = Workspace.get (workspace)
   else
-    fullpath = Workspace.current ()[2]
+    fullpath = Workspace.get (Workspace.current ())
   end
   if fullpath == nil then
     return log.error ("Error in fetching workspace path")
@@ -487,7 +487,7 @@ Workspace.touch = function (p, workspace)
   return fn.writefile ({}, fs.joinpath (ws_match, p))
 end
 Workspace.new_note = function ()
-  if Workspace.config.use_popup then
+  if Workspace.config.use_popup and Workspace.dep.ui and Workspace.dep.ui.new_prompt then
     Workspace.dep.ui.new_prompt ("downNewNote", "New Note: ", function (text)
       Workspace.new_file (text)
     end, {
@@ -509,12 +509,12 @@ Workspace.new_note = function ()
 end
 
 Workspace.subpath = function (p, wsname)
-  local wsp = Workspace.get_dir (wsname)
+  local wsp = Workspace.get (wsname)
   return fs.joinpath (wsp, p)
 end
 
 Workspace.is_subpath = function (p, wsname)
-  local wsp = Workspace.get_dir (wsname)
+  local wsp = Workspace.get (wsname)
   return not not p:match ("^" .. wsp)
 end
 

@@ -1,0 +1,57 @@
+{
+  "name": "tree-sitter-down",
+  "version": "0.1.0",
+  "description": "down grammar for tree-sitter — a markdown superset for developer note-taking",
+  "main": "bindings/node.js",
+  "types": "bindings/node.d.ts",
+  "keywords": [
+    "tree-sitter",
+    "down",
+    "markdown",
+    "note-taking",
+    "grammar"
+  ],
+  "author": "Chris Pecunies <clp@clp.is>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clpi/down.nvim.git",
+    "directory": "ext/tree-sitter-down"
+  },
+  "homepage": "https://down.cli.st",
+  "dependencies": {
+    "node-addon-api": "^8.0.0"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.21.0"
+  },
+  "peerDependenciesMeta": {
+    "tree-sitter": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.22.0"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.down",
+      "file-types": ["down", "dw"],
+      "injection-regex": "^down$",
+      "first-line-regex": "^---"
+    }
+  ],
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "bindings/**",
+    "queries/**",
+    "src/**"
+  ],
+  "scripts": {
+    "build": "tree-sitter generate && node-gyp build",
+    "parse": "tree-sitter parse",
+    "test": "tree-sitter test",
+    "install": "node-gyp rebuild"
+  }
+}

@@ -43,7 +43,7 @@ Cursor.config = {}
 ---@class edit.cursor.Node
 Cursor.node = {}
 
-Cursor.line = require("down.mod.edit.line")
+Cursor.line = require("down.mod.edit.cursor.line")
 
 Cursor.cword = function()
   return vim.fn.expand("<cword>")

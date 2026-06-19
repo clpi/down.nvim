@@ -114,8 +114,8 @@ Template.open_index = function() end
 ---@param time? number #The time to open the template entry at as returned by `os.time()`
 ---@param custom_date? string #A YYYY-mm-dd string that specifies a date to open the template at instead
 Template.open_template = function(time, custom_date)
-  local workspace = Template.config.workspace or Template.dep['workspace'].get_current_workspace()[1]
-  local workspace_path = Template.dep['workspace'].get_workspace(workspace)
+  local workspace = Template.config.workspace or Template.dep['workspace'].current()
+  local workspace_path = Template.dep['workspace'].get(workspace)
   local folder_name = Template.config.template_folder
   local template_name = Template.config.template_name
 
@@ -140,7 +140,7 @@ Template.open_template = function(time, custom_date)
     time
   )
 
-  local template_file_exists = Template.dep['workspace'].file_exists(
+  local template_file_exists = Template.dep['workspace'].exists(
     workspace_path .. sep .. folder_name .. sep .. path
   )
 
@@ -151,7 +151,7 @@ Template.open_template = function(time, custom_date)
   if
       not template_file_exists
       and Template.config.use_template
-      and Template.dep['workspace'].file_exists(
+      and Template.dep['workspace'].exists(
         workspace_path .. sep .. folder_name .. sep .. template_name
       )
   then
@@ -188,9 +188,9 @@ Template.create_template = function()
   local folder_name = Template.config.template_folder
   local template_name = Template.config.template_name
 
-  Template.dep.workspace.new_file(
+  Template.dep['workspace'].new_file(
     folder_name .. sep .. template_name,
-    workspace or Template.dep.workspace.get_current_workspace()[1]
+    workspace or Template.dep['workspace'].current()
   )
 end
 

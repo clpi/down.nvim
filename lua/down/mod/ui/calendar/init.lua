@@ -1,4 +1,3 @@
-local down = require 'down'
 local mod = require 'down.mod'
 local util = require 'down.util'
 local log = require 'down.log'

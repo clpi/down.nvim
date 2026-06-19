@@ -235,8 +235,8 @@ Ui.new_display = function(name, split_type, content)
       line_number = line_number + 1
     end
   end
-  vim.keymap.set('n', '<Esc>', vim.cmd.bdelete, { buffer = buf, silent = true })
-  vim.keymap.set('n', 'q', vim.cmb.bdelete, { buffer = buf, silent = true })
+  vim.keymap.set('n', '<Esc>', function() vim.cmd('bdelete') end, { buffer = buf, silent = true })
+  vim.keymap.set('n', 'q', function() vim.cmd('bdelete') end, { buffer = buf, silent = true })
   vim.api.nvim_buf_set_option(buf, 'modifiable', false)
   local cached_virtualedit = vim.opt.virtualedit:get()
   vim.opt.virtualedit = 'all'
@@ -302,8 +302,8 @@ Ui.new_markdown_buffer = function(name, split_type, config, opts)
   end)()
   vim.api.nvim_win_set_buf(0, buf)
   if opts.keys == true then
-    vim.keymap.set('n', '<Esc>', vim.cmd.bdelete, { buffer = buf, silent = true })
-    vim.keymap.set('n', 'q', vim.cmd.bdelete, { buffer = buf, silent = true })
+    vim.keymap.set('n', '<Esc>', function() vim.cmd('bdelete') end, { buffer = buf, silent = true })
+    vim.keymap.set('n', 'q', function() vim.cmd('bdelete') end, { buffer = buf, silent = true })
   end
   Ui.apply_buffer_options(buf, config or {})
   if opts.del_on_autocmd and #opts.del_on_autocmd ~= 0 then

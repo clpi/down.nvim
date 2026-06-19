@@ -219,7 +219,7 @@ Treesitter.goto_next_query_match = function(query_string)
   if not document_root then
     return
   end
-  local next_match_query = utils.ts_parse_query("markdown", query_string)
+  local next_match_query = util.ts_parse_query("markdown", query_string)
   for id, node in next_match_query:iter_captures(document_root, 0, line_number - 1, -1) do
     if next_match_query.captures[id] == "next-segment" then
       local start_line, start_col = node:range()
@@ -252,7 +252,7 @@ Treesitter.goto_previous_query_match = function(query_string)
   if not document_root then
     return
   end
-  local previous_match_query = utils.ts_parse_query("markdown", query_string)
+  local previous_match_query = util.ts_parse_query("markdown", query_string)
   local final_node = nil
 
   for id, node in previous_match_query:iter_captures(document_root, 0, 0, line_number) do
@@ -325,13 +325,12 @@ Treesitter.fix_indent = function(text)
 
   if text:sub(-1) ~= "\n" then text = text .. "\n" end
 
-  for line in text:gmatch "(.-)\n" do
+  for l in text:gmatch "(.-)\n" do
     if not leading_spaces then
-      leading_spaces = line:match "^%s+"
+      leading_spaces = l:match "^%s+"
     end
 
-    line = line:gsub("^" .. leading_spaces, "")
-    _l = _l .. line .. "\n"
+    _l = _l .. l:gsub("^" .. leading_spaces, "") .. "\n"
   end
 
   _l = _l:gsub("(\n)$", "");
@@ -860,7 +859,7 @@ Treesitter.get_document_metadata = function(source, no_trim)
     })
   end
 
-  local down_query = utils.ts_parse_query(
+  local down_query = util.ts_parse_query(
     "markdown",
     [[
                 (document
@@ -872,7 +871,7 @@ Treesitter.get_document_metadata = function(source, no_trim)
             ]]
   )
 
-  local meta_query = utils.ts_parse_query(
+  local meta_query = util.ts_parse_query(
     "markdown_inline",
     [[
                 (metadata
@@ -935,7 +934,7 @@ end
 ---@param start number? #The start line for the query
 ---@param finish number? #The end line for the query
 Treesitter.execute_query = function(query_string, callback, source, start, finish)
-  local query = utils.ts_parse_query("markdown", query_string)
+  local query = util.ts_parse_query("markdown", query_string)
   local down_parser, iter_src = Treesitter.get_ts_parser(source)
 
   if not down_parser then
@@ -1060,7 +1059,7 @@ Treesitter.handler = function(event)
     local ok, err = pcall(install_down_ts)
 
     if not ok then
-      utils.notify(('Unable to auto-install down parser: %s'):format(err), vim.log.levels.WARN)
+      util.notify(('Unable to auto-install down parser: %s'):format(err), vim.log.levels.WARN)
     end
     install.commands.TSInstallSync["run!"] "markdown"
     install.commands.TSInstallSync["run!"] "markdown_inline"

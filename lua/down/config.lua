@@ -126,7 +126,7 @@ end
 --- @param fp? string
 --- @return string
 function Config:file (fp)
-  local f = vim.fs.joinpath (fp or self.vimdir ("down.json"))
+  return vim.fs.joinpath (vim.fn.stdpath ("data"), "down", fp or "down.json")
 end
 
 --- @param f string | nil

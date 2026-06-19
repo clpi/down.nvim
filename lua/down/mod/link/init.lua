@@ -155,7 +155,7 @@ Link.prev = function(node)
   end
   return Link.prev(prev)
 end
-Link.goto = {
+Link["goto"] = {
 prev = function()
   local node, _ = Link.cursor()
   local prev = Link.prev(node)
@@ -547,7 +547,7 @@ Link.commands = {
         max_args = 1,
         condition = "markdown",
         commands = {},
-        callback = Link.goto.next,
+        callback = Link["goto"].next,
       },
       previous = {
         enabled = true,
@@ -555,7 +555,7 @@ Link.commands = {
         min_args = 0,
         max_args = 1,
         condition = "markdown",
-        callback = Link.goto.prev,
+        callback = Link["goto"].prev,
         commands = {},
       },
       select = {

@@ -17,7 +17,7 @@ local Log = {
     fatal = 5,
   },
   config = {
-    plugin = plug or "down",
+    plugin = "down",
 
     use_console = false,
 

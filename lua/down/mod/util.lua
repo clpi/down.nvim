@@ -8,7 +8,12 @@ U.defaults = {
   find = {},
   lsp = {},
   tag = {},
-  workspace = {},
+  workspace = {
+    default = "notes",
+    workspaces = {
+      notes = "~/notes",
+    },
+  },
 }
 
 ---@type down.Mod.Id[]

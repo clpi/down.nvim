@@ -8,7 +8,7 @@ W.buf = function()
 end
 
 W.time = function(fn)
-  local timer = assert(vim.looop.new_timer())
+  local timer = assert(vim.loop.new_timer())
   timer:start(1000, 0, vim.schedule_wrap(fn))
 end
 

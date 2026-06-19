@@ -1,0 +1,11 @@
+tools:
+    shell:
+        allow:
+            - cd *
+            - lua *
+            - "true"
+            - luac *
+            - echo *
+            - find *
+            - ls *
+            - head *

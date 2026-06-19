@@ -52,7 +52,7 @@ the _familiar_, organized future for neovim and beyond!
 -- Place in lazy.nvim spec
 {
     "clpi/down.nvim",
-    command = { "Down" },
+    cmd = "Down",
     keys = { 
         { "<space>di", "<CMD>Down index<CR>", desc = "Down index" },
         { "<space>dny", "<CMD>Down note yesterday<CR>", desc = "Down yesterday" },
@@ -67,8 +67,7 @@ the _familiar_, organized future for neovim and beyond!
         { "<space>dn", "<CMD>Down note<CR>", desc = "Down note" },
         { "<space>dp", "<CMD>Down note template<CR>", desc = "Down note template" },
         { "<space>dd", "<CMD>Down<CR>", desc = "Down" },
-    }
-    lazy = false,
+    },
     opts = {
       workspace = {
         default = "notes",
@@ -80,9 +79,7 @@ the _familiar_, organized future for neovim and beyond!
     },
     dependencies = {
       "nvim-treesitter/nvim-treesitter",
-        -- And an optional picker, if you want that functionality
       "nvim-telescope/telescope.nvim", -- optional
-      -- "folke/snacks.nvim",             -- optional
     },
 }
 ```

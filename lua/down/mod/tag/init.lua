@@ -1,6 +1,5 @@
 local mod = require('down.mod')
 local log = require('down.log')
-local Tag = require('down.mod.tag.tag')
 
 ---@class down.mod.tag.Tag: down.Mod
 local Tag = mod.new 'tag'
@@ -54,7 +53,7 @@ Tag.commands = {
           end
         end,
       },
-      goto = {
+      ["goto"] = {
         name = 'tag.goto',
         args = 0,
         max_args = 1,
@@ -111,11 +110,11 @@ Tag.parse_ln = function(ln)
 end
 
 Tag.parse_current_ln = function()
-  local ln = vim.api.nvim_buf_get_lines(0, pos[1] - 1, pos[1], false)
+  local ln = vim.api.nvim_buf_get_lines(0, vim.api.nvim_win_get_cursor(0)[1] - 1, vim.api.nvim_win_get_cursor(0)[1], false)
   local path = vim.fn.expand('%:p')
-  local ws = Tag.dep['workspace'].get_current_workspace()
+  local ws = Tag.dep['workspace'] and Tag.dep['workspace'].current()
   local tags = {}
-  for tag in ln:gmatch '#%S+' do
+  for tag in ln:gmatch('#%S+') do
     table.insert(tags, { ---@type down.Tag.Instance
       tag = tag,
       workspace = ws,
@@ -133,10 +132,10 @@ end
 Tag.parse_current_doc = function()
   local tags = {}
   for i, ln in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
-    for tag in ln:gmatch '#%S+' do
+    for tag in ln:gmatch('#%S+') do
       table.insert(tags, { ---@type down.Tag.Instance
         tag = tag,
-        workspace = Tag.dep['workspace'].get_current_workspace(),
+        workspace = Tag.dep['workspace'] and Tag.dep['workspace'].current(),
         path = vim.fn.expand('%:p'),
         line = ln,
         position = {
@@ -152,10 +151,10 @@ end
 Tag.parse_current_workspace = function()
   local tags = {}
   for i, ln in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
-    for tag in ln:gmatch '#%S+' do
+    for tag in ln:gmatch('#%S+') do
       table.insert(tags, { ---@type down.Tag.Instance
         tag = tag,
-        workspace = Tag.dep['workspace'].get_current_workspace(),
+        workspace = Tag.dep['workspace'] and Tag.dep['workspace'].current(),
         path = vim.fn.expand('%:p'),
         line = ln,
         position = {

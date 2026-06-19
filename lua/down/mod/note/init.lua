@@ -176,13 +176,16 @@ Note.open_month = function (time, custom_date)
   end
 end
 Note.capture = function ()
-  local b, w = Note.dep["ui.win"].win ("today", "note", "Down note today")
-  -- vim.cmd
-
-  -- Noteod.get_mod("ui.win").cmd(w, function()
-  --   vim.api.nvim_command("down note today")
-  -- end)
-  -- pcall(vim.api.nvim_command, ":down note today")
+  -- Uses vim.ui.input as fallback
+  vim.ui.input({ prompt = "Capture: " }, function(text)
+    if text and #text > 0 then
+      if Note.dep["workspace"] then
+        Note.dep["workspace"].new_file(text)
+      else
+        vim.cmd("e " .. text .. " | silent! w")
+      end
+    end
+  end)
 end
 --- Opens a note entry at the given time
 ---@param time? number #The time to open the note entry at as returned by `os.time()`
@@ -358,8 +361,8 @@ Note.create_toc = function ()
   local get_title = function (file)
     local buffer =
       vim.fn.bufadd (workspace_path .. sep .. folder_name .. sep .. file)
-    local meta = Note.dep["workspace"].get_document_metadata (buffer)
-    return meta.title
+    local meta = Note.dep["integration.treesitter"] and Note.dep["integration.treesitter"].get_document_metadata (buffer)
+    return meta and meta.title
   end
 
   vim.loop.fs_scandir (

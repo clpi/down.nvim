@@ -117,12 +117,13 @@ Data.files = function (path, cond)
     if type == "file" and cond or name:endswith (".md") then
       table.insert (f, name)
     elseif type == "directory" and not name:startswith (".") then
-      local fs = Data.get_files (Data.concat (path, name))
+      local fs = Data.files (Data.concat (path, name))
       for _, v in ipairs (fs) do
         table.insert (f, v)
       end
     end
   end
+  return f
 end
 
 Data.directory_map = function (path, callback)
