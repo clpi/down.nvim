@@ -11,3 +11,4 @@ tools:
             - head *
             - cat *
             - file *
+            - go build *

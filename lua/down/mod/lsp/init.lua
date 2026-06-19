@@ -370,62 +370,47 @@ Lsp.start = function(bufnr)
 
   Lsp.attach(bufnr)
 end
-      end)
-    else
-      log.info(
-        "down not installed. Set config.lsp.auto_download = true or provide config.lsp.cmd"
-      )
-    end
-    return
-  end
 
-  -- Check for updates in background if enabled
-  if Lsp.config.auto_update then
-    Lsp.check_update(function(has_update, latest)
-      if has_update and latest then
-        vim.schedule(function()
-          vim.notify(
-            "[down.nvim] down update available: " .. latest .. ". Run :Down lsp update",
-            vim.log.levels.INFO
-          )
-        end)
-      end
-    end)
-  end
-
-  Lsp.attach()
-end
-
---- Get active LSP client for down-lsp
+--- Get active LSP client for down
 ---@return vim.lsp.Client|nil
 Lsp.get_client = function()
-  local clients = vim.lsp.get_clients({ name = "down-lsp" })
+  local clients = vim.lsp.get_clients({ name = "down" })
   return clients and clients[1] or nil
 end
 
 --- Attach LSP to current buffer
-Lsp.attach = function()
+---@param bufnr? integer
+Lsp.attach = function(bufnr)
+  bufnr = bufnr or 0
+  local bufname = vim.api.nvim_buf_get_name(bufnr)
+  local ws = mod.get_mod("workspace")
+  if ws and ws.is_wiki_path and not ws.is_wiki_path(bufname) then
+    return
+  end
+
   local cmd_path = Lsp.bin_path()
   if vim.fn.executable(cmd_path) ~= 1 then
     return
   end
 
+  local root_dir = vim.fs.root(bufnr, Lsp.config.root_markers) or vim.fn.getcwd()
+  local workspace_name = ws and ws.name_for_path and ws.name_for_path(root_dir)
   local client_id = vim.lsp.start({
-    name = "down-lsp",
+    name = "down",
     cmd = { cmd_path, "lsp" },
     filetypes = Lsp.config.filetypes,
-    root_dir = vim.fs.root(0, Lsp.config.root_markers) or vim.fn.getcwd(),
-    workspace_folders = Lsp.workspace_folders(),
+    root_dir = root_dir,
+    workspace_folders = Lsp.workspace_folders(workspace_name),
     settings = Lsp.config.settings,
     capabilities = Lsp.capabilities(),
-    on_attach = function(client, bufnr)
-      Lsp.on_attach(client, bufnr)
+    on_attach = function(client, attached_bufnr)
+      Lsp.on_attach(client, attached_bufnr)
     end,
     handlers = Lsp.handlers(),
   })
 
   if client_id then
-    vim.lsp.buf_attach_client(0, client_id)
+    vim.lsp.buf_attach_client(bufnr, client_id)
   end
 end
 
@@ -488,9 +473,9 @@ Lsp.on_attach = function(client, bufnr)
   log.trace("down attached to buffer " .. bufnr)
 end
 
---- Restart all down-lsp clients
+--- Restart all down clients
 Lsp.restart = function()
-  local clients = vim.lsp.get_clients({ name = "down-lsp" })
+  local clients = vim.lsp.get_clients({ name = "down" })
   for _, client in ipairs(clients) do
     client.stop()
   end
@@ -501,7 +486,7 @@ Lsp.restart = function()
         local ft = vim.bo[bufnr].filetype
         if vim.tbl_contains(Lsp.config.filetypes, ft) then
           vim.api.nvim_buf_call(bufnr, function()
-            Lsp.attach()
+            Lsp.attach(bufnr)
           end)
         end
       end
@@ -549,7 +534,7 @@ Lsp.commands = {
         name = "lsp.stop",
         args = 0,
         callback = function()
-          local clients = vim.lsp.get_clients({ name = "down-lsp" })
+          local clients = vim.lsp.get_clients({ name = "down" })
           for _, client in ipairs(clients) do
             client.stop()
           end
