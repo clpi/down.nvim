@@ -67,15 +67,9 @@ if MODREV == 'scm' then
   }
 end
 
-dependencies = {
-  'lua == 5.4',
-  'nvim-nio ~> 1.7',
-}
+dependencies = {}
 
-test_dependencies = {
-  'nlua',
-  'nvim-treesitter == 0.9.2',
-}
+test_dependencies = {}
 
 test = {
   type = 'command',

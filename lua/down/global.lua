@@ -151,14 +151,19 @@ end
 function M.remove_workspace (name, profile_name)
   local data = M.load ()
   data.workspaces[name] = nil
+  data.workspace_options[name] = nil
   if profile_name then
     if data.profiles[profile_name] then
       data.profiles[profile_name].workspaces[name] = nil
+      data.profiles[profile_name].workspace_options[name] = nil
     end
   else
     for _, p in pairs (data.profiles) do
       if p.workspaces then
         p.workspaces[name] = nil
+      end
+      if p.workspace_options then
+        p.workspace_options[name] = nil
       end
     end
   end
@@ -174,6 +179,10 @@ function M.rename_workspace (old_name, new_name)
     data.workspaces[new_name] = data.workspaces[old_name]
     data.workspaces[old_name] = nil
   end
+  if data.workspace_options[old_name] then
+    data.workspace_options[new_name] = data.workspace_options[old_name]
+    data.workspace_options[old_name] = nil
+  end
   for _, p in pairs (data.profiles) do
     if p.workspaces and p.workspaces[old_name] then
       p.workspaces[new_name] = p.workspaces[old_name]
@@ -181,6 +190,10 @@ function M.rename_workspace (old_name, new_name)
       if p.default == old_name then
         p.default = new_name
       end
+    end
+    if p.workspace_options and p.workspace_options[old_name] then
+      p.workspace_options[new_name] = p.workspace_options[old_name]
+      p.workspace_options[old_name] = nil
     end
   end
   M.save (data)
@@ -199,12 +212,25 @@ function M.profile_workspaces (profile_name)
   return p.workspaces or {}
 end
 
+--- Return workspace metadata registered for a profile (default: active).
+---@param profile_name? string
+---@return table<string,table>
+function M.profile_workspace_options (profile_name)
+  local data = M.load ()
+  profile_name = profile_name or data.active_profile or "default"
+  local p = data.profiles[profile_name]
+  if not p then
+    return {}
+  end
+  return p.workspace_options or {}
+end
+
 --- Add a new profile (empty workspaces) to the global config.
 ---@param name string
 function M.add_profile (name)
   local data = M.load ()
   if not data.profiles[name] then
-    data.profiles[name] = { workspaces = {}, default = nil }
+    data.profiles[name] = { workspaces = {}, workspace_options = {}, default = nil }
     M.save (data)
   end
 end
