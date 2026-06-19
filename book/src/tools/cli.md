@@ -134,19 +134,18 @@ down lsp knowledge related design.md  # Related documents
 Use `--root` to point at a workspace (default: nearest `.down/` ancestor).
 
 
-### `down git <subcommand>`
+### `down sync git [subcommand]`
 
 Sync git repository history and diffs into `.down/git/` as organized markdown.
 Full commit history is compacted into `history.md`; each commit gets a detail
 file with patch under `commits/`.
 
 ```bash
-down git                    # Sync (same as `down git sync`)
-down git sync               # Export history + diffs to .down/git/
-down git status             # Repo + sync status
-down git log                # Recent commits (links to .down/git/commits/)
-down git diff               # Working tree diff
-down git sync -f            # Regenerate all commit files
+down sync git               # Export history + diffs to .down/git/
+down sync git status        # Repo + sync status
+down sync git log           # Recent commits (links to .down/git/commits/)
+down sync git diff          # Working tree diff
+down sync git -f            # Regenerate all commit files
 ```
 
 Output layout:
@@ -207,5 +206,6 @@ All commands are available inside Neovim via `:Down`:
 - `:Down profile add/list/switch/remove` — Switches workspace data
 - `:Down memory add/show/list/search/delete`
 - `:Down context` — Generate and open context
+- `:Down sync git/status/log/diff` — Git history into .down/git/
 - `:Down lsp tags/mentions/tasks/outline/backlinks/knowledge` — Workspace introspection
 - `:Down chat` — AI chat interface

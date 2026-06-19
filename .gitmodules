@@ -1,6 +1,3 @@
-; [submodule "ext/lsp"]
-; 	path = ext/lsp
-; 	url = https://github.com/clpi/down.lsp.git
 ; [submodule "ext/mcp"]
 ;   path = ext/mcp
 ;   url = https://github.com/clpi/down.mcp.git

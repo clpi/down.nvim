@@ -736,6 +736,7 @@ Cmd.setup = function ()
         "context",
         "vector",
         "web",
+        "git",
         "--force",
         "-f",
         "--verbose",
@@ -802,6 +803,51 @@ Cmd.setup = function ()
           down_show ({ "sync", "web" })
         end,
       },
+      git = {
+        enabled = true,
+        args = 0,
+        min_args = 0,
+        max_args = math.huge,
+        name = "sync.git",
+        complete = function ()
+          return { "status", "log", "diff", "--force", "-f", "--verbose", "-v", "--root" }
+        end,
+        callback = function (e)
+          local args = e.body or {}
+          local sub = args[1]
+          if sub and not sub:match ("^%-") then
+            down_show ({ "sync", "git", sub, unpack (args, 2) }, "markdown")
+          else
+            down_show ({ "sync", "git", unpack (args) }, "markdown")
+          end
+        end,
+        commands = {
+          status = {
+            enabled = true,
+            args = 0,
+            name = "sync.git.status",
+            callback = function (e)
+              down_show ({ "sync", "git", "status", unpack (e.body or {}, 2) }, "markdown")
+            end,
+          },
+          log = {
+            enabled = true,
+            args = 0,
+            name = "sync.git.log",
+            callback = function (e)
+              down_show ({ "sync", "git", "log", unpack (e.body or {}, 2) }, "markdown")
+            end,
+          },
+          diff = {
+            enabled = true,
+            args = 0,
+            name = "sync.git.diff",
+            callback = function (e)
+              down_show ({ "sync", "git", "diff", unpack (e.body or {}, 2) }, "markdown")
+            end,
+          },
+        },
+      },
     },
   }
 
@@ -831,7 +877,6 @@ Cmd.setup = function ()
     link = { subcmds = {}, ft = nil },
     snippet = { subcmds = {}, ft = nil },
     template = { subcmds = {}, ft = nil },
-    git = { subcmds = { "sync", "status", "log", "diff" }, ft = "markdown" },
     lsp = {
       subcmds = {
         "slash",
