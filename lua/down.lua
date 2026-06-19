@@ -41,6 +41,7 @@ Down.default_mods = {
   "ai",
   "ai.chat",
   "ai.gen",
+  "automate",
 }
 
 --- Load the user configuration, and load into config

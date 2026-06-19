@@ -614,4 +614,157 @@ Database.setup = function()
   }
 end
 
+--- Compute formula fields for a row
+---@param row table
+---@param field table
+---@param all_rows table
+---@return any
+function Database.compute_formula (row, field, all_rows)
+  local expr = field.formula or field.expression or ""
+  if expr == "" then return nil end
+
+  -- Simple formula evaluation
+  -- Supported: field references {field_name}, basic math
+  local result = expr
+
+  -- Replace {field_name} with values
+  for k, v in pairs (row) do
+    local val = tostring (v or "")
+    result = result:gsub ("{" .. k .. "}", val)
+  end
+
+  -- Basic math evaluation
+  if result:match ("^[%d%s%+%-%*/%.()]+$") then
+    local ok, val = pcall (load ("return " .. result))
+    if ok then return val end
+  end
+
+  -- Length formula
+  if result:match ("^length%((.+%)%)$") then
+    local field = result:match ("length%((.+)%)$")
+    if field and row[field] then
+      return #tostring (row[field])
+    end
+  end
+
+  -- If/else formula: if(cond, then, else)
+  if result:match ("^if%(.+%)$") then
+    local inner = result:match ("^if%((.+)%)$")
+    local parts = {}
+    local depth, start = 0, 1
+    for i = 1, #inner do
+      local c = inner:sub (i, i)
+      if c == "(" then depth = depth + 1
+      elseif c == ")" then depth = depth - 1
+      elseif c == "," and depth == 0 then
+        parts[#parts + 1] = inner:sub (start, i - 1):gsub ("^%s+", ""):gsub ("%s+$", "")
+        start = i + 1
+      end
+    end
+    parts[#parts + 1] = inner:sub (start):gsub ("^%s+", ""):gsub ("%s+$", "")
+
+    if #parts >= 2 then
+      local cond = parts[1]:gsub ("^%s+", ""):gsub ("%s+$", "")
+      local cond_val = false
+      -- Check if condition matches a field value
+      for k, v in pairs (row) do
+        if cond == k then cond_val = v ~= nil and v ~= false and v ~= "" end
+        if cond == "not " .. k then cond_val = not (v ~= nil and v ~= false and v ~= "") end
+        if cond == k .. " == true" then cond_val = v == true end
+        if cond == k .. " == false" then cond_val = v == false end
+      end
+      -- Try boolean evaluation
+      if cond == "true" then cond_val = true
+      elseif cond == "false" then cond_val = false end
+
+      return cond_val and parts[2] or (parts[3] or "")
+    end
+  end
+
+  return result
+end
+
+--- Compute rollup: aggregate values from related rows
+---@param row table
+---@param field table
+---@param all_rows table
+---@return any
+function Database.compute_rollup (row, field, all_rows)
+  local relation_field = field.relation or field.rollup_relation
+  local target_field = field.target or field.rollup_target
+  local aggregate = field.aggregate or "count"
+
+  if not relation_field or not target_field then return nil end
+
+  local related_values = {}
+  for _, r in ipairs (all_rows) do
+    if r[relation_field] == row[relation_field] then
+      local val = r[target_field]
+      if val ~= nil then
+        related_values[#related_values + 1] = val
+      end
+    end
+  end
+
+  if aggregate == "count" then
+    return #related_values
+  elseif aggregate == "count_unique" then
+    local seen = {}
+    for _, v in ipairs (related_values) do seen[tostring (v)] = true end
+    local count = 0
+    for _ in pairs (seen) do count = count + 1 end
+    return count
+  elseif aggregate == "sum" then
+    local total = 0
+    for _, v in ipairs (related_values) do
+      local n = tonumber (v)
+      if n then total = total + n end
+    end
+    return total
+  elseif aggregate == "average" or aggregate == "avg" then
+    local total, count = 0, 0
+    for _, v in ipairs (related_values) do
+      local n = tonumber (v)
+      if n then total = total + n end
+    end
+    return count > 0 and (total / count) or 0
+  elseif aggregate == "min" then
+    local min_val = nil
+    for _, v in ipairs (related_values) do
+      if min_val == nil or v < min_val then min_val = v end
+    end
+    return min_val
+  elseif aggregate == "max" then
+    local max_val = nil
+    for _, v in ipairs (related_values) do
+      if max_val == nil or v > max_val then max_val = v end
+    end
+    return max_val
+  elseif aggregate == "join" or aggregate == "concat" then
+    local t = {}
+    for _, v in ipairs (related_values) do
+      if v ~= nil and tostring (v) ~= "" then t[#t + 1] = tostring (v) end
+    end
+    return table.concat (t, ", ")
+  elseif aggregate == "list" or aggregate == "array" then
+    return related_values
+  end
+
+  return nil
+end
+
+--- Resolve all formula/rollup fields in a database
+---@param db table
+function Database.resolve_formulas (db)
+  for _, row in ipairs (db.rows or {}) do
+    for key, field in pairs (db.schema or {}) do
+      if field.type == "formula" then
+        row[key] = Database.compute_formula (row, field, db.rows)
+      elseif field.type == "rollup" then
+        row[key] = Database.compute_rollup (row, field, db.rows)
+      end
+    end
+  end
+end
+
 return Database
