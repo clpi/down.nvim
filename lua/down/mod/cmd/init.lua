@@ -479,12 +479,32 @@ Cmd.setup = function ()
     enabled = true,
     args = 0,
     name = "memory",
+    complete = function ()
+      return { "add", "list", "show", "search", "delete", "export", "import" }
+    end,
     callback = function (e)
       local body = e.body or {}
       local sub = body[1]
       local data_home = os.getenv ("XDG_DATA_HOME")
         or (os.getenv ("HOME") .. "/.local/share")
       local mem_dir = data_home .. "/down/memory"
+
+      local function memory_cli (argv, show)
+        if down_bin () then
+          if show then
+            down_show (argv, "markdown")
+          else
+            local out, err = down_run (argv)
+            if err then
+              vim.notify ("Memory command failed: " .. err, vim.log.levels.ERROR)
+            elseif out and out ~= "" then
+              vim.notify (out, vim.log.levels.INFO)
+            end
+          end
+          return true
+        end
+        return false
+      end
 
       if sub == "add" or sub == "set" then
         local key = body[2]
@@ -494,21 +514,26 @@ Cmd.setup = function ()
             if k and k ~= "" then
               vim.ui.input ({ prompt = "Value: " }, function (v)
                 if v then
-                  os.execute ('mkdir -p "' .. mem_dir .. '"')
-                  local f = io.open (mem_dir .. "/" .. k .. ".json", "w")
-                  if f then
-                    f:write (vim.json.encode ({
-                      key = k,
-                      value = v,
-                      created = os.date ("%Y-%m-%d %H:%M"),
-                    }))
-                    f:close ()
-                    vim.notify ("Memory saved: " .. k, vim.log.levels.INFO)
+                  if not memory_cli ({ "memory", "add", k, v }) then
+                    os.execute ('mkdir -p "' .. mem_dir .. '"')
+                    local f = io.open (mem_dir .. "/" .. k .. ".json", "w")
+                    if f then
+                      f:write (vim.json.encode ({
+                        key = k,
+                        value = v,
+                        created = os.date ("%Y-%m-%d %H:%M"),
+                      }))
+                      f:close ()
+                      vim.notify ("Memory saved: " .. k, vim.log.levels.INFO)
+                    end
                   end
                 end
               end)
             end
           end)
+          return
+        end
+        if memory_cli ({ "memory", "add", key, value or "" }) then
           return
         end
         os.execute ('mkdir -p "' .. mem_dir .. '"')
@@ -523,6 +548,9 @@ Cmd.setup = function ()
           vim.notify ("Memory saved: " .. key, vim.log.levels.INFO)
         end
       elseif sub == "list" or sub == "ls" or not sub then
+        if memory_cli ({ "memory", "list" }, true) then
+          return
+        end
         local entries = vim.fn.glob (mem_dir .. "/*.json", true, true)
         if #entries == 0 then
           vim.notify ("No memory entries", vim.log.levels.INFO)
@@ -557,10 +585,12 @@ Cmd.setup = function ()
         if not key then
           vim.ui.input ({ prompt = "Show memory key: " }, function (k)
             if k then
-              _show_memory_entry (mem_dir, k)
+              if not memory_cli ({ "memory", "show", k }, true) then
+                _show_memory_entry (mem_dir, k)
+              end
             end
           end)
-        else
+        elseif not memory_cli ({ "memory", "show", key }, true) then
           _show_memory_entry (mem_dir, key)
         end
       elseif sub == "search" then
@@ -568,10 +598,12 @@ Cmd.setup = function ()
         if not query then
           vim.ui.input ({ prompt = "Search memory: " }, function (q)
             if q then
-              _search_memory (mem_dir, q)
+              if not memory_cli ({ "memory", "search", q }, true) then
+                _search_memory (mem_dir, q)
+              end
             end
           end)
-        else
+        elseif not memory_cli ({ "memory", "search", query }, true) then
           _search_memory (mem_dir, query)
         end
       elseif sub == "delete" or sub == "rm" then
@@ -579,17 +611,34 @@ Cmd.setup = function ()
         if not key then
           vim.ui.input ({ prompt = "Delete memory key: " }, function (k)
             if k then
-              os.remove (mem_dir .. "/" .. k .. ".json")
-              vim.notify ("Deleted: " .. k, vim.log.levels.INFO)
+              if not memory_cli ({ "memory", "delete", k }) then
+                os.remove (mem_dir .. "/" .. k .. ".json")
+                vim.notify ("Deleted: " .. k, vim.log.levels.INFO)
+              end
             end
           end)
-        else
+        elseif not memory_cli ({ "memory", "delete", key }) then
           os.remove (mem_dir .. "/" .. key .. ".json")
           vim.notify ("Deleted: " .. key, vim.log.levels.INFO)
+        end
+      elseif sub == "export" then
+        local file = body[2]
+        local argv = { "memory", "export" }
+        if file then
+          table.insert (argv, file)
+        end
+        memory_cli (argv, not file)
+      elseif sub == "import" then
+        local file = body[2]
+        if file then
+          memory_cli ({ "memory", "import", file })
+        else
+          vim.notify ("Usage: :Down memory import <file>", vim.log.levels.ERROR)
         end
       end
     end,
   }
+
 
   -- Register context command
   Cmd.commands.context = {
@@ -600,174 +649,19 @@ Cmd.setup = function ()
     name = "context",
     callback = function (e)
       local root = e.body and e.body[1] or vim.fn.getcwd ()
-      local name = vim.fn.fnamemodify (root, ":t")
-      local out = {
-        "# " .. name .. " — AI Context",
-        "",
-        "> Generated: " .. os.date ("%Y-%m-%d %H:%M:%S"),
-        "",
-      }
-
-      -- Try Go CLI context first
-      local ctx_out, _ =
-        down_run ({ "context", root, "-o", root .. "/.down/context.md" })
-
-      -- Embed compact output if Go binary available
-      local compact_str = nil
-      down_run ({ "compact", root, "-o", root .. "/.down/compact.xml" })
-
-      -- Detect languages
-      local langs = {}
-      pcall (function ()
-        for ext, lang in pairs ({
-          lua = "Lua",
-          go = "Go",
-          js = "JavaScript",
-          py = "Python",
-          rs = "Rust",
-          md = "Markdown",
-          json = "JSON",
-          toml = "TOML",
-          yml = "YAML",
-        }) do
-          local count = tonumber (
-            vim.fn.system (
-              "find "
-                .. root
-                .. " -name '*."
-                .. ext
-                .. "' -not -path '*/.git/*' 2>/dev/null | wc -l"
-            )
-          ) or 0
-          if count > 0 then
-            langs[lang] = true
-          end
-        end
-      end)
-      local lang_list = {}
-      for l in pairs (langs) do
-        lang_list[#lang_list + 1] = l
-      end
-      table.sort (lang_list)
-      if #lang_list > 0 then
-        out[#out + 1] = "**Languages:** " .. table.concat (lang_list, ", ")
-        out[#out + 1] = ""
-      end
-      out[#out + 1] = "## Structure"
-      out[#out + 1] = "```"
-      pcall (function ()
-        for _, l in
-          ipairs (
-            vim.split (
-              vim.fn.system ("ls -R " .. root .. " 2>/dev/null | head -80"),
-              "\n"
-            )
-          )
-        do
-          out[#out + 1] = l
-        end
-      end)
-      out[#out + 1] = "```"
-      out[#out + 1] = ""
-      out[#out + 1] = "## Task"
-      out[#out + 1] = ""
-      out[#out + 1] = "<!-- Describe what you want the AI to do -->"
-
-      -- Write context
-      os.execute ('mkdir -p "' .. root .. '/.down"')
       local out_path = root .. "/.down/context.md"
-      local f = io.open (out_path, "w")
-      if f then
-        f:write (table.concat (out, "\n"))
-        f:close ()
+      os.execute ('mkdir -p "' .. root .. '/.down"')
+      local _, err = down_run ({ "context", root, "-o", out_path })
+      if err then
+        vim.notify ("Context command failed: " .. err, vim.log.levels.ERROR)
+        return
       end
-
-      -- Open in buffer
-      vim.cmd (ctx_out and "vsplit " .. out_path or "vsplit")
-      if ctx_out then
-        vim.cmd ("edit " .. out_path)
-      end
+      vim.cmd ("vsplit " .. vim.fn.fnameescape (out_path))
       vim.notify ("Context written to " .. out_path, vim.log.levels.INFO)
     end,
   }
 
-  -- Register notion command
-  Cmd.commands.notion = {
-    enabled = true,
-    args = 0,
-    min_args = 0,
-    max_args = math.huge,
-    name = "notion",
-    complete = function ()
-      return {
-        "search",
-        "me",
-        "users",
-        "page",
-        "database",
-        "blocks",
-      }
-    end,
-    callback = function (e)
-      local args = e.body or {}
-      if #args == 0 then
-        vim.ui.select ({
-          "search",
-          "me",
-          "users",
-          "page",
-          "database",
-          "blocks",
-        }, { prompt = "Notion command:" }, function (choice)
-          if choice then
-            vim.cmd ("Down notion " .. choice)
-          end
-        end)
-        return
-      end
-      local out, err = down_run ({ "notion", unpack (args) })
-      if err then
-        vim.notify ("Notion command failed: " .. err, vim.log.levels.ERROR)
-        return
-      end
-      if out and out ~= "" then
-        local buf = vim.api.nvim_create_buf (false, true)
-        vim.api.nvim_buf_set_option (buf, "buftype", "nofile")
-        vim.api.nvim_buf_set_option (buf, "bufhidden", "wipe")
-        vim.api.nvim_buf_set_lines (buf, 0, -1, false, vim.split (out, "\n"))
-        vim.cmd ("vsplit")
-        vim.api.nvim_win_set_buf (0, buf)
-      end
-    end,
-    commands = {
-      search = {
-        enabled = true,
-        args = 0,
-        max_args = 1,
-        name = "notion.search",
-      },
-      me = { enabled = true, args = 0, name = "notion.me" },
-      users = { enabled = true, args = 0, name = "notion.users" },
-      page = {
-        enabled = true,
-        args = 0,
-        max_args = math.huge,
-        name = "notion.page",
-      },
-      database = {
-        enabled = true,
-        args = 0,
-        max_args = math.huge,
-        name = "notion.database",
-      },
-      blocks = {
-        enabled = true,
-        args = 0,
-        max_args = math.huge,
-        name = "notion.blocks",
-      },
-    },
-  }
+
 
   -- Register repomix command
   Cmd.commands.repomix = {
@@ -937,8 +831,28 @@ Cmd.setup = function ()
     link = { subcmds = {}, ft = nil },
     snippet = { subcmds = {}, ft = nil },
     template = { subcmds = {}, ft = nil },
-    lsp = { subcmds = {}, ft = nil },
+    lsp = {
+      subcmds = {
+        "slash",
+        "tags",
+        "mentions",
+        "tasks",
+        "outline",
+        "backlinks",
+        "knowledge",
+      },
+      ft = nil,
+    },
   }
+  local lsp_knowledge_subcmds = {
+    "summary",
+    "search",
+    "entities",
+    "relations",
+    "related",
+    "reindex",
+  }
+
   for cmd_name, spec in pairs (passthrough) do
     Cmd.commands[cmd_name] = {
       enabled = true,
@@ -955,6 +869,71 @@ Cmd.setup = function ()
       end,
     }
   end
+
+  Cmd.commands.lsp.commands = {
+    knowledge = {
+      enabled = true,
+      args = 0,
+      name = "lsp.knowledge",
+      complete = function ()
+        return lsp_knowledge_subcmds
+      end,
+      callback = function (e)
+        local args = e.body or {}
+        down_show ({ "lsp", "knowledge", unpack (args) })
+      end,
+      commands = {
+        summary = {
+          enabled = true,
+          args = 0,
+          name = "lsp.knowledge.summary",
+          callback = function ()
+            down_show ({ "lsp", "knowledge", "summary" })
+          end,
+        },
+        search = {
+          enabled = true,
+          args = 0,
+          name = "lsp.knowledge.search",
+          callback = function (e)
+            down_show ({ "lsp", "knowledge", "search", unpack (e.body or {}, 2) })
+          end,
+        },
+        entities = {
+          enabled = true,
+          args = 0,
+          name = "lsp.knowledge.entities",
+          callback = function (e)
+            down_show ({ "lsp", "knowledge", "entities", unpack (e.body or {}, 2) })
+          end,
+        },
+        relations = {
+          enabled = true,
+          args = 0,
+          name = "lsp.knowledge.relations",
+          callback = function (e)
+            down_show ({ "lsp", "knowledge", "relations", unpack (e.body or {}, 2) })
+          end,
+        },
+        related = {
+          enabled = true,
+          args = 0,
+          name = "lsp.knowledge.related",
+          callback = function (e)
+            down_show ({ "lsp", "knowledge", "related", unpack (e.body or {}, 2) })
+          end,
+        },
+        reindex = {
+          enabled = true,
+          args = 0,
+          name = "lsp.knowledge.reindex",
+          callback = function ()
+            down_show ({ "lsp", "knowledge", "reindex" })
+          end,
+        },
+      },
+    },
+  }
 
   return { loaded = true }
 end

@@ -114,6 +114,25 @@ down memory export memories.json                   # Export all
 down memory import memories.json                   # Import from file
 ```
 
+
+### `down lsp <subcommand>`
+
+Start the LSP stdio server (bare `down lsp`) or query Notion-style workspace features
+from the knowledge graph without an editor attached.
+
+```bash
+down lsp                              # Start LSP server on stdio
+down lsp tags planning                # Filter #tags
+down lsp mentions alice               # Filter @mentions
+down lsp tasks --open                 # Open markdown tasks
+down lsp outline index.md             # Heading/task outline
+down lsp backlinks design.md          # Backlinks panel
+down lsp knowledge summary            # Graph summary
+down lsp knowledge related design.md  # Related documents
+```
+
+Use `--root` to point at a workspace (default: nearest `.down/` ancestor).
+
 ### `down context [directory]`
 
 Generate a comprehensive AI project context document at `.down/context.md`.
@@ -121,6 +140,8 @@ Generate a comprehensive AI project context document at `.down/context.md`.
 ```bash
 down context .                                    # Generate context
 down context . -p "Fix all bugs in this project"  # With task prompt
+down context . --no-compact                         # Omit packed codebase
+down context . --no-memory                            # Omit memory entries
 ```
 
 ### `down mcp`
@@ -135,11 +156,11 @@ down mcp    # Start MCP server
 
 ### `down serve`
 
-Start the full LSP server (language server protocol).
+Start the LSP server on stdio (alias of `down lsp`).
 
 ### `down run`
 
-Run the LSP binary directly.
+Run the LSP server on stdio (alias of `down lsp`).
 
 ### `down config`
 
@@ -158,4 +179,5 @@ All commands are available inside Neovim via `:Down`:
 - `:Down profile add/list/switch/remove` — Switches workspace data
 - `:Down memory add/show/list/search/delete`
 - `:Down context` — Generate and open context
+- `:Down lsp tags/mentions/tasks/outline/backlinks/knowledge` — Workspace introspection
 - `:Down chat` — AI chat interface
