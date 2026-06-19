@@ -37,7 +37,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
       - name: Build with mdBook
-        run: cd book && mdbook build
+        run: cd docs && mdbook build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
