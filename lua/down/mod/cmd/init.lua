@@ -974,6 +974,8 @@ Cmd.setup = function ()
     vector = {
       subcmds = {
         "index",
+        "index-all",
+        "index-kb",
         "search",
         "list",
         "delete",
@@ -998,7 +1000,7 @@ Cmd.setup = function ()
     new = { subcmds = {}, ft = nil },
     link = { subcmds = { "backlinks" }, ft = nil },
     snippet = { subcmds = { "list", "show" }, ft = nil },
-    template = { subcmds = { "list", "apply" }, ft = nil },
+    template = { subcmds = { "list", "show", "apply", "create", "delete", "init", "types", "validate" }, ft = nil },
     workspace = {
       subcmds = { "add", "list", "switch", "remove", "init", "clear" },
       ft = nil,
