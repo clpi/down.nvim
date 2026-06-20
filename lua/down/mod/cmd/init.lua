@@ -20,10 +20,14 @@ Cmd.setup = function ()
   -- Helper: resolve the down CLI binary path
   local function down_bin ()
     local paths = {}
-    for _, p in ipairs (vim.api.nvim_get_runtime_file ("scripts/bin/down", true)) do
+    for _, p in
+      ipairs (vim.api.nvim_get_runtime_file ("scripts/bin/down", true))
+    do
       paths[#paths + 1] = p
     end
-    for _, p in ipairs (vim.api.nvim_get_runtime_file ("ext/down/bin/down", true)) do
+    for _, p in
+      ipairs (vim.api.nvim_get_runtime_file ("ext/down/bin/down", true))
+    do
       paths[#paths + 1] = p
     end
     for _, p in ipairs (vim.api.nvim_get_runtime_file ("ext/down/down", true)) do
@@ -528,7 +532,10 @@ Cmd.setup = function ()
                       f:write (vim.json.encode ({
                         key = k,
                         value = v,
-                        created = os.date ("%Y-%m-%d %H:%M"),
+                        tags = {},
+                        meta = {},
+                        created_at = os.date ("%Y-%m-%dT%H:%M:%SZ"),
+                        updated_at = os.date ("%Y-%m-%dT%H:%M:%SZ"),
                       }))
                       f:close ()
                       vim.notify ("Memory saved: " .. k, vim.log.levels.INFO)
@@ -549,7 +556,10 @@ Cmd.setup = function ()
           f:write (vim.json.encode ({
             key = key,
             value = value,
-            created = os.date ("%Y-%m-%d %H:%M"),
+            tags = {},
+            meta = {},
+            created_at = os.date ("%Y-%m-%dT%H:%M:%SZ"),
+            updated_at = os.date ("%Y-%m-%dT%H:%M:%SZ"),
           }))
           f:close ()
           vim.notify ("Memory saved: " .. key, vim.log.levels.INFO)
@@ -1000,7 +1010,19 @@ Cmd.setup = function ()
     new = { subcmds = {}, ft = nil },
     link = { subcmds = { "backlinks" }, ft = nil },
     snippet = { subcmds = { "list", "show" }, ft = nil },
-    template = { subcmds = { "list", "show", "apply", "create", "delete", "init", "types", "validate" }, ft = nil },
+    template = {
+      subcmds = {
+        "list",
+        "show",
+        "apply",
+        "create",
+        "delete",
+        "init",
+        "types",
+        "validate",
+      },
+      ft = nil,
+    },
     workspace = {
       subcmds = { "add", "list", "switch", "remove", "init", "clear" },
       ft = nil,
