@@ -173,6 +173,22 @@ Cmd.setup = function ()
     end,
     callback = function (e)
       local root = e.body and e.body[1] or vim.fn.getcwd ()
+
+      -- Try Go CLI sync skills first (rich data: knowledge + vector + memory + data)
+      local bin = down_bin ()
+      if bin then
+        local result = vim.fn.system ({ bin, "sync", "skills" })
+        if vim.v.shell_error == 0 and result ~= "" then
+          vim.cmd ("new")
+          vim.api.nvim_buf_set_lines (0, 0, -1, false, vim.split (result, "\n"))
+          vim.bo.filetype = "markdown"
+          vim.bo.buflisted = false
+          vim.bo.bufhidden = "wipe"
+          return
+        end
+      end
+
+      -- Fallback to Lua skills (filesystem only)
       local skills = require ("down.skills")
       skills.config.output = nil
       local result = skills.generate (root)
@@ -1028,6 +1044,19 @@ Cmd.setup = function ()
       ft = nil,
     },
     upgrade = { subcmds = {}, ft = nil },
+    database = {
+      subcmds = {
+        "list",
+        "show",
+        "query",
+        "view",
+        "create",
+        "add-row",
+        "add",
+        "export",
+      },
+      ft = "markdown",
+    },
     generate = {
       subcmds = {
         "all",
@@ -1071,6 +1100,8 @@ Cmd.setup = function ()
         "tasks",
         "outline",
         "backlinks",
+        "databases",
+        "database",
         "knowledge",
       },
       ft = nil,
@@ -1170,6 +1201,43 @@ Cmd.setup = function ()
           else
             vim.notify ("[down] upgrade complete", vim.log.levels.INFO)
           end
+          return
+        end
+        if cmd_name == "database" then
+          local sub = args[1] or "list"
+          if sub == "view" or sub == "open" then
+            local db_mod = mod.get_mod ("data.database")
+            if db_mod then
+              if sub == "open" then
+                db_mod.open_database (args[2])
+                return
+              end
+              local view_type = args[2] or "table"
+              local group_by = args[3]
+              db_mod.show_view (view_type, group_by)
+              return
+            end
+          end
+          if sub == "create" then
+            local out, err =
+              down_run ({ "database", "create", unpack (args, 2) })
+            if err then
+              vim.notify (
+                "[down] database create failed: " .. err,
+                vim.log.levels.ERROR
+              )
+              return
+            end
+            local path = out
+              and (out:match ("open%s+(%S+)") or out:match ("Created:%s+(%S+)"))
+            if path and vim.fn.filereadable (path) == 1 then
+              vim.cmd ("edit " .. vim.fn.fnameescape (path))
+            elseif out and out ~= "" then
+              down_show ({ "database", unpack (args) }, spec.ft)
+            end
+            return
+          end
+          down_show ({ "database", unpack (args) }, spec.ft)
           return
         end
         if cmd_name == "generate" then
