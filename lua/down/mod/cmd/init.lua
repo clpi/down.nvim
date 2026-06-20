@@ -1178,12 +1178,15 @@ Cmd.setup = function ()
             diagram = "graph.md",
             mermaid = "graph.md",
           })[sub]
-          local path = out and (
-            out:match ("open%s+(%S+)")
-            or out:match ("Generated:%s+(%S+)")
-            or (expected and out:match ("(%S+" .. expected:gsub ("%.", "%%.") .. ")"))
-            or out:match ("(%S+index%.md)")
-          )
+          local path = out
+            and (
+              out:match ("open%s+(%S+)")
+              or out:match ("Generated:%s+(%S+)")
+              or (expected and out:match (
+                "(%S+" .. expected:gsub ("%.", "%%.") .. ")"
+              ))
+              or out:match ("(%S+index%.md)")
+            )
           if path and vim.fn.filereadable (path) == 1 then
             vim.cmd ("vsplit " .. vim.fn.fnameescape (path))
             vim.bo.filetype = "markdown"
@@ -1204,6 +1207,70 @@ Cmd.setup = function ()
         end
         if cmd_name == "lsp" then
           local sub = args[1]
+          local lsp_mod = mod.get_mod ("lsp")
+          if lsp_mod and lsp_mod.get_client and lsp_mod.get_client () then
+            if sub == "tags" then
+              lsp_mod.workspace_symbol_picker ({
+                kind = "tag",
+                query = args[2] or "",
+              })
+              return
+            end
+            if sub == "mentions" or sub == "@" then
+              lsp_mod.workspace_symbol_picker ({
+                kind = "mention",
+                query = args[2] or "",
+              })
+              return
+            end
+            if sub == "tasks" or sub == "task" or sub == "todos" then
+              lsp_mod.list_tasks ()
+              return
+            end
+            if sub == "outline" then
+              vim.lsp.buf.document_symbol ()
+              return
+            end
+            if sub == "backlinks" then
+              local file = args[2] or current_buf_file ()
+              local client = lsp_mod.get_client ()
+              if client then
+                client.request ("workspace/executeCommand", {
+                  command = "down.backlinks",
+                  arguments = file and { file } or {},
+                }, function (err, result)
+                  if err then
+                    vim.notify (
+                      "[down] backlinks failed: " .. vim.inspect (err),
+                      vim.log.levels.ERROR
+                    )
+                    return
+                  end
+                  local text = type (result) == "string" and result
+                    or vim.inspect (result or {})
+                  local buf = vim.api.nvim_create_buf (false, true)
+                  vim.api.nvim_buf_set_option (buf, "buftype", "nofile")
+                  vim.api.nvim_buf_set_option (buf, "bufhidden", "wipe")
+                  vim.api.nvim_buf_set_lines (
+                    buf,
+                    0,
+                    -1,
+                    false,
+                    vim.split (text, "\n")
+                  )
+                  vim.cmd ("vsplit")
+                  vim.api.nvim_win_set_buf (0, buf)
+                  vim.bo[buf].filetype = "markdown"
+                end, 0)
+                return
+              end
+            end
+            if sub == "knowledge" and args[2] and lsp_mod.knowledge_show then
+              if lsp_mod.knowledge_show (args[2], { unpack (args, 3) }) then
+                return
+              end
+            end
+          end
           if sub == "outline" or sub == "backlinks" then
             if not args[2] then
               local file = current_buf_file ()
@@ -1334,6 +1401,7 @@ local function _show_memory_entry (mem_dir, key)
 end
 
 local function _search_memory (mem_dir, query)
+  -- First try substring search
   local entries = vim.fn.glob (mem_dir .. "/*.json", true, true)
   local results = {}
   for _, path in ipairs (entries) do
@@ -1347,6 +1415,34 @@ local function _search_memory (mem_dir, query)
           results[#results + 1] = data
         end
       end
+    end
+  end
+
+  -- Fallback: try semantic search via embedding module
+  if #results == 0 then
+    local ok, sem = pcall (require, "down.mod.data.semantic")
+    if ok and next (sem.embeddings or {}) then
+      local scored = {}
+      for _, path in ipairs (entries) do
+        local f = io.open (path, "r")
+        if f then
+          local raw = f:read ("*a")
+          f:close ()
+          local ok2, data = pcall (vim.json.decode, raw)
+          if ok2 and data.value then
+            local score =
+              sem.cosine (sem.embed (query) or {}, sem.embed (data.value) or {})
+            if score > 0.2 then
+              data._score = score
+              scored[#scored + 1] = data
+            end
+          end
+        end
+      end
+      table.sort (scored, function (a, b)
+        return a._score > b._score
+      end)
+      results = scored
     end
   end
   if #results == 0 then
