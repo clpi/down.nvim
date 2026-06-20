@@ -424,6 +424,12 @@ Task.parse_task_line = function(line, lnum)
 end
 
 Task.list_tasks = function(filters)
+  local lsp = mod.get_mod("lsp")
+  if lsp and lsp.get_client and lsp.get_client() and lsp.list_tasks then
+    lsp.list_tasks({ filters = filters })
+    return
+  end
+
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   local tasks = {}
 

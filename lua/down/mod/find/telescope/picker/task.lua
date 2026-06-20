@@ -69,6 +69,14 @@ end
 ---@param opts table
 return function(opts)
   opts = opts or {}
+  local ok, down_mod = pcall(require, "down.mod")
+  if ok then
+    local lsp = down_mod.get_mod("lsp")
+    if lsp and lsp.get_client and lsp.get_client() and lsp.list_tasks then
+      lsp.list_tasks({ prompt = opts.prompt or "Tasks" })
+      return
+    end
+  end
   opts.scope = opts.scope or "workspace" -- buffer or workspace
 
   local tasks = {}

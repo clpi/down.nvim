@@ -64,9 +64,39 @@ end
 --- Sources
 Completion.sources = {}
 
+---@return boolean
+Completion.lsp_available = function()
+  local ok, down_mod = pcall(require, "down.mod")
+  if not ok then
+    return false
+  end
+  local lsp = down_mod.get_mod("lsp")
+  return lsp ~= nil and lsp.get_client() ~= nil
+end
+
+--- Prefer LSP completion when the down client is attached
+---@param trigger string
+Completion.lsp_complete = function(trigger)
+  if not Completion.lsp_available() then
+    return false
+  end
+  if trigger == "/" then
+    return false
+  end
+  if vim.lsp.buf.completion then
+    vim.lsp.buf.completion()
+    return true
+  end
+  return false
+end
+
 --- Trigger completion for a given character
 ---@param trigger string The trigger character (/, @, #)
 Completion.trigger = function(trigger)
+  if Completion.lsp_complete(trigger) then
+    return
+  end
+
   local line = vim.api.nvim_get_current_line()
   local col = vim.api.nvim_win_get_cursor(0)[2]
 
@@ -132,6 +162,13 @@ end
 ---@param base string
 ---@return number|table
 Completion.omnifunc = function(findstart, base)
+  if Completion.lsp_available() and base ~= "" then
+    local trigger = base:sub(1, 1)
+    if trigger == "#" or trigger == "@" or base:match("^%[%[") then
+      return vim.lsp.omnifunc(findstart, base)
+    end
+  end
+
   if findstart == 1 then
     local line = vim.api.nvim_get_current_line()
     local col = vim.api.nvim_win_get_cursor(0)[2]

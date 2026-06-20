@@ -70,10 +70,19 @@ Lsp.setup_semantic_highlights = function()
     ["@lsp.type.keyword.down"] = "@markup.strong",
     ["@lsp.type.modifier.down"] = "@markup.italic",
     ["@lsp.type.type.down"] = "@type",
+    ["@lsp.type.regexp.down"] = "@markup.strikethrough",
     ["@lsp.type.decorator.down"] = "@markup.underline",
     ["@lsp.type.label.down"] = "@label",
     ["@lsp.type.operator.down"] = "@markup.math",
+    ["@lsp.type.struct.down"] = "@punctuation.delimiter",
+    ["@lsp.type.typeParameter.down"] = "@markup.quote",
     ["@lsp.type.interface.down"] = "@markup.link",
+    ["@lsp.type.enumMember.down"] = "@constant",
+    ["@lsp.type.enum.down"] = "@punctuation",
+    ["@lsp.type.mod.deprecated.down"] = "@comment",
+    ["@lsp.type.mod.abstract.down"] = "@markup.link",
+    ["@lsp.type.mod.link.down"] = "@markup.link",
+    ["@lsp.type.mod.declaration.down"] = "@markup.heading",
   }
   for group, link in pairs(links) do
     vim.api.nvim_set_hl(0, group, { link = link, default = true })
@@ -371,11 +380,45 @@ Lsp.capabilities = function()
     dynamicRegistration = true,
   }
 
-  -- Document link support (for wiki links, file links)
+  -- Document link support (wiki links, tags, mentions, embeds)
   caps.textDocument.documentLink = {
     dynamicRegistration = true,
     tooltipSupport = true,
+    resolveSupport = { properties = { "tooltip", "target", "range" } },
   }
+
+  -- Linked editing for wiki links, tags, mentions
+  caps.textDocument.linkedEditingRange = {
+    dynamicRegistration = true,
+  }
+
+  -- Code lenses for tasks, workspaces, knowledge graph
+  caps.textDocument.codeLens = {
+    dynamicRegistration = true,
+  }
+
+  -- Hierarchical document symbols (headings, tasks)
+  caps.textDocument.documentSymbol = {
+    dynamicRegistration = true,
+    hierarchicalDocumentSymbolSupport = true,
+    symbolKind = {
+      valueSet = vim.tbl_values(vim.lsp.protocol.SymbolKind),
+    },
+  }
+
+  -- Workspace folders and file operations
+  caps.workspace = caps.workspace or {}
+  caps.workspace.workspaceFolders = true
+  caps.workspace.fileOperations = {
+    dynamicRegistration = true,
+    didCreate = true,
+    didRename = true,
+    didDelete = true,
+    willCreate = true,
+    willRename = true,
+    willDelete = true,
+  }
+  caps.workspace.semanticTokens = { refreshSupport = true }
 
   return caps
 end
@@ -429,6 +472,231 @@ end
 Lsp.get_client = function()
   local clients = vim.lsp.get_clients({ name = "down" })
   return clients and clients[1] or nil
+end
+
+
+--- Check if down LSP is attached to a buffer
+---@param bufnr? integer
+---@return boolean
+Lsp.attached = function(bufnr)
+  bufnr = bufnr or 0
+  local clients = vim.lsp.get_clients({ bufnr = bufnr, name = "down" })
+  return clients ~= nil and #clients > 0
+end
+
+--- Push client settings to the LSP server
+Lsp.did_change_configuration = function()
+  local client = Lsp.get_client()
+  if not client then
+    return
+  end
+  client.notify("workspace/didChangeConfiguration", { settings = Lsp.config.settings })
+end
+
+--- Request workspace symbols from the knowledge graph
+---@param query string
+---@param cb fun(symbols: lsp.SymbolInformation[]|nil, err?: any)
+Lsp.workspace_symbols = function(query, cb)
+  local client = Lsp.get_client()
+  if not client then
+    cb(nil, "LSP not running")
+    return
+  end
+  local bufnr = vim.api.nvim_get_current_buf()
+  client.request("workspace/symbol", { query = query or "" }, function(err, result)
+    cb(result, err)
+  end, bufnr)
+end
+
+--- Symbol kinds used by the down LSP server
+Lsp.symbol_kinds = {
+  tag = vim.lsp.protocol.SymbolKind.Key,
+  mention = vim.lsp.protocol.SymbolKind.Variable,
+  task = vim.lsp.protocol.SymbolKind.Event,
+  document = vim.lsp.protocol.SymbolKind.File,
+}
+
+--- Open a picker for workspace symbols (tags, mentions, tasks, or all)
+---@param opts? { query?: string, kind?: "tag"|"mention"|"task"|"document", prompt?: string }
+Lsp.workspace_symbol_picker = function(opts)
+  opts = opts or {}
+  local kind_filter = opts.kind and Lsp.symbol_kinds[opts.kind] or nil
+  local prompt = opts.prompt
+    or ({
+      tag = "Tags",
+      mention = "Mentions",
+      task = "Tasks",
+      document = "Documents",
+    })[opts.kind]
+    or "Workspace symbols"
+
+  Lsp.workspace_symbols(opts.query or "", function(symbols, err)
+    if err then
+      vim.notify("[down.nvim] workspace/symbol failed: " .. vim.inspect(err), vim.log.levels.ERROR)
+      return
+    end
+    symbols = symbols or {}
+    if kind_filter then
+      symbols = vim.tbl_filter(function(sym)
+        return sym.kind == kind_filter
+      end, symbols)
+    end
+    if #symbols == 0 then
+      vim.notify("[down.nvim] No " .. string.lower(prompt) .. " found", vim.log.levels.INFO)
+      return
+    end
+
+    vim.ui.select(symbols, {
+      prompt = prompt,
+      format_item = function(sym)
+        local uri = sym.location and sym.location.uri or ""
+        local file = uri:gsub("^file://", "")
+        local rel = vim.fn.fnamemodify(file, ":t")
+        return string.format("%s  %s", sym.name, rel)
+      end,
+    }, function(choice)
+      if not choice or not choice.location then
+        return
+      end
+      local loc = choice.location
+      local uri = loc.uri:gsub("^file://", "")
+      vim.cmd("edit " .. vim.fn.fnameescape(uri))
+      local line = (loc.range.start.line or 0) + 1
+      local col = (loc.range.start.character or 0)
+      vim.api.nvim_win_set_cursor(0, { line, col })
+      vim.cmd("normal! zz")
+    end)
+  end)
+end
+
+--- List workspace tasks via LSP and jump to selection
+---@param opts? { filters?: table, prompt?: string }
+Lsp.list_tasks = function(opts)
+  opts = opts or {}
+  local client = Lsp.get_client()
+  if not client then
+    local task_mod = mod.get_mod("task")
+    if task_mod and task_mod.list_tasks then
+      task_mod.list_tasks(opts.filters)
+    else
+      vim.notify("[down.nvim] LSP not running", vim.log.levels.WARN)
+    end
+    return
+  end
+
+  local bufnr = vim.api.nvim_get_current_buf()
+  client.request("workspace/executeCommand", {
+    command = "down.task.list",
+    arguments = {},
+  }, function(err, result)
+    if err then
+      vim.notify("[down.nvim] task list failed: " .. vim.inspect(err), vim.log.levels.ERROR)
+      return
+    end
+
+    local tasks = (result and result.tasks) or {}
+    local filters = opts.filters
+    if filters then
+      if filters.status == "todo" then
+        tasks = vim.tbl_filter(function(t)
+          return not t.completed
+        end, tasks)
+      elseif filters.status == "done" then
+        tasks = vim.tbl_filter(function(t)
+          return t.completed
+        end, tasks)
+      end
+      if filters.overdue then
+        local today = os.date("%Y-%m-%d")
+        tasks = vim.tbl_filter(function(t)
+          local due = (t.text or ""):match("<([%d%-]+)>")
+          return due and due < today and not t.completed
+        end, tasks)
+      end
+    end
+
+    if #tasks == 0 then
+      vim.notify("[down.nvim] No tasks found in workspace", vim.log.levels.INFO)
+      return
+    end
+
+    table.sort(tasks, function(a, b)
+      if a.completed ~= b.completed then
+        return not a.completed
+      end
+      return (a.line or 0) < (b.line or 0)
+    end)
+
+    vim.ui.select(tasks, {
+      prompt = opts.prompt or "Workspace tasks",
+      format_item = function(task)
+        local mark = task.completed and "✓" or "○"
+        local uri = (task.uri or ""):gsub("^file://", "")
+        local file = vim.fn.fnamemodify(uri, ":t")
+        return string.format("%s %s:%d %s  (%s)", mark, file, (task.line or 0) + 1, task.title or task.text or "", file)
+      end,
+    }, function(choice)
+      if not choice or not choice.uri then
+        return
+      end
+      local uri = choice.uri:gsub("^file://", "")
+      vim.cmd("edit " .. vim.fn.fnameescape(uri))
+      vim.api.nvim_win_set_cursor(0, { (choice.line or 0) + 1, 0 })
+      vim.cmd("normal! zz")
+    end)
+  end, bufnr)
+end
+
+--- Follow document link under cursor via LSP
+Lsp.open_document_link = function()
+  if vim.lsp.buf.document_link then
+    vim.lsp.buf.document_link()
+    return
+  end
+  vim.notify("[down.nvim] Document links not available", vim.log.levels.WARN)
+end
+
+--- Run a knowledge-graph LSP command and show results in a scratch buffer
+---@param sub string
+---@param args? string[]
+---@return boolean handled
+Lsp.knowledge_show = function(sub, args)
+  local client = Lsp.get_client()
+  if not client then
+    return false
+  end
+  local command = "down.knowledge." .. sub
+  local bufnr = vim.api.nvim_get_current_buf()
+  client.request("workspace/executeCommand", {
+    command = command,
+    arguments = args or {},
+  }, function(err, result)
+    if err then
+      vim.notify("[down.nvim] " .. command .. " failed: " .. vim.inspect(err), vim.log.levels.ERROR)
+      return
+    end
+    local text
+    if type(result) == "string" then
+      text = result
+    elseif type(result) == "table" then
+      text = vim.inspect(result)
+    else
+      text = tostring(result or "")
+    end
+    if text == "" then
+      vim.notify("[down.nvim] " .. command .. " returned no data", vim.log.levels.INFO)
+      return
+    end
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+    vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(text, "
+"))
+    vim.cmd("vsplit")
+    vim.api.nvim_win_set_buf(0, buf)
+    vim.bo[buf].filetype = "markdown"
+  end, bufnr)
+  return true
 end
 
 --- Attach LSP to current buffer
@@ -502,6 +770,22 @@ Lsp.handlers = function()
         end
       end
     end,
+    ["workspace/semanticTokens/refresh"] = function(_, _, ctx)
+      local client = vim.lsp.get_client_by_id(ctx.client_id)
+      if not client or not vim.lsp.semantic_tokens then
+        return
+      end
+      for bufnr, _ in pairs(client.attached_buffers or {}) do
+        if vim.api.nvim_buf_is_valid(bufnr) then
+          vim.lsp.semantic_tokens.enable(true, bufnr)
+          vim.schedule(function()
+            if vim.api.nvim_buf_is_valid(bufnr) then
+              vim.lsp.buf.semantic_tokens_full({ bufnr = bufnr })
+            end
+          end)
+        end
+      end
+    end,
   }
 end
 
@@ -546,10 +830,53 @@ Lsp.on_attach = function(client, bufnr)
     if ok and inline.clear then inline.clear(bufnr) end
   end, vim.tbl_extend("force", opts, { desc = "Dismiss inline suggestion" }))
 
-  -- Refresh semantic tokens after attach
-  if client.server_capabilities.semanticTokensProvider then
+  -- Enable semantic highlighting
+  if client.server_capabilities.semanticTokensProvider and vim.lsp.semantic_tokens then
+    vim.lsp.semantic_tokens.enable(true, bufnr)
     vim.lsp.buf.semantic_tokens_full()
   end
+
+  -- Code lenses (tasks, workspaces, tags)
+  if client.server_capabilities.codeLensProvider then
+    if vim.lsp.codelens and vim.lsp.codelens.on_attach then
+      vim.lsp.codelens.on_attach(client, bufnr)
+    end
+    vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave", "TextChanged" }, {
+      buffer = bufnr,
+      callback = function()
+        if vim.lsp.codelens then
+          vim.lsp.codelens.refresh()
+        end
+      end,
+      desc = "Refresh down code lenses",
+    })
+  end
+
+  -- Sync configuration with server
+  Lsp.did_change_configuration()
+
+  -- Follow document links (gx)
+  vim.keymap.set("n", "gx", Lsp.open_document_link, vim.tbl_extend("force", opts, { desc = "Follow document link" }))
+
+  -- Task list via LSP
+  vim.keymap.set("n", "<leader>dt", function()
+    Lsp.list_tasks()
+  end, vim.tbl_extend("force", opts, { desc = "List workspace tasks" }))
+
+  -- Refresh semantic tokens on buffer changes
+  vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
+    buffer = bufnr,
+    callback = function()
+      if client.server_capabilities.semanticTokensProvider then
+        vim.defer_fn(function()
+          if vim.api.nvim_buf_is_valid(bufnr) then
+            vim.lsp.buf.semantic_tokens_full()
+          end
+        end, 300)
+      end
+    end,
+    desc = "Refresh down semantic tokens",
+  })
 
   log.trace("down attached to buffer " .. bufnr)
 end
@@ -645,6 +972,13 @@ Lsp.commands = {
         args = 0,
         callback = function()
           Lsp.update()
+        end,
+      },
+      tasks = {
+        name = "lsp.tasks",
+        args = 0,
+        callback = function()
+          Lsp.list_tasks()
         end,
       },
       status = {

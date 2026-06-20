@@ -59,7 +59,38 @@ local function tag_picker(opts)
   if opts.scope == "buffer" then
     tags = parse_tags(0)
   elseif opts.scope == "workspace" then
-    tags = parse_workspace_tags()
+    local ok, down_mod = pcall(require, "down.mod")
+    local used_lsp = false
+    if ok then
+      local lsp = down_mod.get_mod("lsp")
+      if lsp and lsp.get_client and lsp.get_client() then
+        local done, symbols = false, nil
+        lsp.workspace_symbols("", function(result)
+          symbols = vim.tbl_filter(function(sym)
+            return sym.kind == lsp.symbol_kinds.tag
+          end, result or {})
+          done = true
+        end)
+        vim.wait(3000, function() return done end)
+        if symbols and #symbols > 0 then
+          used_lsp = true
+          tags = {}
+          for _, sym in ipairs(symbols) do
+            local uri = (sym.location.uri or ""):gsub("^file://", "")
+            table.insert(tags, {
+              tag = "#" .. sym.name,
+              line = (sym.location.range.start.line or 0) + 1,
+              col = (sym.location.range.start.character or 0) + 1,
+              text = sym.name,
+              file = uri,
+            })
+          end
+        end
+      end
+    end
+    if not used_lsp then
+      tags = parse_workspace_tags()
+    end
   end
 
   if #tags == 0 then

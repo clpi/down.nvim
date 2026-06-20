@@ -8,6 +8,60 @@ local Knowledge = {}
 Knowledge.get_items = function(parent, query)
   local items = {}
   query = (query or ""):lower()
+
+  local ok_mod, down_mod = pcall(require, "down.mod")
+  if ok_mod then
+    local lsp = down_mod.get_mod("lsp")
+    if lsp and lsp.get_client and lsp.get_client() and lsp.workspace_symbols then
+      local done, symbols = false, {}
+      lsp.workspace_symbols(query, function(result)
+        for _, sym in ipairs(result or {}) do
+          local kind = "concept"
+          local icon = "󰧑"
+          if sym.kind == lsp.symbol_kinds.tag then
+            kind = "tag"
+            icon = "󰌷"
+          elseif sym.kind == lsp.symbol_kinds.mention then
+            kind = "person"
+            icon = "󰀄"
+          elseif sym.kind == lsp.symbol_kinds.document then
+            kind = "document"
+            icon = "󰈙"
+          elseif sym.kind == lsp.symbol_kinds.task then
+            kind = "action"
+            icon = "󰄴"
+          end
+          local name = sym.name
+          local insert = name
+          if kind == "tag" then insert = "#" .. name
+          elseif kind == "person" then insert = "@" .. name
+          elseif kind == "document" or kind == "concept" then insert = "[[" .. name .. "]]"
+          end
+          items[#items + 1] = {
+            label = icon .. " " .. name,
+            detail = kind,
+            insert_text = insert,
+            filter_text = name:lower(),
+            sort_text = ("0" .. name):lower(),
+            documentation = "Knowledge: " .. kind,
+            kind = "reference",
+          }
+        end
+        done = true
+      end)
+      vim.wait(1500, function() return done end)
+      if #items > 0 then
+        table.sort(items, function(a, b) return (a.sort_text or "") < (b.sort_text or "") end)
+        local max_items = (parent.config and parent.config.max_items) or 20
+        if #items > max_items then
+          local limited = {}
+          for i = 1, max_items do limited[i] = items[i] end
+          return limited
+        end
+        return items
+      end
+    end
+  end
   local max_items = (parent.config and parent.config.max_items) or 20
 
   local ok, kg = pcall(require, "down.mod.data.knowledge")
