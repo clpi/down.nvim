@@ -29,6 +29,7 @@ Down.default_mods = {
   "workspace",
   "data",
   "note",
+  "template",
   "find",
   "lsp",
   "lsp.completion",
