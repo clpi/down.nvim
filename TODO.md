@@ -122,6 +122,13 @@ end
 - [x] LSP: knowledge graph entity tokens in semantic highlighting
 - [x] LSP: monikers, rename, linked edits, document links, document highlights
 
+- [x] `code` subcommand — run runnable fenced code blocks in a markdown file (Lua + Go)
+- [x] Plugin: `:Down code run|cursor|list|lens` + inline codelens to run code blocks
+- [x] org-babel: `:tangle`/`:mkdirp`/`:var`/`:noweb`/`:name` header args + `down code tangle` (Lua + Go)
+- [x] org-babel: `--results` / `:Down code results` insert `:down_result` blocks after execution
+- [x] org-babel: `:Down code edit` opens a block in an indirect native-ft buffer; `:w` writes back
+- [x] org-footnote: `:Down footnote` jump/add/list (`down.mod.footnote`)
+
 ## Future
 - [ ] Collaborative sync via git auto-commit on change
 - [ ] Mobile companion app (read-only notes browser)

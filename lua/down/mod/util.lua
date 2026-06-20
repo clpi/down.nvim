@@ -58,6 +58,8 @@ U.ids = {
   "ai",
   "ai.chat",
   "ai.gen",
+  "code",
+  "footnote",
 }
 
 ---@return boolean

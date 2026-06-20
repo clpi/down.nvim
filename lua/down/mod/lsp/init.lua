@@ -53,7 +53,35 @@ Lsp.config = {
 }
 
 ---@return down.mod.Setup
+
+--- Set up semantic token highlight links for down LSP
+Lsp.setup_semantic_highlights = function()
+  local links = {
+    ["@lsp.type.namespace.down"] = "@markup.heading",
+    ["@lsp.type.macro.down"] = "@tag",
+    ["@lsp.type.variable.down"] = "@variable",
+    ["@lsp.type.class.down"] = "@markup.link.label",
+    ["@lsp.type.function.down"] = "@markup.link.url",
+    ["@lsp.type.event.down"] = "@tag",
+    ["@lsp.type.string.down"] = "@markup.raw",
+    ["@lsp.type.number.down"] = "@number",
+    ["@lsp.type.property.down"] = "@property",
+    ["@lsp.type.comment.down"] = "@comment",
+    ["@lsp.type.keyword.down"] = "@markup.strong",
+    ["@lsp.type.modifier.down"] = "@markup.italic",
+    ["@lsp.type.type.down"] = "@type",
+    ["@lsp.type.decorator.down"] = "@markup.underline",
+    ["@lsp.type.label.down"] = "@label",
+    ["@lsp.type.operator.down"] = "@markup.math",
+    ["@lsp.type.interface.down"] = "@markup.link",
+  }
+  for group, link in pairs(links) do
+    vim.api.nvim_set_hl(0, group, { link = link, default = true })
+  end
+end
+
 Lsp.setup = function()
+  Lsp.setup_semantic_highlights()
   vim.api.nvim_create_autocmd("FileType", {
     pattern = Lsp.config.filetypes,
     callback = function(ev)
@@ -318,6 +346,31 @@ Lsp.capabilities = function()
     },
   }
 
+  -- Semantic token support (knowledge-aware highlighting)
+  caps.textDocument.semanticTokens = {
+    dynamicRegistration = true,
+    formats = { "relative" },
+    requests = {
+      range = true,
+      full = { delta = true },
+    },
+    tokenTypes = {
+      "namespace", "macro", "variable", "class", "function", "event",
+      "string", "number", "property", "comment", "keyword", "modifier",
+      "type", "regexp", "decorator", "label", "operator", "struct",
+      "typeParameter", "interface", "enumMember", "enum",
+    },
+    tokenModifiers = {
+      "declaration", "definition", "readonly", "deprecated", "documentation",
+      "abstract", "static", "async", "modification", "defaultLibrary",
+    },
+  }
+
+  -- Inlay hints for knowledge graph annotations
+  caps.textDocument.inlayHint = {
+    dynamicRegistration = true,
+  }
+
   -- Document link support (for wiki links, file links)
   caps.textDocument.documentLink = {
     dynamicRegistration = true,
@@ -481,6 +534,23 @@ Lsp.on_attach = function(client, bufnr)
   vim.keymap.set("n", "<leader>do", vim.lsp.buf.document_symbol, vim.tbl_extend("force", opts, { desc = "Document outline" }))
 
   -- Notify about LSP connection
+
+  -- Inline suggestion keymaps (ghost text)
+  vim.keymap.set("i", "<C-]>", function()
+    local ok, inline = pcall(require, "down.mod.edit.inline")
+    if ok and inline.accept then inline.accept() end
+  end, vim.tbl_extend("force", opts, { desc = "Accept inline suggestion" }))
+
+  vim.keymap.set("i", "<C-g>", function()
+    local ok, inline = pcall(require, "down.mod.edit.inline")
+    if ok and inline.clear then inline.clear(bufnr) end
+  end, vim.tbl_extend("force", opts, { desc = "Dismiss inline suggestion" }))
+
+  -- Refresh semantic tokens after attach
+  if client.server_capabilities.semanticTokensProvider then
+    vim.lsp.buf.semantic_tokens_full()
+  end
+
   log.trace("down attached to buffer " .. bufnr)
 end
 

@@ -42,6 +42,9 @@ Down.default_mods = {
   "ai.chat",
   "ai.gen",
   "automate",
+  "edit.inline",
+  "code",
+  "footnote",
 }
 
 --- Load the user configuration, and load into config
@@ -107,7 +110,10 @@ function Down:load_integrations ()
   if has_cmp and not self.mod.is_loaded ("integration.cmp") then
     local cmp_config = self.config.user["integration.cmp"]
     if cmp_config ~= false then
-      self.mod.load_mod ("integration.cmp", type (cmp_config) == "table" and cmp_config or {})
+      self.mod.load_mod (
+        "integration.cmp",
+        type (cmp_config) == "table" and cmp_config or {}
+      )
     end
   end
 
@@ -116,10 +122,12 @@ function Down:load_integrations ()
   if has_blink and not self.mod.is_loaded ("integration.blink") then
     local blink_config = self.config.user["integration.blink"]
     if blink_config ~= false then
-      self.mod.load_mod ("integration.blink", type (blink_config) == "table" and blink_config or {})
+      self.mod.load_mod (
+        "integration.blink",
+        type (blink_config) == "table" and blink_config or {}
+      )
     end
   end
-
 end
 
 --- After the plugin has started
@@ -162,17 +170,30 @@ end
 function Down:ensure_cli ()
   local bin_dir = vim.fn.stdpath ("data") .. "/down/bin"
   local bin_path = bin_dir .. "/down"
-  if vim.fn.executable (bin_path) == 1 then return end
-  if vim.fn.executable ("down") == 1 then return end
+  if vim.fn.executable (bin_path) == 1 then
+    return
+  end
+  if vim.fn.executable ("down") == 1 then
+    return
+  end
   vim.fn.mkdir (bin_dir, "p")
 
   local ext_down = nil
   local runtime = vim.api.nvim_get_runtime_file ("lua/down.lua", false)
   if runtime and runtime[1] then
-    ext_down = vim.fs.joinpath (vim.fn.fnamemodify (runtime[1], ":p:h:h"), "ext", "down")
+    ext_down =
+      vim.fs.joinpath (vim.fn.fnamemodify (runtime[1], ":p:h:h"), "ext", "down")
   end
-  if ext_down and vim.fn.isdirectory (ext_down) == 1 and vim.fn.executable ("go") == 1 then
-    pcall (vim.fn.jobstart, { "go", "build", "-o", bin_path, "." }, { cwd = ext_down })
+  if
+    ext_down
+    and vim.fn.isdirectory (ext_down) == 1
+    and vim.fn.executable ("go") == 1
+  then
+    pcall (
+      vim.fn.jobstart,
+      { "go", "build", "-o", bin_path, "." },
+      { cwd = ext_down }
+    )
   end
 end
 

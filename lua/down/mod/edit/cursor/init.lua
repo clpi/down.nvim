@@ -1,23 +1,23 @@
-local mod = require("down.mod")
-local tbl = require("down.util.table")
-local util = require("down.util")
-local log = require("down.log")
+local log = require ("down.log")
+local mod = require ("down.mod")
+local tbl = require ("down.util.table")
+local util = require ("down.util")
 local ts = vim.treesitter
-local tuok, tu = pcall(require, "nvim-treesitter.ts_utils")
+local tuok, tu = pcall (require, "nvim-treesitter.ts_utils")
 
 ---@class down.mod.edit.Cursor: down.Mod
-local Cursor = mod.new("edit.cursor")
+local Cursor = mod.new ("edit.cursor")
 Cursor.dep = { "integration.treesitter", "workspace" }
 
 ---@return down.mod.Setup
-function Cursor.setup()
+function Cursor.setup ()
   return {
     loaded = tuok,
   }
 end
 
-Cursor.update = function(event)
-  local cursor_record = tbl.orempty(M.cursor_record, event.buffer)
+Cursor.update = function (event)
+  local cursor_record = tbl.orempty (M.cursor_record, event.buffer)
   cursor_record.row_0b = event.cursor_position[1] - 1
   cursor_record.col_0b = event.cursor_position[2]
   cursor_record.line_content = event.line_content
@@ -40,78 +40,82 @@ Cursor.config = {}
 ---@class edit.cursor.Node
 Cursor.node = {}
 
-Cursor.line = require("down.mod.edit.cursor.line")
+Cursor.line = require ("down.mod.edit.cursor.line")
 
-Cursor.cword = function()
-  return vim.fn.expand("<cword>")
+Cursor.cword = function ()
+  return vim.fn.expand ("<cword>")
 end
 
-Cursor.cWORD = function()
-  return vim.fn.expand("<cWORD>")
+Cursor.cWORD = function ()
+  return vim.fn.expand ("<cWORD>")
 end
 
-function Cursor.node:captures()
-  return ts.get_captures_at_cursor(0)
+function Cursor.node:captures ()
+  return ts.get_captures_at_cursor (0)
 end
 
 ---@return table
-function Cursor.node:lspRange()
+function Cursor.node:lspRange ()
   ---@diagnostic disable-next-line
-  return tu.node_to_lsp_range(self.get())
+  return tu.node_to_lsp_range (self.get ())
 end
 
 ---@param switch boolean: switch parent
 ---@param nextParent boolean: nextParent parent
 ---@return TSNode|nil
-function Cursor.node:next(switch, nextParent)
+function Cursor.node:next (switch, nextParent)
   ---@diagnostic disable-next-line
-  return tu.get_next_node(self.get(), switch or true, nextParent or true)
+  return tu.get_next_node (self.get (), switch or true, nextParent or true)
 end
 
 ---@param switch boolean: switch parent
 ---@param prevParent boolean: nextParent parent
 ---@return TSNode|nil
-function Cursor.node:prev(switch, prevParent)
+function Cursor.node:prev (switch, prevParent)
   ---@diagnostic disable-next-line
-  return tu.get_previous_node(self.get(), switch or true, prevParent or true)
+  return tu.get_previous_node (self.get (), switch or true, prevParent or true)
 end
 
 ---@return string[]
-function Cursor.node:text()
+function Cursor.node:text ()
   ---@diagnostic disable-next-line
-  return tu.get_node_text(self.get(), 0)
+  return tu.get_node_text (self.get (), 0)
 end
 
 ---@return TSNode|nil
-function Cursor.node.get()
-  local n = tu.get_node_at_cursor(0, nil)
+function Cursor.node.get ()
+  local n = tu.get_node_at_cursor (0, nil)
   ---@diagnostic disable-next-line
-  setmetatable(n, { __index = n, __call = Cursor.node.get() })
+  setmetatable (n, { __index = n, __call = Cursor.node.get () })
   return n
 end
 
 ---@return TSNode
-function Cursor.node:root()
+function Cursor.node:root ()
   ---@diagnostic disable-next-line
-  return tu.get_root_for_node(self.get())
+  return tu.get_root_for_node (self.get ())
 end
 
 ---@return ...
-function Cursor.node:range()
+function Cursor.node:range ()
   ---@diagnostic disable-next-line
-  return tu.get_vim_range(self.get(), 0)
+  return tu.get_vim_range (self.get (), 0)
 end
 
 ---@param ns? string: namespace
 ---@param hgroup? string: hilite group
 ---@return nil
-function Cursor.node:hl(ns, hgroup)
+function Cursor.node:hl (ns, hgroup)
   ---@diagnostic disable-next-line
-  return tu.highlight_node(self.get(), 0, ns, hgroup)
+  return tu.highlight_node (self.get (), 0, ns, hgroup)
 end
 
 ---@return boolean
-function Cursor.in_codeblock()
+function Cursor.in_codeblock ()
+  local ok, codeblock = pcall (require, "down.mod.integration.codeblock")
+  if ok then
+    return codeblock.in_codeblock ()
+  end
   return false
 end
 

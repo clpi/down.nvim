@@ -15,6 +15,8 @@ Completion.config = {
   mention = true,
   --- Enable # tag completion
   tag = true,
+  --- Enable knowledge graph + semantic suggestions
+  knowledge = true,
   --- Max items to show in completion menu
   max_items = 20,
   --- Enable fuzzy matching
@@ -26,6 +28,8 @@ Completion.setup = function()
   Completion.sources.slash = require("down.mod.lsp.completion.slash")
   Completion.sources.mention = require("down.mod.lsp.completion.mention")
   Completion.sources.tag = require("down.mod.lsp.completion.tag")
+  Completion.sources.wiki = require("down.mod.lsp.completion.wiki")
+  Completion.sources.knowledge = require("down.mod.lsp.completion.knowledge")
 
   -- Set up omnifunc for markdown buffers as fallback
   vim.api.nvim_create_autocmd("FileType", {
@@ -44,7 +48,7 @@ Completion.setup = function()
         return
       end
       local char = vim.v.char
-      if char == "/" or char == "@" or char == "#" then
+      if char == "/" or char == "@" or char == "#" or char == "[" then
         vim.schedule(function()
           Completion.trigger(char)
         end)
@@ -80,6 +84,11 @@ Completion.trigger = function(trigger)
     if not before:match("^#+%s") then
       Completion.show_menu("tag")
     end
+  elseif trigger == "[" then
+    local before = line:sub(1, col)
+    if before:match("%[%[$") or before:match("%[%[%S*$") then
+      Completion.show_menu("wiki")
+    end
   end
 end
 
@@ -91,7 +100,13 @@ Completion.show_menu = function(source_name)
     return
   end
 
-  local items = source.get_items(Completion)
+  local items = source.get_items(Completion) or {}
+  if Completion.config.knowledge and source_name ~= "knowledge" then
+    local kg_items = Completion.sources.knowledge.get_items(Completion, "")
+    for _, item in ipairs(kg_items) do
+      items[#items + 1] = item
+    end
+  end
   if not items or #items == 0 then
     return
   end
@@ -125,7 +140,7 @@ Completion.omnifunc = function(findstart, base)
     local start = col
     while start > 0 do
       local char = line:sub(start, start)
-      if char == "/" or char == "@" or char == "#" then
+      if char == "/" or char == "@" or char == "#" or char == "[" then
         return start - 1
       elseif char:match("%s") then
         break
@@ -146,6 +161,12 @@ Completion.omnifunc = function(findstart, base)
     source_name = "mention"
   elseif trigger == "#" then
     source_name = "tag"
+  elseif base:match("^%[%[") then
+    source_name = "wiki"
+    query = base:sub(3)
+  elseif Completion.config.knowledge and #base >= 2 then
+    source_name = "knowledge"
+    query = base
   else
     return {}
   end

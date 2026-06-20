@@ -15,7 +15,6 @@ Cmd.setup = function ()
     complete = Cmd.generate_completions,
   })
 
-
   -- LuaJIT has `unpack` (global); Lua 5.2+ has `table.unpack`.
   local unpack = table.unpack or unpack
   -- Helper: resolve the down CLI binary path
@@ -639,29 +638,74 @@ Cmd.setup = function ()
     end,
   }
 
-
   -- Register context command
   Cmd.commands.context = {
     enabled = true,
     args = 0,
     min_args = 0,
-    max_args = 1,
+    max_args = math.huge,
     name = "context",
+    complete = function ()
+      return {
+        "-o",
+        "--output",
+        "--no-compact",
+        "--no-memory",
+        "--no-vectors",
+        "-q",
+        "--vector-query",
+        "-l",
+        "--vector-limit",
+        "-p",
+        "--prompt",
+      }
+    end,
     callback = function (e)
-      local root = e.body and e.body[1] or vim.fn.getcwd ()
+      local args = e.body or {}
+      local root = vim.fn.getcwd ()
+      local cli = { "context" }
+      local i = 1
+      while i <= #args do
+        local a = args[i]
+        if a:match ("^%-") then
+          table.insert (cli, a)
+          if
+            a:match ("^%-%-")
+            and not vim.tbl_contains ({
+              "--no-compact",
+              "--no-memory",
+              "--no-vectors",
+            }, a)
+          then
+            if args[i + 1] and not args[i + 1]:match ("^%-") then
+              table.insert (cli, args[i + 1])
+              i = i + 1
+            end
+          end
+        elseif
+          not root:match ("^%.$")
+          and i == 1
+          and vim.fn.isdirectory (a) == 1
+        then
+          root = a
+        else
+          table.insert (cli, a)
+        end
+        i = i + 1
+      end
+      table.insert (cli, 2, root)
       local out_path = root .. "/.down/context.md"
-      os.execute ('mkdir -p "' .. root .. '/.down"')
-      local _, err = down_run ({ "context", root, "-o", out_path })
+      local _, err = down_run (cli)
       if err then
         vim.notify ("Context command failed: " .. err, vim.log.levels.ERROR)
         return
       end
-      vim.cmd ("vsplit " .. vim.fn.fnameescape (out_path))
+      if vim.fn.filereadable (out_path) == 1 then
+        vim.cmd ("vsplit " .. vim.fn.fnameescape (out_path))
+      end
       vim.notify ("Context written to " .. out_path, vim.log.levels.INFO)
     end,
   }
-
-
 
   -- Register repomix command
   Cmd.commands.repomix = {
@@ -760,7 +804,9 @@ Cmd.setup = function ()
         enabled = true,
         args = 1,
         name = "sync.add",
-        complete = function () return {} end,
+        complete = function ()
+          return {}
+        end,
         callback = function (e)
           local url = e.body and e.body[1]
           if not url then
@@ -822,6 +868,29 @@ Cmd.setup = function ()
           down_show ({ "sync", "web" })
         end,
       },
+      skills = {
+        enabled = true,
+        args = 0,
+        min_args = 0,
+        max_args = math.huge,
+        name = "sync.skills",
+        complete = function ()
+          return {
+            "--output",
+            "-o",
+            "--profile",
+            "-p",
+            "--no-fs",
+            "--no-kb",
+            "--no-memory",
+            "--no-vector",
+            "--no-data",
+          }
+        end,
+        callback = function (e)
+          down_show ({ "sync", "skills", unpack (e.body or {}) }, "markdown")
+        end,
+      },
       git = {
         enabled = true,
         args = 0,
@@ -829,7 +898,16 @@ Cmd.setup = function ()
         max_args = math.huge,
         name = "sync.git",
         complete = function ()
-          return { "status", "log", "diff", "--force", "-f", "--verbose", "-v", "--root" }
+          return {
+            "status",
+            "log",
+            "diff",
+            "--force",
+            "-f",
+            "--verbose",
+            "-v",
+            "--root",
+          }
         end,
         callback = function (e)
           local args = e.body or {}
@@ -846,7 +924,10 @@ Cmd.setup = function ()
             args = 0,
             name = "sync.git.status",
             callback = function (e)
-              down_show ({ "sync", "git", "status", unpack (e.body or {}, 2) }, "markdown")
+              down_show (
+                { "sync", "git", "status", unpack (e.body or {}, 2) },
+                "markdown"
+              )
             end,
           },
           log = {
@@ -854,7 +935,10 @@ Cmd.setup = function ()
             args = 0,
             name = "sync.git.log",
             callback = function (e)
-              down_show ({ "sync", "git", "log", unpack (e.body or {}, 2) }, "markdown")
+              down_show (
+                { "sync", "git", "log", unpack (e.body or {}, 2) },
+                "markdown"
+              )
             end,
           },
           diff = {
@@ -862,7 +946,10 @@ Cmd.setup = function ()
             args = 0,
             name = "sync.git.diff",
             callback = function (e)
-              down_show ({ "sync", "git", "diff", unpack (e.body or {}, 2) }, "markdown")
+              down_show (
+                { "sync", "git", "diff", unpack (e.body or {}, 2) },
+                "markdown"
+              )
             end,
           },
         },
@@ -876,7 +963,19 @@ Cmd.setup = function ()
   local passthrough = {
     export = { subcmds = { "html", "csv", "pdf", "markdown" }, ft = nil },
     publish = { subcmds = {}, ft = "markdown" },
-    vector = { subcmds = { "index", "search", "list", "delete" }, ft = nil },
+    vector = {
+      subcmds = {
+        "index",
+        "search",
+        "list",
+        "delete",
+        "cluster",
+        "dedup",
+        "stats",
+        "compare",
+      },
+      ft = nil,
+    },
     todo = { subcmds = { "add", "list", "done", "delete" }, ft = "markdown" },
     mcp = { subcmds = {}, ft = nil },
     remove = { subcmds = {}, ft = nil },
@@ -885,17 +984,53 @@ Cmd.setup = function ()
     shell = { subcmds = {}, ft = nil },
     list = { subcmds = {}, ft = nil },
     find = { subcmds = {}, ft = nil },
-    config = { subcmds = {}, ft = nil },
+    config = { subcmds = { "get", "set" }, ft = nil },
     log = { subcmds = {}, ft = nil },
-    tag = { subcmds = {}, ft = nil },
+    tag = { subcmds = { "list" }, ft = nil },
     new = { subcmds = {}, ft = nil },
-    note = {
-      subcmds = { "today", "yesterday", "tomorrow", "week", "month", "year" },
+    link = { subcmds = { "backlinks" }, ft = nil },
+    snippet = { subcmds = { "list", "show" }, ft = nil },
+    template = { subcmds = { "list", "apply" }, ft = nil },
+    workspace = {
+      subcmds = { "add", "list", "switch", "remove", "init", "clear" },
+      ft = nil,
+    },
+    upgrade = { subcmds = {}, ft = nil },
+    generate = {
+      subcmds = {
+        "all",
+        "daily",
+        "notes",
+        "journal",
+        "calendar",
+        "cal",
+        "toc",
+        "table-of-contents",
+        "tasks",
+        "task",
+        "todos",
+        "links",
+        "tags",
+        "mentions",
+        "mention",
+        "@",
+        "backlinks",
+        "bl",
+        "orphans",
+        "orphan",
+        "stats",
+        "dashboard",
+        "summary",
+        "entities",
+        "entity",
+        "knowledge",
+        "graph",
+        "diagram",
+        "mermaid",
+      },
       ft = "markdown",
     },
-    link = { subcmds = {}, ft = nil },
-    snippet = { subcmds = {}, ft = nil },
-    template = { subcmds = {}, ft = nil },
+    run = { subcmds = {}, ft = nil },
     lsp = {
       subcmds = {
         "slash",
@@ -918,6 +1053,66 @@ Cmd.setup = function ()
     "reindex",
   }
 
+  -- Note command: open daily notes in editor (Notion-style journal)
+  Cmd.commands.note = {
+    enabled = true,
+    args = 0,
+    min_args = 0,
+    max_args = math.huge,
+    name = "note",
+    complete = function ()
+      return {
+        "today",
+        "yesterday",
+        "tomorrow",
+        "week",
+        "month",
+        "year",
+        "path",
+      }
+    end,
+    callback = function (e)
+      local body = e.body or {}
+      local sub = body[1] or "today"
+      local note_mod = mod.get_mod ("note")
+      local journal_cmds = {
+        today = "note_today",
+        yesterday = "note_yesterday",
+        tomorrow = "note_tomorrow",
+        week = "week_index",
+        month = "month_index",
+        year = "year_index",
+      }
+      if note_mod and journal_cmds[sub] and note_mod[journal_cmds[sub]] then
+        note_mod[journal_cmds[sub]] ()
+        return
+      end
+      local argv = { "note", sub }
+      for i = 2, #body do
+        argv[#argv + 1] = body[i]
+      end
+      local out, err = down_run (argv)
+      if err then
+        vim.notify ("Note command failed: " .. err, vim.log.levels.ERROR)
+        return
+      end
+      if out and out ~= "" then
+        local path = out:match ("open%s+(.+)") or out:match ("^%s*(%S+)%s*$")
+        if path and vim.fn.filereadable (path) == 1 then
+          vim.cmd ("edit " .. vim.fn.fnameescape (path))
+        end
+      end
+    end,
+  }
+
+  local function current_buf_file ()
+    local f = vim.api.nvim_buf_get_name (0)
+    if f ~= "" then
+      return f
+    end
+    return nil
+  end
+
   for cmd_name, spec in pairs (passthrough) do
     Cmd.commands[cmd_name] = {
       enabled = true,
@@ -930,6 +1125,105 @@ Cmd.setup = function ()
       end,
       callback = function (e)
         local args = e.body or {}
+        if cmd_name == "run" or cmd_name == "serve" then
+          down_show ({ "lsp", unpack (args) }, spec.ft)
+          return
+        end
+        if cmd_name == "upgrade" then
+          local out, err = down_run ({ "upgrade", unpack (args) })
+          if err then
+            vim.notify ("[down] upgrade failed: " .. err, vim.log.levels.ERROR)
+          elseif out and out ~= "" then
+            vim.notify (out, vim.log.levels.INFO)
+          else
+            vim.notify ("[down] upgrade complete", vim.log.levels.INFO)
+          end
+          return
+        end
+        if cmd_name == "generate" then
+          local out, err = down_run ({ "generate", unpack (args) })
+          if err then
+            vim.notify ("[down] generate failed: " .. err, vim.log.levels.ERROR)
+            return
+          end
+          local sub = args[1] or "all"
+          local expected = ({
+            all = "index.md",
+            daily = "daily-notes.md",
+            notes = "daily-notes.md",
+            journal = "daily-notes.md",
+            calendar = "calendar.md",
+            cal = "calendar.md",
+            toc = "toc.md",
+            ["table-of-contents"] = "toc.md",
+            tasks = "tasks.md",
+            task = "tasks.md",
+            todos = "tasks.md",
+            links = "links.md",
+            tags = "tags.md",
+            mentions = "mentions.md",
+            mention = "mentions.md",
+            ["@"] = "mentions.md",
+            backlinks = "backlinks.md",
+            bl = "backlinks.md",
+            orphans = "orphans.md",
+            orphan = "orphans.md",
+            stats = "stats.md",
+            dashboard = "stats.md",
+            summary = "stats.md",
+            entities = "entities.md",
+            entity = "entities.md",
+            knowledge = "entities.md",
+            graph = "graph.md",
+            diagram = "graph.md",
+            mermaid = "graph.md",
+          })[sub]
+          local path = out and (
+            out:match ("open%s+(%S+)")
+            or out:match ("Generated:%s+(%S+)")
+            or (expected and out:match ("(%S+" .. expected:gsub ("%.", "%%.") .. ")"))
+            or out:match ("(%S+index%.md)")
+          )
+          if path and vim.fn.filereadable (path) == 1 then
+            vim.cmd ("vsplit " .. vim.fn.fnameescape (path))
+            vim.bo.filetype = "markdown"
+          elseif out and out ~= "" then
+            local buf = vim.api.nvim_create_buf (false, true)
+            vim.api.nvim_buf_set_option (buf, "buftype", "nofile")
+            vim.api.nvim_buf_set_option (buf, "bufhidden", "wipe")
+            vim.api.nvim_buf_set_lines (buf, 0, -1, false, vim.split (out, "\n"))
+            vim.cmd ("vsplit")
+            vim.api.nvim_win_set_buf (0, buf)
+            vim.bo[buf].filetype = "markdown"
+          end
+          return
+        end
+        if cmd_name == "workspace" then
+          down_show ({ "workspace", unpack (args) }, spec.ft)
+          return
+        end
+        if cmd_name == "lsp" then
+          local sub = args[1]
+          if sub == "outline" or sub == "backlinks" then
+            if not args[2] then
+              local file = current_buf_file ()
+              if file then
+                args[2] = file
+              end
+            end
+          end
+          down_show ({ "lsp", unpack (args) }, spec.ft)
+          return
+        end
+        if
+          cmd_name == "link" and (args[1] == nil or args[1] == "backlinks")
+        then
+          local file = args[2] or current_buf_file ()
+          if file then
+            down_show ({ "link", "backlinks", file }, spec.ft)
+            return
+          end
+        end
         down_show ({ cmd_name, unpack (args) }, spec.ft)
       end,
     }
@@ -969,7 +1263,12 @@ Cmd.setup = function ()
           args = 0,
           name = "lsp.knowledge.entities",
           callback = function (e)
-            down_show ({ "lsp", "knowledge", "entities", unpack (e.body or {}, 2) })
+            down_show ({
+              "lsp",
+              "knowledge",
+              "entities",
+              unpack (e.body or {}, 2),
+            })
           end,
         },
         relations = {
@@ -977,7 +1276,12 @@ Cmd.setup = function ()
           args = 0,
           name = "lsp.knowledge.relations",
           callback = function (e)
-            down_show ({ "lsp", "knowledge", "relations", unpack (e.body or {}, 2) })
+            down_show ({
+              "lsp",
+              "knowledge",
+              "relations",
+              unpack (e.body or {}, 2),
+            })
           end,
         },
         related = {
@@ -985,7 +1289,12 @@ Cmd.setup = function ()
           args = 0,
           name = "lsp.knowledge.related",
           callback = function (e)
-            down_show ({ "lsp", "knowledge", "related", unpack (e.body or {}, 2) })
+            down_show ({
+              "lsp",
+              "knowledge",
+              "related",
+              unpack (e.body or {}, 2),
+            })
           end,
         },
         reindex = {

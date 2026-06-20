@@ -189,6 +189,31 @@ Start the LSP server on stdio (alias of `down lsp`).
 
 Run the LSP server on stdio (alias of `down lsp`).
 
+
+### `down generate [subcommand]`
+
+Generate workspace reports into `.down/generated/`:
+
+```bash
+down generate              # all reports + index.md
+down generate all          # same as above
+down generate daily        # daily notes index table
+down generate toc          # workspace table of contents
+down generate links        # compiled wiki/tag links
+down generate tags         # tag index with source files
+down generate graph        # Mermaid knowledge graph diagram
+```
+
+Output files:
+- `daily-notes.md` — journal index with previews
+- `toc.md` — all headings across workspace
+- `links.md` — link relation table from knowledge graph
+- `tags.md` — tags grouped by document
+- `graph.md` — Mermaid diagram of entities/relations
+- `index.md` — hub linking all reports
+
+Use `--open` to print `open <path>` for editor integration.
+
 ### `down config`
 
 View and set configuration values.
@@ -206,6 +231,12 @@ All commands are available inside Neovim via `:Down`:
 - `:Down profile add/list/switch/remove` — Switches workspace data
 - `:Down memory add/show/list/search/delete`
 - `:Down context` — Generate and open context
+- `:Down generate` — Generate workspace reports (TOC, links, tags, graph)
+- `:Down generate daily/toc/links/tags/graph` — Individual reports
 - `:Down sync git/status/log/diff` — Git history into .down/git/
 - `:Down lsp tags/mentions/tasks/outline/backlinks/knowledge` — Workspace introspection
+- `:Down workspace add/list/switch/remove` — CLI workspace management
+- `:Down upgrade` — Rebuild/upgrade CLI binary
+- `:Down run` — Start LSP server
+- `:Down inline` — Inline AI/knowledge ghost-text suggestions
 - `:Down chat` — AI chat interface
