@@ -1,39 +1,47 @@
 local pickers = {
   -- Files in current workspace (default for :Down find)
-  file = require("down.mod.find.telescope.picker.workspace_files"),
-  files = require("down.mod.find.telescope.picker.workspace_files"),
+  file = require ("down.mod.find.telescope.picker.workspace_files"),
+  files = require ("down.mod.find.telescope.picker.workspace_files"),
 
   -- Workspace pickers
-  workspace = require("down.mod.find.telescope.picker.workspace"),
+  workspace = require ("down.mod.find.telescope.picker.workspace"),
 
   -- All files from all workspaces
-  all_files = require("down.mod.find.telescope.picker.files"),
+  all_files = require ("down.mod.find.telescope.picker.files"),
 
   -- Link pickers
-  link = require("down.mod.find.telescope.picker.link"),
-  links = require("down.mod.find.telescope.picker.link"),
-  backlink = require("down.mod.find.telescope.picker.link.backlink"),
-  linkable = require("down.mod.find.telescope.picker.link.linkable"),
+  link = require ("down.mod.find.telescope.picker.link"),
+  links = require ("down.mod.find.telescope.picker.link"),
+  backlink = require ("down.mod.find.telescope.picker.link.backlink"),
+  linkable = require ("down.mod.find.telescope.picker.link.linkable"),
 
   -- Tag pickers
-  tag = require("down.mod.find.telescope.picker.tag"),
-  tags = require("down.mod.find.telescope.picker.tag"),
+  tag = require ("down.mod.find.telescope.picker.tag"),
+  tags = require ("down.mod.find.telescope.picker.tag"),
 
   -- Note pickers
-  note = require("down.mod.find.telescope.picker.note"),
+  note = require ("down.mod.find.telescope.picker.note"),
 
   -- Task pickers
-  task = require("down.mod.find.telescope.picker.task"),
-  todo = require("down.mod.find.telescope.picker.task"),
-  agenda = require("down.mod.find.telescope.picker.task"),
+  task = require ("down.mod.find.telescope.picker.task"),
+  todo = require ("down.mod.find.telescope.picker.task"),
+  agenda = require ("down.mod.find.telescope.picker.task"),
 
   -- Template pickers
-  template = require("down.mod.find.telescope.picker.template"),
+  template = require ("down.mod.find.telescope.picker.template"),
+
+  -- Semantic pickers
+  similar = require ("down.mod.find.telescope.picker.similar.similar"),
+
+  -- Database pickers
+  database = require ("down.mod.find.telescope.picker.database"),
+  databases = require ("down.mod.find.telescope.picker.database"),
+  db = require ("down.mod.find.telescope.picker.database"),
 
   -- Other pickers
-  header = require("down.mod.find.telescope.picker.header"),
-  markdown = require("down.mod.find.telescope.picker.workspace.markdown"),
-  grep = require("telescope.builtin").live_grep,
+  header = require ("down.mod.find.telescope.picker.header"),
+  markdown = require ("down.mod.find.telescope.picker.workspace.markdown"),
+  grep = require ("telescope.builtin").live_grep,
 }
 
 -- Default "down" command shows current workspace files

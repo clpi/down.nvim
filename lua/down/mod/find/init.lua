@@ -1,15 +1,15 @@
-local cfg = require("down.config")
-local mod = require("down.mod")
+local cfg = require ("down.config")
+local mod = require ("down.mod")
 
 ---@alias down.mod.find.Findinder "telescope" | "mini" | "snacks" | "fzflua" | "builtin"
 
-local has_telescope, _ = pcall(require, "telescope")
-local has_mini, _ = pcall(require, "mini.pick")
-local has_snacks, _ = pcall(require, "mini.snacks")
-local has_fzflua, _ = pcall(require, "fzflua")
+local has_telescope, _ = pcall (require, "telescope")
+local has_mini, _ = pcall (require, "mini.pick")
+local has_snacks, _ = pcall (require, "mini.snacks")
+local has_fzflua, _ = pcall (require, "fzflua")
 
 ---@class down.mod.find.Findind: down.Mod
-local Find = mod.new("find")
+local Find = mod.new ("find")
 
 ---@class down.mod.find.Config: down.mod.Config
 ---@field public default? down.mod.find.Findinder The default finder
@@ -19,27 +19,28 @@ Find.config = {
   finders = nil,
   enabled = true,
 }
-
----@alias down.mod.find.Picker
----| 'file'
----| 'link'
----| 'tag'
----| 'workspace'
----| 'task'
----| 'note'
----| 'template'
+  ---@alias down.mod.find.Picker
+  ---| 'file'
+  ---| 'link'
+  ---| 'tag'
+  ---| 'workspace'
+  ---| 'task'
+  ---| 'note'
+  ---| 'template'
+  | "database"
+  | "databases"
 ---| 'markdown'
 ---| 'project'
 
 ---@param n down.mod.find.Picker
 ---@return fun()|table
-Find.picker = function(n)
-  local p = require("down.mod.find." .. Find.config.default)
+Find.picker = function (n)
+  local p = require ("down.mod.find." .. Find.config.default)
   if p and p.picker then
     Find.picker = p.picker
   end
   if n and p.down and p.down[n] then
-    if type(p.down[n]) == "function" then
+    if type (p.down[n]) == "function" then
       return p.down[n]
     end
   end
@@ -52,167 +53,191 @@ Find.commands = {
     args = 0,
     name = "find",
     enabled = true,
-    callback = function(e)
+    callback = function (e)
       -- Default: find files in current workspace
-      Find.picker("file")()
+      Find.picker ("file") ()
     end,
     commands = {
       tag = {
-        callback = function(e)
-          Find.picker("tag")({ scope = "workspace" })
+        callback = function (e)
+          Find.picker ("tag") ({ scope = "workspace" })
         end,
         enabled = true,
         name = "find.tag",
         args = 0,
       },
       tags = {
-        callback = function(e)
-          Find.picker("tag")({ scope = "workspace" })
+        callback = function (e)
+          Find.picker ("tag") ({ scope = "workspace" })
         end,
         enabled = true,
         name = "find.tags",
         args = 0,
       },
       link = {
-        callback = function(e)
-          Find.picker("link")()
+        callback = function (e)
+          Find.picker ("link") ()
         end,
         enabled = true,
         name = "find.link",
         args = 0,
       },
       links = {
-        callback = function(e)
-          Find.picker("link")()
+        callback = function (e)
+          Find.picker ("link") ()
         end,
         enabled = true,
         name = "find.links",
         args = 0,
       },
       task = {
-        callback = function(e)
-          Find.picker("task")({ scope = "workspace" })
+        callback = function (e)
+          Find.picker ("task") ({ scope = "workspace" })
         end,
         enabled = true,
         name = "find.task",
         args = 0,
       },
       tasks = {
-        callback = function(e)
-          Find.picker("task")({ scope = "workspace" })
+        callback = function (e)
+          Find.picker ("task") ({ scope = "workspace" })
         end,
         enabled = true,
         name = "find.tasks",
         args = 0,
       },
       file = {
-        callback = function(e)
-          Find.picker("file")()
+        callback = function (e)
+          Find.picker ("file") ()
         end,
         enabled = true,
         name = "find.file",
         args = 0,
       },
       files = {
-        callback = function(e)
-          Find.picker("file")()
+        callback = function (e)
+          Find.picker ("file") ()
         end,
         enabled = true,
         name = "find.files",
         args = 0,
       },
       workspace = {
-        callback = function(e)
+        callback = function (e)
           -- Workspace switcher
-          Find.picker("workspace")()
+          Find.picker ("workspace") ()
         end,
         enabled = true,
         name = "find.workspace",
         args = 0,
       },
       note = {
-        callback = function(e)
-          Find.picker("note")()
+        callback = function (e)
+          Find.picker ("note") ()
         end,
         enabled = true,
         name = "find.note",
         args = 0,
       },
       notes = {
-        callback = function(e)
-          Find.picker("note")()
+        callback = function (e)
+          Find.picker ("note") ()
         end,
         enabled = true,
         name = "find.notes",
         args = 0,
       },
+      database = {
+        callback = function (e)
+          Find.picker ("database") ()
+        end,
+        enabled = true,
+        name = "find.database",
+        args = 0,
+      },
+      databases = {
+        callback = function (e)
+          Find.picker ("database") ()
+        end,
+        enabled = true,
+        name = "find.databases",
+        args = 0,
+      },
       template = {
-        callback = function(e)
-          Find.picker("template")()
+        callback = function (e)
+          Find.picker ("template") ()
         end,
         enabled = true,
         name = "find.template",
         args = 0,
       },
+      similar = {
+        callback = function (e)
+          Find.picker ("similar") ()
+        end,
+        enabled = true,
+        name = "find.similar",
+        args = 0,
+      },
       all_files = {
-        callback = function(e)
-          Find.picker("all_files")()
+        callback = function (e)
+          Find.picker ("all_files") ()
         end,
         enabled = true,
         name = "find.all_files",
         args = 0,
       },
       backlink = {
-        callback = function(e)
-          Find.picker("backlink")()
+        callback = function (e)
+          Find.picker ("backlink") ()
         end,
         enabled = true,
         name = "find.backlink",
         args = 0,
       },
       linkable = {
-        callback = function(e)
-          Find.picker("linkable")()
+        callback = function (e)
+          Find.picker ("linkable") ()
         end,
         enabled = true,
         name = "find.linkable",
         args = 0,
       },
       todo = {
-        callback = function(e)
-          Find.picker("todo")()
+        callback = function (e)
+          Find.picker ("todo") ()
         end,
         enabled = true,
         name = "find.todo",
         args = 0,
       },
       agenda = {
-        callback = function(e)
-          Find.picker("agenda")()
+        callback = function (e)
+          Find.picker ("agenda") ()
         end,
         enabled = true,
         name = "find.agenda",
         args = 0,
       },
       header = {
-        callback = function(e)
-          Find.picker("header")()
+        callback = function (e)
+          Find.picker ("header") ()
         end,
         enabled = true,
         name = "find.header",
         args = 0,
       },
       markdown = {
-        callback = function(e)
-          Find.picker("markdown")()
+        callback = function (e)
+          Find.picker ("markdown") ()
         end,
         enabled = true,
         name = "find.markdown",
         args = 0,
       },
       grep = {
-        callback = function(e)
-          Find.picker("grep")()
+        callback = function (e)
+          Find.picker ("grep") ()
         end,
         enabled = true,
         name = "find.grep",
@@ -224,9 +249,9 @@ Find.commands = {
 
 ---@class down.mod.find.Maps: { [string]: down.Map }
 Find.maps = {
-  { "n", ",dFind", "<cmd>Down find file<CR>",     "Down find files" },
-  { "n", ",dm",    "<cmd>Down find markdown<CR>", "Down find md files" },
-  { "n", ",dL",    "<cmd>Down find link<CR>",     "Down find links" },
+  { "n", ",dFind", "<cmd>Down find file<CR>", "Down find files" },
+  { "n", ",dm", "<cmd>Down find markdown<CR>", "Down find md files" },
+  { "n", ",dL", "<cmd>Down find link<CR>", "Down find links" },
   {
     "n",
     ",dW",
@@ -237,42 +262,42 @@ Find.maps = {
 
 Find.data = {}
 
-Find.setup = function()
+Find.setup = function ()
   if not Find.config.finders then
     Find.config.finders = { "builtin" }
     if has_telescope then
-      table.insert(Find.config.finders, "telescope")
+      table.insert (Find.config.finders, "telescope")
     end
     if has_mini then
-      table.insert(Find.config.finders, "mini")
+      table.insert (Find.config.finders, "mini")
     end
     if has_snacks then
-      table.insert(Find.config.finders, "snacks")
+      table.insert (Find.config.finders, "snacks")
     end
     if has_fzflua then
-      table.insert(Find.config.finders, "fzflua")
+      table.insert (Find.config.finders, "fzflua")
     end
   end
   if not Find.config.default then
     if #Find.config.finders > 0 then
-      if vim.list_contains(Find.config.finders, "telescope") then
+      if vim.list_contains (Find.config.finders, "telescope") then
         Find.config.default = "telescope"
       else
         Find.config.default = Find.config.finders[1]
       end
     else
-      table.insert(Find.config.finders, "builtin")
+      table.insert (Find.config.finders, "builtin")
       Find.config.default = "builtin"
     end
   end
-  Find.picker = require("down.mod.find." .. Find.config.default).picker
+  Find.picker = require ("down.mod.find." .. Find.config.default).picker
   Find.dep = Find.config.finders
   return {
     loaded = true,
   }
 end
 
-Find.after = function()
+Find.after = function ()
   -- TODO: should load and register telescope extension if it is available
 end
 
