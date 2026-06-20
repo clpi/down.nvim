@@ -647,6 +647,51 @@ Lsp.list_tasks = function(opts)
   end, bufnr)
 end
 
+
+Lsp.list_databases = function(opts)
+  opts = opts or {}
+  local client = Lsp.get_client()
+  if not client then
+    local db_mod = mod.get_mod("data.database")
+    if db_mod and db_mod.list_databases then
+      db_mod.list_databases()
+    else
+      vim.notify("[down.nvim] LSP not running", vim.log.levels.WARN)
+    end
+    return
+  end
+
+  local bufnr = vim.api.nvim_get_current_buf()
+  client.request("workspace/executeCommand", {
+    command = "down.database.list",
+    arguments = {},
+  }, function(err, result)
+    if err then
+      vim.notify("[down.nvim] database list failed: " .. vim.inspect(err), vim.log.levels.ERROR)
+      return
+    end
+    local items = result or {}
+    if type(items) ~= "table" or #items == 0 then
+      vim.notify("[down.nvim] No databases found in workspace", vim.log.levels.INFO)
+      return
+    end
+    vim.ui.select(items, {
+      prompt = opts.prompt or "Workspace databases",
+      format_item = function(item)
+        local path = (item.path or ""):gsub("^file://", "")
+        local file = vim.fn.fnamemodify(path, ":t")
+        return string.format("%s  %d rows  (%s)", item.title or file, item.rows or 0, file)
+      end,
+    }, function(choice)
+      if not choice or not choice.path then
+        return
+      end
+      local path = choice.path:gsub("^file://", "")
+      vim.cmd("edit " .. vim.fn.fnameescape(path))
+    end)
+  end, bufnr)
+end
+
 --- Follow document link under cursor via LSP
 Lsp.open_document_link = function()
   if vim.lsp.buf.document_link then

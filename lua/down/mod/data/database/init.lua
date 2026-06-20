@@ -32,7 +32,11 @@ Database.commands = {
     args = 0,
     max_args = 1,
     callback = function(e)
-      log.trace("database")
+      if e.fargs and e.fargs[1] then
+        vim.cmd("Down database " .. table.concat(e.fargs, " "))
+      else
+        Database.list_databases()
+      end
     end,
     commands = {
       view = {
@@ -75,6 +79,22 @@ Database.commands = {
           end
         end,
       },
+      list = {
+        name = "database.list",
+        args = 0,
+        max_args = 1,
+        callback = function()
+          Database.list_databases()
+        end,
+      },
+      open = {
+        name = "database.open",
+        args = 0,
+        max_args = 1,
+        callback = function(e)
+          Database.open_database(e.fargs and e.fargs[1])
+        end,
+      },
     },
   },
 }
@@ -84,6 +104,7 @@ Database.maps = {
   { "n", "<leader>db", "<CMD>Down database view board<CR>", "View as board" },
   { "n", "<leader>dc", "<CMD>Down database view calendar<CR>", "View as calendar" },
   { "n", "<leader>da", "<CMD>Down database add<CR>", "Add row to database" },
+  { "n", "<leader>fd", "<CMD>Down find database<CR>", "Pick database" },
 }
 
 Database.parse_markdown_table = function(lines, start_line)
@@ -109,11 +130,12 @@ Database.parse_markdown_table = function(lines, start_line)
         if cols and #cols > 0 and headers then
           local row = {}
           for j, header in ipairs(headers) do
+            local clean_header = header:gsub("^%s+", ""):gsub("%s+$", "")
             local val = cols[j]
             if val then
               val = val:gsub("^%s+", ""):gsub("%s+$", "")
             end
-            row[header] = val or ""
+            row[clean_header] = val or ""
           end
           row._table_row = i
           table.insert(rows, row)
@@ -311,30 +333,105 @@ Database.add_row = function(bufnr)
   end
 end
 
+--- Update a single table cell in a database buffer.
+---@param bufnr number
+---@param row_line number 1-based line number in buffer
+---@param column string column name
+---@param value string new cell value
+---@return boolean
+Database.update_cell = function(bufnr, row_line, column, value)
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  if not row_line or not column then
+    return false
+  end
+
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local line = lines[row_line]
+  if not line then
+    return false
+  end
+
+  local headers = nil
+  for i = 1, #lines do
+    local cols = Database.parse_table_row(lines[i])
+    if cols and #cols > 0 and not lines[i]:match("^|?%s*:?%-%-%-+:?%s*|") then
+      headers = cols
+      break
+    end
+  end
+  if not headers then
+    return false
+  end
+
+  column = column:gsub("^%s+", ""):gsub("%s+$", "")
+  local col_idx = nil
+  for i, h in ipairs(headers) do
+    local clean = h:gsub("^%s+", ""):gsub("%s+$", "")
+    if clean:lower() == column:lower() then
+      col_idx = i
+      break
+    end
+  end
+  if not col_idx then
+    return false
+  end
+
+  local cells = Database.parse_table_row(line)
+  if not cells then
+    return false
+  end
+  while #cells < #headers do
+    cells[#cells + 1] = ""
+  end
+  cells[col_idx] = " " .. tostring(value) .. " "
+
+  local new_line = "|" .. table.concat(cells, "|") .. "|"
+  vim.api.nvim_buf_set_lines(bufnr, row_line - 1, row_line, false, { new_line })
+  return true
+end
+
 Database.show_view = function(view_type, group_by)
-  local fm_data, schema, rows = Database.get_current_db_info()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local fm_data, schema, rows = Database.get_current_db_info(bufnr)
 
   if not rows or #rows == 0 then
     vim.notify("[down.nvim] No table data found in current buffer", vim.log.levels.WARN)
     return
   end
 
+  Database.resolve_formulas({ schema = schema, rows = rows, root = (function()
+    local ws = mod.get_mod("workspace")
+    return ws and ws.get(ws.current()) or vim.loop.cwd()
+  end)() })
+
+  local ws = mod.get_mod("workspace")
+  local root = ws and ws.get(ws.current()) or vim.loop.cwd()
+  local ctx = {
+    source_bufnr = bufnr,
+    source_path = vim.api.nvim_buf_get_name(bufnr),
+    root = root,
+  }
   if view_type == "board" then
-    Database.show_board_view(schema, rows, group_by or "status")
+    Database.show_board_view(schema, rows, group_by or "status", ctx)
   elseif view_type == "calendar" then
-    Database.show_calendar_view(schema, rows, group_by or "due_date")
+    Database.show_calendar_view(schema, rows, group_by or "due_date", ctx)
   elseif view_type == "list" then
-    Database.show_list_view(schema, rows, group_by)
+    Database.show_list_view(schema, rows, group_by, ctx)
   else
-    Database.show_table_view(schema, rows)
+    Database.show_table_view(schema, rows, ctx)
   end
 end
 
 Database.show_with_filter = function(property, operator, value)
-  local _, schema, rows = Database.get_current_db_info()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local _, schema, rows = Database.get_current_db_info(bufnr)
   if not rows then
     return
   end
+
+  local ws = mod.get_mod("workspace")
+  local root = ws and ws.get(ws.current()) or vim.loop.cwd()
+  Database.resolve_formulas({ schema = schema, rows = rows, root = root })
 
   local filtered = Query.filter(rows, {
     property = property,
@@ -342,17 +439,75 @@ Database.show_with_filter = function(property, operator, value)
     value = value,
   })
 
-  Database.show_table_view(schema, filtered)
+  Database.show_table_view(schema, filtered, {
+    source_bufnr = bufnr,
+    source_path = vim.api.nvim_buf_get_name(bufnr),
+    root = root,
+  })
 end
 
-Database.show_table_view = function(schema, rows)
+Database.show_table_view = function(schema, rows, ctx)
+  ctx = ctx or {}
+  local source_bufnr = ctx.source_bufnr or vim.api.nvim_get_current_buf()
+  local columns = vim.tbl_keys(schema or {})
+  table.sort(columns)
+  if #columns == 0 then
+    schema = {}
+    for _, row in ipairs(rows) do
+      for k in pairs(row) do
+        if k ~= "_table_row" then
+          schema[k] = { type = "text" }
+          columns[#columns + 1] = k
+        end
+      end
+    end
+    table.sort(columns)
+  end
+
+  local function render_lines()
+    local display_lines = {}
+    local col_widths = {}
+    for _, col in ipairs(columns) do
+      col_widths[col] = #col + 2
+    end
+    for _, row in ipairs(rows) do
+      for _, col in ipairs(columns) do
+        local val = tostring(row[col] or "")
+        col_widths[col] = math.max(col_widths[col], #val + 2)
+      end
+    end
+    local function pad(val, w)
+      val = tostring(val)
+      return val .. string.rep(" ", w - #val)
+    end
+    local header_parts = {}
+    for _, col in ipairs(columns) do
+      table.insert(header_parts, " " .. pad(col, col_widths[col] - 1))
+    end
+    table.insert(display_lines, "|" .. table.concat(header_parts, "|") .. "|")
+    local sep_parts = {}
+    for _, col in ipairs(columns) do
+      table.insert(sep_parts, "|" .. string.rep("-", col_widths[col]))
+    end
+    table.insert(display_lines, table.concat(sep_parts, "") .. "|")
+    for _, row in ipairs(rows) do
+      local row_parts = {}
+      for _, col in ipairs(columns) do
+        local val = tostring(row[col] or "")
+        table.insert(row_parts, " " .. pad(val, col_widths[col] - 1))
+      end
+      table.insert(display_lines, "|" .. table.concat(row_parts, "|") .. "|")
+    end
+    return display_lines
+  end
+
   local bufnr = vim.api.nvim_create_buf(false, true)
   local width = math.min(vim.o.columns, 120)
-  local height = math.min(vim.o.lines - 4, #rows + 5)
+  local height = math.min(vim.o.lines - 4, #rows + 8)
   local win = vim.api.nvim_open_win(bufnr, true, {
     style = "minimal",
     border = "single",
-    title = " Table View ",
+    title = " Table View (e edit, q close) ",
     title_pos = "center",
     row = 2,
     col = math.max(0, (vim.o.columns - width) / 2),
@@ -361,67 +516,67 @@ Database.show_table_view = function(schema, rows)
     relative = "editor",
   })
 
-  local display_lines = {}
-
-  if not schema or vim.tbl_isempty(schema) then
-    schema = {}
-    for _, row in ipairs(rows) do
-      for k in pairs(row) do
-        if k ~= "_table_row" then
-          schema[k] = { type = "text" }
-        end
-      end
-    end
+  local function refresh()
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, render_lines())
   end
-
-  local columns = vim.tbl_keys(schema)
-  table.sort(columns)
-
-  local col_widths = {}
-  for _, col in ipairs(columns) do
-    col_widths[col] = #col + 2
-  end
-  for _, row in ipairs(rows) do
-    for _, col in ipairs(columns) do
-      local val = tostring(row[col] or "")
-      col_widths[col] = math.max(col_widths[col], #val + 2)
-    end
-  end
-
-  local function pad(val, w)
-    val = tostring(val)
-    return val .. string.rep(" ", w - #val)
-  end
-
-  local header_parts = {}
-  for _, col in ipairs(columns) do
-    table.insert(header_parts, " " .. pad(col, col_widths[col] - 1))
-  end
-  table.insert(display_lines, "|" .. table.concat(header_parts, "|") .. "|")
-
-  local sep_parts = {}
-  for _, col in ipairs(columns) do
-    table.insert(sep_parts, "|" .. string.rep("-", col_widths[col]))
-  end
-  table.insert(display_lines, table.concat(sep_parts, "") .. "|")
-
-  for _, row in ipairs(rows) do
-    local row_parts = {}
-    for _, col in ipairs(columns) do
-      local val = tostring(row[col] or "")
-      table.insert(row_parts, " " .. pad(val, col_widths[col] - 1))
-    end
-    table.insert(display_lines, "|" .. table.concat(row_parts, "|") .. "|")
-  end
-
-  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, display_lines)
+  refresh()
   vim.api.nvim_set_option_value("filetype", "markdown", { buf = bufnr })
   vim.api.nvim_buf_set_option(bufnr, "modifiable", false)
   vim.bo[bufnr].bufhidden = "wipe"
 
+  local function cell_at_cursor()
+    local row_idx = vim.api.nvim_win_get_cursor(win)[1]
+    local col_idx = vim.api.nvim_win_get_cursor(win)[2]
+    if row_idx <= 2 then
+      return nil
+    end
+    local data_row = row_idx - 2
+    if data_row < 1 or data_row > #rows then
+      return nil
+    end
+    local line = vim.api.nvim_buf_get_lines(bufnr, row_idx - 1, row_idx, false)[1] or ""
+    local col_no = 1
+    local current = 1
+    for i, col in ipairs(columns) do
+      local start = line:find("|", current, true)
+      if not start then break end
+      local finish = line:find("|", start + 1, true)
+      if not finish then break end
+      if col_idx >= start and col_idx <= finish then
+        return rows[data_row], col, data_row
+      end
+      current = finish + 1
+      col_no = i + 1
+    end
+    local col = columns[math.min(col_no, #columns)]
+    return rows[data_row], col, data_row
+  end
+
+  local function edit_cell()
+    local row, col, idx = cell_at_cursor()
+    if not row or not col then
+      return
+    end
+    local fd = (schema or {})[col] or {}
+    if fd.type == "formula" or fd.type == "rollup" then
+      vim.notify("[down.nvim] Computed columns are read-only", vim.log.levels.WARN)
+      return
+    end
+    local current = tostring(row[col] or "")
+    vim.ui.input({ prompt = col .. ": ", default = current }, function(val)
+      if val == nil then return end
+      Database.update_cell(source_bufnr, row._table_row, col, val)
+      row[col] = val
+      Database.resolve_formulas({ schema = schema, rows = rows, root = ctx.root })
+      refresh()
+    end)
+  end
+
   vim.keymap.set("n", "q", function()
     pcall(vim.api.nvim_win_close, win, true)
   end, { buffer = bufnr })
+  vim.keymap.set("n", "e", edit_cell, { buffer = bufnr })
+  vim.keymap.set("n", "<CR>", edit_cell, { buffer = bufnr })
 end
 
 Database.show_board_view = function(schema, rows, group_by)
@@ -689,7 +844,7 @@ end
 ---@param field table
 ---@param all_rows table
 ---@return any
-function Database.compute_rollup (row, field, all_rows)
+function Database.compute_rollup (row, field, all_rows, ctx)
   local relation_field = field.relation or field.rollup_relation
   local target_field = field.target or field.rollup_target
   local aggregate = field.aggregate or "count"
@@ -697,18 +852,55 @@ function Database.compute_rollup (row, field, all_rows)
   if not relation_field or not target_field then return nil end
 
   local related_values = {}
-  for _, r in ipairs (all_rows) do
-    if r[relation_field] == row[relation_field] then
-      local val = r[target_field]
-      if val ~= nil then
-        related_values[#related_values + 1] = val
+  local schema = (ctx and ctx.schema) or {}
+  local relation_def = schema[relation_field] or {}
+  local target_db_name = relation_def.database or relation_def.target_database
+
+  if target_db_name and ctx and ctx.databases then
+    local target_db = nil
+    for _, db in ipairs(ctx.databases) do
+      if db.title and db.title:lower() == target_db_name:lower() then
+        target_db = db
+        break
+      end
+      if db.rel and db.rel:lower():find(target_db_name:lower(), 1, true) then
+        target_db = db
+        break
+      end
+    end
+    if target_db and target_db.path and vim.fn.filereadable(target_db.path) == 1 then
+      local lines = vim.fn.readfile(target_db.path)
+      local _, _, target_rows = Database.parse_markdown_table(lines, 1)
+      local linked = {}
+      for token in tostring(row[relation_field] or ""):gmatch("[^,]+") do
+        local part = token:gsub("^%s+", ""):gsub("%s+$", "")
+        if part ~= "" then linked[#linked + 1] = part:lower() end
+      end
+      for _, r in ipairs(target_rows or {}) do
+        local title = tostring(r.title or r.name or ""):lower()
+        for _, link in ipairs(linked) do
+          if title == link then
+            local val = r[target_field]
+            if val ~= nil then related_values[#related_values + 1] = val end
+            break
+          end
+        end
+      end
+    end
+  else
+    for _, r in ipairs (all_rows) do
+      if r[relation_field] == row[relation_field] then
+        local val = r[target_field]
+        if val ~= nil then
+          related_values[#related_values + 1] = val
+        end
       end
     end
   end
 
   if aggregate == "count" then
     return #related_values
-  elseif aggregate == "count_unique" then
+  elseif aggregate == "count_unique" or aggregate == "unique" then
     local seen = {}
     for _, v in ipairs (related_values) do seen[tostring (v)] = true end
     local count = 0
@@ -725,7 +917,7 @@ function Database.compute_rollup (row, field, all_rows)
     local total, count = 0, 0
     for _, v in ipairs (related_values) do
       local n = tonumber (v)
-      if n then total = total + n end
+      if n then total = total + n; count = count + 1 end
     end
     return count > 0 and (total / count) or 0
   elseif aggregate == "min" then
@@ -740,28 +932,178 @@ function Database.compute_rollup (row, field, all_rows)
       if max_val == nil or v > max_val then max_val = v end
     end
     return max_val
-  elseif aggregate == "join" or aggregate == "concat" then
-    local t = {}
+  elseif aggregate == "join" or aggregate == "concat" or aggregate == "list" then
+    local parts = {}
     for _, v in ipairs (related_values) do
-      if v ~= nil and tostring (v) ~= "" then t[#t + 1] = tostring (v) end
+      if v ~= nil and tostring (v) ~= "" then parts[#parts + 1] = tostring (v) end
     end
-    return table.concat (t, ", ")
-  elseif aggregate == "list" or aggregate == "array" then
-    return related_values
+    return table.concat (parts, ", ")
   end
 
   return nil
 end
 
+local function down_bin_path()
+  local paths = {}
+  for _, path in ipairs(vim.api.nvim_get_runtime_file("scripts/bin/down", true)) do
+    paths[#paths + 1] = path
+  end
+  paths[#paths + 1] = vim.fn.stdpath("data") .. "/down/bin/down"
+  paths[#paths + 1] = "down"
+  for _, path in ipairs(paths) do
+    if vim.fn.executable(path) == 1 then
+      return path
+    end
+  end
+  return "down"
+end
+
+Database.scan_workspace = function(root)
+  local ws = mod.get_mod("workspace")
+  root = root or (ws and ws.get(ws.current())) or vim.loop.cwd()
+  local out, err = vim.system({ down_bin_path(), "database", "list", "--json" }, { cwd = root, text = true }):wait()
+  local items = {}
+  if out and out.code == 0 and out.stdout and out.stdout ~= "" then
+    local ok, decoded = pcall(vim.json.decode, out.stdout)
+    if ok and type(decoded) == "table" then
+      for _, entry in ipairs(decoded) do
+        local rel = entry.rel or ""
+        local db_path = entry.path
+        if not db_path or db_path == "" then
+          db_path = rel ~= "" and vim.fs.joinpath(root, rel) or ""
+        end
+        items[#items + 1] = {
+          title = entry.title or "",
+          rows = entry.rows or 0,
+          columns = entry.columns or 0,
+          path = db_path,
+          rel = rel,
+        }
+      end
+    else
+      for line in out.stdout:gmatch("[^\n]+") do
+        local title, rows, rel = line:match("^(.-)%s+(%d+)%s+rows%s+(.+)$")
+        if title and rel then
+          items[#items + 1] = {
+            title = title:match("%s*(.-)%s*$"),
+            rows = tonumber(rows) or 0,
+            path = vim.fs.joinpath(root, rel),
+            rel = rel,
+          }
+        end
+      end
+    end
+  end
+  Database.databases = items
+  return items, err
+end
+
+
+Database.picker = function(opts)
+  local ok, find = pcall(require, "down.mod.find")
+  if ok and find and find.picker then
+    local picker = find.picker("database")
+    if type(picker) == "function" then
+      picker(opts or {})
+      return true
+    end
+  end
+  return false
+end
+
+Database.open_database = function(target)
+  local ws = mod.get_mod("workspace")
+  local root = ws and ws.get(ws.current()) or vim.loop.cwd()
+  local path = target
+  if not path or path == "" then
+    if Database.picker({ prompt = "Open database" }) then
+      return
+    end
+    local items = Database.scan_workspace(root)
+    if #items == 0 then
+      vim.notify("[down.nvim] No databases found in workspace", vim.log.levels.WARN)
+      return
+    end
+    if #items == 1 then
+      path = items[1].path
+    else
+      vim.ui.select(items, {
+        prompt = "Open database",
+        format_item = function(item)
+          return string.format("%s (%d rows) — %s", item.title, item.rows, item.rel)
+        end,
+      }, function(choice)
+        if choice then
+          vim.cmd("edit " .. vim.fn.fnameescape(choice.path))
+        end
+      end)
+      return
+    end
+  end
+  if not path:match("%.md$") then
+    local out = vim.system({ down_bin_path(), "database", "show", path }, { cwd = root, text = true }):wait()
+    if out and out.stdout then
+      local rel = out.stdout:match("%(([^)]+)%)")
+      if rel then
+        path = vim.fs.joinpath(root, rel)
+      end
+    end
+  end
+  if vim.fn.filereadable(path) == 1 then
+    vim.cmd("edit " .. vim.fn.fnameescape(path))
+  else
+    vim.notify("[down.nvim] Database not found: " .. tostring(path), vim.log.levels.ERROR)
+  end
+end
+
+Database.list_databases = function()
+  if Database.picker({ prompt = "Databases" }) then
+    return
+  end
+  local lsp = mod.get_mod("lsp")
+  if lsp and lsp.get_client and lsp.get_client() and lsp.list_databases then
+    lsp.list_databases()
+    return
+  end
+  local ws = mod.get_mod("workspace")
+  local root = ws and ws.get(ws.current()) or vim.loop.cwd()
+  local items = Database.scan_workspace(root)
+  if #items == 0 then
+    vim.notify("[down.nvim] No databases in workspace", vim.log.levels.INFO)
+    return
+  end
+  local lines = { "# Databases", "" }
+  for _, item in ipairs(items) do
+    lines[#lines + 1] = string.format("- **%s** — %d rows (`%s`)", item.title, item.rows, item.rel)
+  end
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.api.nvim_set_option_value("filetype", "markdown", { buf = buf })
+  vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    width = math.min(80, vim.o.columns - 4),
+    height = math.min(#lines + 2, vim.o.lines - 4),
+    row = 2,
+    col = 2,
+    style = "minimal",
+    border = "rounded",
+    title = " Databases ",
+  })
+end
+
 --- Resolve all formula/rollup fields in a database
 ---@param db table
 function Database.resolve_formulas (db)
+  local root = db.root
+  if root then
+    db.databases = Database.scan_workspace(root)
+  end
   for _, row in ipairs (db.rows or {}) do
     for key, field in pairs (db.schema or {}) do
       if field.type == "formula" then
         row[key] = Database.compute_formula (row, field, db.rows)
       elseif field.type == "rollup" then
-        row[key] = Database.compute_rollup (row, field, db.rows)
+        row[key] = Database.compute_rollup (row, field, db.rows, db)
       end
     end
   end

@@ -1053,6 +1053,9 @@ Cmd.setup = function ()
         "create",
         "add-row",
         "add",
+        "update-row",
+        "update",
+        "set",
         "export",
       },
       ft = "markdown",
@@ -1088,6 +1091,10 @@ Cmd.setup = function ()
         "graph",
         "diagram",
         "mermaid",
+        "databases",
+        "database",
+        "db",
+        "dbs",
       },
       ft = "markdown",
     },
@@ -1277,6 +1284,10 @@ Cmd.setup = function ()
             graph = "graph.md",
             diagram = "graph.md",
             mermaid = "graph.md",
+            databases = "databases.md",
+            database = "databases.md",
+            db = "databases.md",
+            dbs = "databases.md",
           })[sub]
           local path = out
             and (
