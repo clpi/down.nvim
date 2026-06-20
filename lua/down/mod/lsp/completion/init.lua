@@ -38,8 +38,11 @@ Completion.setup = function()
 
   -- Set up inline completion triggers via InsertCharPre
   vim.api.nvim_create_autocmd("InsertCharPre", {
-    pattern = { "*.md", "*.markdown", "*.down" },
     callback = function()
+      local ft = vim.bo.filetype
+      if not vim.tbl_contains({ "markdown", "md", "down" }, ft) then
+        return
+      end
       local char = vim.v.char
       if char == "/" or char == "@" or char == "#" then
         vim.schedule(function()

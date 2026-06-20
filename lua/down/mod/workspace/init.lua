@@ -370,10 +370,14 @@ Workspace.set_workspace = function (n, create)
   end
   local p = Workspace.path (Workspace.data.workspaces[n])
   fn.mkdir (p, "p")
+  local old = Workspace.data.active
   Workspace.data.previous = Workspace.data.active
   Workspace.data.active = n
-  -- local e = mod.new_event(Workspace, 'workspace.events.wschanged', { old = ws, new = workspace })
-  -- mod.broadcast(e or {})
+  mod.broadcast (
+    mod.new_event (Workspace, "workspace.events.wschanged", { old = old, new = n })
+      or {}
+  )
+  Workspace.sync ()
 
   return true
 end

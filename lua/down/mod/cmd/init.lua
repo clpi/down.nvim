@@ -730,6 +730,7 @@ Cmd.setup = function ()
     name = "sync",
     complete = function ()
       return {
+        "add",
         "data",
         "knowledge",
         "memory",
@@ -755,6 +756,24 @@ Cmd.setup = function ()
       down_show ({ "sync", unpack (args) }, nil)
     end,
     commands = {
+      add = {
+        enabled = true,
+        args = 1,
+        name = "sync.add",
+        complete = function () return {} end,
+        callback = function (e)
+          local url = e.body and e.body[1]
+          if not url then
+            vim.ui.input ({ prompt = "URL to fetch and add: " }, function (input)
+              if input and input ~= "" then
+                down_show ({ "sync", "add", input })
+              end
+            end)
+            return
+          end
+          down_show ({ "sync", "add", url })
+        end,
+      },
       data = {
         enabled = true,
         args = 0,

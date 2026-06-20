@@ -10,7 +10,7 @@ Avante.setup = function()
     callback = function(args)
       local lsp_mod = require("down.mod").get_mod("lsp")
       if lsp_mod and lsp_mod.attach then
-        lsp_mod.attach()
+        lsp_mod.attach(args.buf)
       end
     end,
     desc = "Attach down.lsp to Avante prompt buffer",

@@ -281,7 +281,7 @@ M.file_source = function()
       return
     end
 
-    local ws = M.dep["workspace"]
+    local ws = mod.get_mod("workspace")
     if not ws then
       callback({ items = {}, isIncomplete = false })
       return

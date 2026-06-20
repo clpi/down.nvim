@@ -20,13 +20,28 @@ M.config = {
 
 ---@return down.mod.Setup
 M.setup = function()
-  if has_blink then
-    return {
-      loaded = true,
-    }
-  else
+  if not has_blink then
     return { loaded = false }
   end
+
+  local log = require("down.log")
+  if M.config.slash and blink.add_source then
+    blink.add_source("down_slash", M.slash_source())
+  end
+  if M.config.mention and blink.add_source then
+    blink.add_source("down_mention", M.mention_source())
+  end
+  if M.config.tag and blink.add_source then
+    blink.add_source("down_tag", M.tag_source())
+  end
+  log.trace(
+    "down.nvim: blink sources available. Add down_slash, down_mention, down_tag to blink.cmp sources "
+      .. "or rely on auto-registration when blink.add_source is supported."
+  )
+
+  return {
+    loaded = true,
+  }
 end
 
 ---@class down.integration.blink.Data

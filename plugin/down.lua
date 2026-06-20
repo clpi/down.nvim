@@ -40,6 +40,13 @@ end, {
 })
 
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = "markdown",
-  callback = function() end,
+  pattern = { "markdown", "md", "down" },
+  once = true,
+  callback = function()
+    local ok, down = pcall(require, "down")
+    if ok and not down.config.started then
+      down.setup(vim.g.down_config or {})
+    end
+  end,
+  desc = "Lazy-load down.nvim when editing markdown",
 })

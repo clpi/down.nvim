@@ -64,10 +64,6 @@ Lsp.setup = function()
     desc = "Start down LSP for markdown files in wiki workspaces",
   })
 
-  mod.await("workspace", function(ws)
-    if ws.events and ws.events.wschanged then
-    end
-  end)
   return {
     loaded = true,
   }
@@ -192,9 +188,13 @@ Lsp.download = function(cb, version)
   local install_dir = Lsp.install_dir()
   local dest = vim.fs.joinpath(install_dir, bin_name)
 
-  -- Get plugin root directory
-  local script_path = debug.getinfo(1).source:sub(2)
-  local plugin_root = vim.fn.fnamemodify(script_path, ":p:h:h:h:h:h")
+  -- Get plugin root directory from runtime path (lua/down.lua → repo root)
+  local runtime = vim.api.nvim_get_runtime_file("lua/down.lua", false)
+  local plugin_root = runtime[1] and vim.fn.fnamemodify(runtime[1], ":p:h:h") or nil
+  if not plugin_root then
+    local script_path = debug.getinfo(1, "S").source:sub(2)
+    plugin_root = vim.fn.fnamemodify(script_path, ":p:h:h:h:h")
+  end
   local ext_down_path = vim.fs.joinpath(plugin_root, "ext", "down")
 
   if vim.fn.executable("go") ~= 1 then
@@ -393,21 +393,32 @@ Lsp.attach = function(bufnr)
     return
   end
 
+  for _, client in ipairs(vim.lsp.get_clients({ name = "down", bufnr = bufnr })) do
+    return
+  end
+
   local root_dir = vim.fs.root(bufnr, Lsp.config.root_markers) or vim.fn.getcwd()
   local workspace_name = ws and ws.name_for_path and ws.name_for_path(root_dir)
-  local client_id = vim.lsp.start({
-    name = "down",
-    cmd = { cmd_path, "lsp" },
-    filetypes = Lsp.config.filetypes,
-    root_dir = root_dir,
-    workspace_folders = Lsp.workspace_folders(workspace_name),
-    settings = Lsp.config.settings,
-    capabilities = Lsp.capabilities(),
-    on_attach = function(client, attached_bufnr)
-      Lsp.on_attach(client, attached_bufnr)
-    end,
-    handlers = Lsp.handlers(),
-  })
+
+  local client_id
+  local existing = vim.lsp.get_clients({ name = "down" })
+  if #existing > 0 then
+    client_id = existing[1].id
+  else
+    client_id = vim.lsp.start({
+      name = "down",
+      cmd = { cmd_path, "lsp" },
+      filetypes = Lsp.config.filetypes,
+      root_dir = root_dir,
+      workspace_folders = Lsp.workspace_folders(workspace_name),
+      settings = Lsp.config.settings,
+      capabilities = Lsp.capabilities(),
+      on_attach = function(client, attached_bufnr)
+        Lsp.on_attach(client, attached_bufnr)
+      end,
+      handlers = Lsp.handlers(),
+    })
+  end
 
   if client_id then
     vim.lsp.buf_attach_client(bufnr, client_id)
@@ -481,13 +492,17 @@ Lsp.restart = function()
   end
   vim.defer_fn(function()
     -- Re-attach to all markdown buffers
+    local ws = mod.get_mod("workspace")
     for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
       if vim.api.nvim_buf_is_loaded(bufnr) then
         local ft = vim.bo[bufnr].filetype
         if vim.tbl_contains(Lsp.config.filetypes, ft) then
-          vim.api.nvim_buf_call(bufnr, function()
-            Lsp.attach(bufnr)
-          end)
+          local bufname = vim.api.nvim_buf_get_name(bufnr)
+          if not ws or not ws.is_wiki_path or ws.is_wiki_path(bufname) then
+            vim.api.nvim_buf_call(bufnr, function()
+              Lsp.attach(bufnr)
+            end)
+          end
         end
       end
     end
@@ -585,6 +600,14 @@ Lsp.commands = {
 Lsp.maps = {
   { "n", ",dl", "<cmd>Down lsp status<CR>", { desc = "LSP status", silent = true } },
   { "n", ",dL", "<cmd>Down lsp restart<CR>", { desc = "LSP restart", silent = true } },
+}
+
+Lsp.handle = {
+  workspace = {
+    wschanged = function()
+      Lsp.reindex()
+    end,
+  },
 }
 
 return Lsp

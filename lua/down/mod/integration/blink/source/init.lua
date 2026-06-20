@@ -27,7 +27,7 @@ function Resp.default(ctx)
   }
 end
 
-function Src:get_completiosn(ctx, cb)
+function Src:get_completions(ctx, cb)
   local ccb = function(err, resp)
     if resp == nil then
       return cb(Resp.default(ctx))
@@ -38,10 +38,8 @@ function Src:get_completiosn(ctx, cb)
       print("data nil")
       return cb(Resp.default(ctx))
     end
-    for _, cmp in ipairs(data) do
-      -- completion = require("bcp.format").format_item(completion)
+    for _, completion in ipairs(data) do
       ---@type blink.cmp.CompletionItem
-      completion = completion
       local item = {
         kind = require("blink.cmp.ids").CompletionItemKind.Lsp,
         -- label = "cmp",

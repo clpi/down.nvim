@@ -12,3 +12,6 @@ tools:
             - cat *
             - file *
             - go build *
+            - git status
+            - git log *
+            - git diff *

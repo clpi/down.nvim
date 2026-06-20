@@ -165,9 +165,14 @@ function Down:ensure_cli ()
   if vim.fn.executable (bin_path) == 1 then return end
   if vim.fn.executable ("down") == 1 then return end
   vim.fn.mkdir (bin_dir, "p")
-  local ext_dir = vim.fn.stdpath ("config"):gsub ("nvim$", "") .. "down/ext/down"
-  if vim.fn.isdirectory (ext_dir) == 1 and vim.fn.executable ("go") == 1 then
-    pcall (vim.fn.system, { "go", "build", "-o", bin_path, ext_dir .. "/." })
+
+  local ext_down = nil
+  local runtime = vim.api.nvim_get_runtime_file ("lua/down.lua", false)
+  if runtime and runtime[1] then
+    ext_down = vim.fs.joinpath (vim.fn.fnamemodify (runtime[1], ":p:h:h"), "ext", "down")
+  end
+  if ext_down and vim.fn.isdirectory (ext_down) == 1 and vim.fn.executable ("go") == 1 then
+    pcall (vim.fn.jobstart, { "go", "build", "-o", bin_path, "." }, { cwd = ext_down })
   end
 end
 
