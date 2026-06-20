@@ -19,10 +19,18 @@ Cmd.setup = function ()
   local unpack = table.unpack or unpack
   -- Helper: resolve the down CLI binary path
   local function down_bin ()
-    local paths = {
-      vim.fn.stdpath ("data") .. "/down/bin/down",
-      "down", -- system PATH
-    }
+    local paths = {}
+    for _, p in ipairs (vim.api.nvim_get_runtime_file ("scripts/bin/down", true)) do
+      paths[#paths + 1] = p
+    end
+    for _, p in ipairs (vim.api.nvim_get_runtime_file ("ext/down/bin/down", true)) do
+      paths[#paths + 1] = p
+    end
+    for _, p in ipairs (vim.api.nvim_get_runtime_file ("ext/down/down", true)) do
+      paths[#paths + 1] = p
+    end
+    paths[#paths + 1] = vim.fn.stdpath ("data") .. "/down/bin/down"
+    paths[#paths + 1] = "down" -- system PATH
     for _, p in ipairs (paths) do
       if vim.fn.executable (p) == 1 then
         return p
